@@ -3,9 +3,25 @@ import { icono, ICONO_SOL, ICONO_LUNA } from './iconos.js';
 
 const CLAVE_TEMA = 'generico.tema';
 
+export const TEMA_AUTOMATICO = 'automatico';
+
+export const leerTema = () => preferencias.leer(CLAVE_TEMA) || TEMA_AUTOMATICO;
+
 export function iniciarTema() {
   const tema = preferencias.leer(CLAVE_TEMA);
-  if (tema) document.documentElement.dataset.tema = tema;
+  if (tema === 'claro' || tema === 'oscuro') document.documentElement.dataset.tema = tema;
+}
+
+// Aplica y guarda el tema: 'claro', 'oscuro' o 'automatico' (sigue al dispositivo)
+export function aplicarTema(tema) {
+  const raiz = document.documentElement;
+  if (tema === 'claro' || tema === 'oscuro') raiz.dataset.tema = tema;
+  else {
+    delete raiz.dataset.tema;
+    tema = TEMA_AUTOMATICO;
+  }
+  preferencias.guardar(CLAVE_TEMA, tema);
+  return tema;
 }
 
 // Cambia entre claro y oscuro y devuelve el tema aplicado
@@ -14,9 +30,7 @@ export function alternarTema() {
   const esOscuro = raiz.dataset.tema
     ? raiz.dataset.tema === 'oscuro'
     : matchMedia('(prefers-color-scheme: dark)').matches;
-  raiz.dataset.tema = esOscuro ? 'claro' : 'oscuro';
-  preferencias.guardar(CLAVE_TEMA, raiz.dataset.tema);
-  return raiz.dataset.tema;
+  return aplicarTema(esOscuro ? 'claro' : 'oscuro');
 }
 
 // Botón de tema como icono: la luna se ve en modo claro y el sol en modo oscuro (lo decide el CSS)

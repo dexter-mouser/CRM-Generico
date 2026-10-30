@@ -1,0 +1,67 @@
+<div id="principal">
+  <h1>Pagos</h1>
+  <div class="texto-suave separacion-inferior">Registra abonos de clientes que deben y pagos a proveedores con facturas pendientes. Los valores se escriben a mano.</div>
+
+  <div class="dos-columnas arriba">
+    <section class="caja" aria-labelledby="titulo-abono">
+      <strong id="titulo-abono">Abono de un cliente</strong>
+      <label for="abono-cliente">Cliente con deuda</label>
+      <select id="abono-cliente" class="campo">{{{opcionesClientes}}}</select>
+      <div class="texto-suave margen-superior" id="deuda-seleccionada"></div>
+      <label for="abono-valor">Valor (COP)</label>
+      <input id="abono-valor" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
+      <label for="abono-metodo">Método de pago</label>
+      <select id="abono-metodo" class="campo">{{{opcionesMetodo}}}</select>
+      <button type="button" class="boton primario ancho" id="registrar-abono">Registrar abono</button>
+    </section>
+
+    <section class="caja" aria-labelledby="titulo-proveedor">
+      <strong id="titulo-proveedor">Pago a un proveedor</strong>
+      <label for="pago-proveedor">Proveedor con saldo pendiente</label>
+      <select id="pago-proveedor" class="campo">{{{opcionesProveedores}}}</select>
+      <div class="texto-suave margen-superior" id="saldo-seleccionado"></div>
+      <label for="pago-concepto">Concepto</label>
+      <input id="pago-concepto" class="campo" autocomplete="off" placeholder="Pago de facturas">
+      <label for="pago-valor">Valor (COP)</label>
+      <input id="pago-valor" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
+      <label for="pago-metodo">Método de pago</label>
+      <select id="pago-metodo" class="campo">{{{opcionesMetodo}}}</select>
+      <button type="button" class="boton primario ancho" id="registrar-pago">Registrar pago</button>
+    </section>
+  </div>
+
+  <section class="caja margen-superior-grande">
+    <strong>Historial de pagos</strong>
+    <div class="desplazable">
+      <table>
+        <thead><tr><th>N°</th><th>Fecha</th><th>Tipo</th><th>Cliente o proveedor</th><th>Concepto</th><th>Método</th><th>Valor</th></tr></thead>
+        <tbody><!--{{{filas}}}--></tbody>
+      </table>
+    </div>
+    {{{sinPagos}}}
+  </section>
+</div>
+
+<template id="aviso-vacio">
+  <div class="texto-suave margen-superior">{{texto}}</div>
+</template>
+
+<template id="opcion-cliente">
+  <option value="{{id}}" data-pendiente="{{pendiente}}">{{nombre}}</option>
+</template>
+
+<template id="opcion-proveedor">
+  <option value="{{nombre}}" data-pendiente="{{pendiente}}">{{nombre}}</option>
+</template>
+
+<template id="opcion-vacia">
+  <option value="">{{texto}}</option>
+</template>
+
+<template id="opcion-metodo">
+  <option>{{metodo}}</option>
+</template>
+
+<template id="fila-pago">
+  <tr><td>{{id}}</td><td>{{fecha}}</td><td>{{tipo}}</td><td>{{tercero}}</td><td class="celda-ancha">{{concepto}}</td><td>{{metodo}}</td><td>{{valor}}</td></tr>
+</template>

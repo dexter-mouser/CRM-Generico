@@ -1,11 +1,12 @@
 <div id="principal">
-  <h1>Buenos días, Nombre</h1>
-  <div class="texto-suave separacion-inferior-grande">Texto de prueba: resumen del día de tu tienda. Arrastra las tarjetas para reordenarlas.</div>
+  <h1>{{saludo}}, {{nombre}}</h1>
+  <div class="texto-suave separacion-inferior-grande">Resumen del día de tu tienda. Arrastra las tarjetas para reordenarlas.</div>
   <div class="tarjetas" id="contenedor-tarjetas">{{{tarjetas}}}</div>
   <div class="dos-columnas">
     <div class="caja">
       <strong>Ventas de la semana</strong>
       <div class="barras">{{{barras}}}</div>
+      <div class="etiquetas-barras">{{{etiquetas}}}</div>
     </div>
     <div class="caja">
       <strong>Últimas ventas</strong>
@@ -29,12 +30,16 @@
     </div>
     <div class="valor" data-hasta="{{valor}}" data-formato="{{formato}}">0</div>
     <div class="pista"><div class="relleno" data-porcentaje="{{porcentaje}}"></div></div>
-    <div class="texto-suave margen-superior" data-hasta="{{porcentaje}}" data-formato="porcentaje">0%</div>
+    <div class="texto-suave margen-superior">{{detalle}}</div>
   </div>
 </template>
 
 <template id="barra">
-  <i style="height:{{altura}}px;animation-delay:{{retraso}}ms"></i>
+  <i style="height:{{altura}}px;animation-delay:{{retraso}}ms" title="{{titulo}}" aria-label="{{titulo}}"></i>
+</template>
+
+<template id="etiqueta-barra">
+  <span>{{texto}}</span>
 </template>
 
 <template id="fila-venta">

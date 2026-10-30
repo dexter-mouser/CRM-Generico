@@ -7,7 +7,7 @@
   <div class="caja">
     <div class="desplazable">
       <table>
-        <tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Pago</th><th>Total</th></tr>
+        <tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Pago</th><th>Total</th><th></th></tr>
         <!--{{{filas}}}-->
       </table>
     </div>
@@ -15,5 +15,5 @@
 </div>
 
 <template id="fila-venta">
-  <tr><td>{{id}}</td><td>{{fecha}}</td><td>{{cliente}}</td><td class="celda-ancha">{{productos}}</td><td>{{metodo}}</td><td>{{total}}</td></tr>
+  <tr><td>{{id}}</td><td>{{fecha}}</td><td>{{cliente}}</td><td class="celda-ancha">{{productos}}</td><td>{{metodo}}</td><td>{{total}}</td><td><button type="button" class="boton" data-recibo="{{id}}">Recibo</button></td></tr>
 </template>

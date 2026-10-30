@@ -1,0 +1,90 @@
+<div id="principal">
+  <div class="cabecera-vista">
+    <div>
+      <h1>Clientes</h1>
+      <div class="texto-suave">Datos de contacto y deuda de cada cliente. La deuda sale de las ventas a Fiado menos los abonos de Pagos.</div>
+    </div>
+    <button type="button" class="boton primario" id="nuevo-cliente">Nuevo cliente</button>
+  </div>
+
+  <section class="caja formulario-en-linea" id="formulario-cliente" aria-labelledby="titulo-formulario-cliente" hidden>
+    <strong id="titulo-formulario-cliente">Nuevo cliente</strong>
+    <div class="dos-campos">
+      <div>
+        <label for="cliente-nombre">Nombre</label>
+        <input id="cliente-nombre" class="campo" autocomplete="off">
+      </div>
+      <div>
+        <label for="cliente-telefono">Teléfono</label>
+        <input id="cliente-telefono" class="campo" inputmode="tel" autocomplete="off">
+      </div>
+    </div>
+    <div class="dos-campos">
+      <div>
+        <label for="cliente-correo">Correo</label>
+        <input id="cliente-correo" class="campo" type="email" autocomplete="off">
+      </div>
+      <div>
+        <label for="cliente-direccion">Dirección</label>
+        <input id="cliente-direccion" class="campo" autocomplete="off">
+      </div>
+    </div>
+    <div class="acciones-fila margen-superior-grande">
+      <button type="button" class="boton primario" id="guardar-cliente">Guardar cliente</button>
+      <button type="button" class="boton" id="cancelar-cliente">Cancelar</button>
+    </div>
+  </section>
+
+  <section class="caja">
+    <label for="buscar-cliente">Buscar</label>
+    <input id="buscar-cliente" class="campo" autocomplete="off" placeholder="ID, nombre, teléfono o correo">
+    <div class="confirmacion" id="confirmar-eliminar-cliente" hidden>
+      <span id="texto-eliminar-cliente"></span>
+      <button type="button" class="boton peligro" id="eliminar-cliente-si">Sí, eliminar</button>
+      <button type="button" class="boton" id="eliminar-cliente-no">Cancelar</button>
+    </div>
+    <div class="desplazable margen-superior-grande">
+      <table>
+        <thead><tr><th>ID</th><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Deuda</th><th></th></tr></thead>
+        <tbody id="lista-clientes"></tbody>
+      </table>
+    </div>
+    <div class="texto-suave margen-superior" id="sin-clientes" hidden>No hay clientes que coincidan. Crea uno con "Nuevo cliente".</div>
+  </section>
+
+  <section class="caja margen-superior-grande" id="historial-cliente" aria-labelledby="titulo-historial" hidden>
+    <strong id="titulo-historial"></strong>
+    <div class="desplazable">
+      <table>
+        <thead><tr><th>N°</th><th>Fecha</th><th>Productos</th><th>Pago</th><th>Total</th></tr></thead>
+        <tbody id="compras-cliente"></tbody>
+      </table>
+    </div>
+    <div class="texto-suave margen-superior" id="sin-compras" hidden>Este cliente aún no tiene ventas.</div>
+  </section>
+</div>
+
+<template id="fila-cliente">
+  <tr>
+    <td>{{id}}</td>
+    <td>{{nombre}}</td>
+    <td>{{telefono}}</td>
+    <td>{{correo}}</td>
+    <td>{{{deuda}}}</td>
+    <td>
+      <div class="acciones-fila">
+        <button type="button" class="boton" data-historial="{{id}}">Historial</button>
+        <button type="button" class="boton" data-editar="{{id}}">Editar</button>
+        <button type="button" class="boton peligro" data-eliminar="{{id}}">Eliminar</button>
+      </div>
+    </td>
+  </tr>
+</template>
+
+<template id="deuda-con-saldo">
+  <span class="insignia">{{valor}}</span>
+</template>
+
+<template id="fila-compra">
+  <tr><td>{{id}}</td><td>{{fecha}}</td><td class="celda-ancha">{{productos}}</td><td>{{metodo}}</td><td>{{total}}</td></tr>
+</template>

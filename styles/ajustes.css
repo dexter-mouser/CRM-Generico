@@ -1,0 +1,35 @@
+/* Ajustes: secciones con título a la izquierda y controles a la derecha */
+.seccion-ajustes {
+  display: grid;
+  grid-template-columns: minmax(0, 240px) minmax(0, 1fr);
+  gap: 24px;
+  margin-bottom: 14px;
+}
+
+.seccion-ajustes > div:first-child strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 15px;
+}
+
+.seccion-ajustes label:first-child {
+  margin-top: 0;
+}
+
+.lista-casillas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 800px) {
+  .seccion-ajustes {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .dos-campos {
+    grid-template-columns: 1fr;
+  }
+}

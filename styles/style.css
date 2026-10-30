@@ -4,4 +4,9 @@
 @import url('layout.css');
 @import url('components.css');
 @import url('animations.css');
+@import url('cuadricula.css');
+@import url('recibo.css');
+@import url('ajustes.css');
+@import url('roles.css');
+@import url('reportes.css');
 @import url('acceso.css');

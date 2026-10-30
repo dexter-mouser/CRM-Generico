@@ -71,3 +71,13 @@ export async function leerInventarioCsv(archivo) {
     }))
     .filter((producto) => producto.nombre);
 }
+
+// Descarga cualquier tabla como CSV: columnas = ['Fecha', ...], filas = [[...], ...]
+export function descargarCsv(nombreArchivo, columnas, filas) {
+  const contenido = [columnas, ...filas].map((fila) => fila.map(escapar).join(',')).join('\r\n');
+  const enlace = document.createElement('a');
+  enlace.href = URL.createObjectURL(new Blob(['﻿' + contenido], { type: 'text/csv;charset=utf-8' }));
+  enlace.download = nombreArchivo;
+  enlace.click();
+  setTimeout(() => URL.revokeObjectURL(enlace.href), 1000);
+}

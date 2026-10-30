@@ -62,11 +62,6 @@ main {
   font-weight: 600;
 }
 
-.campo.buscador {
-  width: 220px;
-  flex: none;
-}
-
 .espacio-flexible {
   flex: 1;
 }
@@ -167,8 +162,7 @@ aside.recogido .opcion-menu span {
 }
 
 @media (max-width: 800px) {
-  .pestanas-superiores,
-  .campo.buscador {
+  .pestanas-superiores {
     display: none;
   }
 

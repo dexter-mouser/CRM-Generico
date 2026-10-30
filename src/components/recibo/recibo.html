@@ -1,0 +1,38 @@
+<dialog id="recibo" class="recibo-dialogo" aria-labelledby="recibo-titulo">
+  <div class="recibo" id="contenido-recibo"></div>
+  <div class="recibo-acciones">
+    <button type="button" class="boton primario" id="imprimir-recibo">Imprimir</button>
+    <button type="button" class="boton" id="cerrar-recibo">Cerrar</button>
+  </div>
+</dialog>
+
+<template id="recibo-cuerpo">
+  <div class="recibo-encabezado">
+    <div class="recibo-marca">{{tienda}}</div>
+    {{{datosTienda}}}
+    <div id="recibo-titulo">{{titulo}}</div>
+    <div class="recibo-suave">{{subtitulo}}</div>
+  </div>
+  <div class="recibo-datos">
+    <div><span>Fecha</span><span>{{fecha}}</span></div>
+    <div><span>Cliente</span><span>{{cliente}}</span></div>
+    <div><span>Pago</span><span>{{metodo}}</span></div>
+  </div>
+  <div class="recibo-lineas">{{{lineas}}}</div>
+  <div class="recibo-total"><span>TOTAL</span><span>{{total}}</span></div>
+  <div class="recibo-pie">{{pie}}</div>
+</template>
+
+<template id="recibo-dato-tienda">
+  <div class="recibo-suave">{{texto}}</div>
+</template>
+
+<template id="recibo-linea">
+  <div class="recibo-linea">
+    <div>
+      <div class="recibo-nombre">{{nombre}}</div>
+      <div class="recibo-suave">{{cantidad}} × {{valorUnitario}}</div>
+    </div>
+    <span>{{subtotal}}</span>
+  </div>
+</template>

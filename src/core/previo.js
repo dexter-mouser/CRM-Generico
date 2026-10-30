@@ -4,7 +4,7 @@
   var raiz = document.documentElement;
   try {
     var tema = localStorage.getItem('generico.tema');
-    if (tema) raiz.dataset.tema = tema;
+    if (tema === 'claro' || tema === 'oscuro') raiz.dataset.tema = tema;
   } catch (error) { /* sin almacenamiento */ }
 
   if (!('protegida' in raiz.dataset)) return;

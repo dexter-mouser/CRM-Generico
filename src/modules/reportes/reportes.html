@@ -1,0 +1,94 @@
+<div id="principal">
+  <div class="cabecera-vista">
+    <div>
+      <h1>Reportes</h1>
+      <div class="texto-suave">Ventas por rango de fechas, productos con poco stock y clientes con deuda.</div>
+    </div>
+    <button type="button" class="boton" id="descargar-ventas">Descargar ventas CSV</button>
+  </div>
+
+  <section class="caja" aria-label="Rango de fechas">
+    <div class="filtros-reporte">
+      <div>
+        <label for="fecha-desde">Desde</label>
+        <input id="fecha-desde" class="campo" type="date" value="{{desde}}">
+      </div>
+      <div>
+        <label for="fecha-hasta">Hasta</label>
+        <input id="fecha-hasta" class="campo" type="date" value="{{hasta}}">
+      </div>
+      <div class="acciones-fila">
+        <button type="button" class="boton" data-rango="hoy">Hoy</button>
+        <button type="button" class="boton" data-rango="semana">Últimos 7 días</button>
+        <button type="button" class="boton" data-rango="mes">Este mes</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="indicadores margen-superior-grande" id="indicadores"></div>
+
+  <div class="dos-columnas arriba">
+    <section class="caja">
+      <strong>Ventas por método de pago</strong>
+      <div class="desplazable">
+        <table>
+          <thead><tr><th>Método</th><th>Total</th></tr></thead>
+          <tbody id="por-metodo"></tbody>
+        </table>
+      </div>
+      <div class="texto-suave margen-superior" id="sin-ventas" hidden>No hay ventas en este rango.</div>
+    </section>
+    <section class="caja">
+      <strong>Productos más vendidos</strong>
+      <div class="desplazable">
+        <table>
+          <thead><tr><th>ID</th><th>Producto</th><th>Unidades</th><th>Total</th></tr></thead>
+          <tbody id="mas-vendidos"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="dos-columnas arriba">
+    <section class="caja">
+      <strong>Stock bajo (5 unidades o menos)</strong>
+      <div class="desplazable">
+        <table>
+          <thead><tr><th>ID</th><th>Producto</th><th>Stock</th></tr></thead>
+          <tbody id="stock-bajo"></tbody>
+        </table>
+      </div>
+      <div class="texto-suave margen-superior" id="sin-stock-bajo" hidden>Ningún producto tiene poco stock.</div>
+    </section>
+    <section class="caja">
+      <strong>Clientes con deuda</strong>
+      <div class="desplazable">
+        <table>
+          <thead><tr><th>Cliente</th><th>Deuda</th></tr></thead>
+          <tbody id="deudas"></tbody>
+        </table>
+      </div>
+      <div class="texto-suave margen-superior" id="sin-deudas" hidden>Ningún cliente tiene deuda.</div>
+    </section>
+  </div>
+</div>
+
+<template id="indicador">
+  <div class="caja indicador"><span class="texto-suave">{{etiqueta}}</span><strong>{{valor}}</strong></div>
+</template>
+
+<template id="fila-metodo">
+  <tr><td>{{metodo}}</td><td>{{valor}}</td></tr>
+</template>
+
+<template id="fila-mas-vendido">
+  <tr><td>{{id}}</td><td>{{nombre}}</td><td>{{cantidad}}</td><td>{{total}}</td></tr>
+</template>
+
+<template id="fila-stock-bajo">
+  <tr><td>{{id}}</td><td>{{nombre}}</td><td>{{existencias}}</td></tr>
+</template>
+
+<template id="fila-deuda">
+  <tr><td>{{nombre}}</td><td>{{deuda}}</td></tr>
+</template>

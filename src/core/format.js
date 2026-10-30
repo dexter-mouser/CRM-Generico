@@ -12,3 +12,9 @@ export function aFecha(valor) {
 
 // Fecha de hoy en hora local, con el formato de un campo <input type="date">
 export const fechaDeHoy = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
+// Fecha local con el formato de un campo <input type="date">, a partir de una fecha ISO completa
+export const aFechaLocal = (iso) => {
+  const fecha = new Date(iso);
+  return new Date(fecha.getTime() - fecha.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+};

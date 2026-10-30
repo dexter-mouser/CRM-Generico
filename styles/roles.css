@@ -1,0 +1,77 @@
+/* Roles y permisos: lista de roles a la izquierda, permisos y personas a la derecha */
+.cabecera-vista {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.cabecera-vista h1,
+.cabecera-vista h2 {
+  margin: 0;
+}
+
+.disposicion-roles {
+  display: grid;
+  grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.columna-roles {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.tarjeta-rol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: none;
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tarjeta-rol:hover {
+  background: var(--pasar);
+}
+
+.tarjeta-rol[aria-current="true"] {
+  border-color: var(--contorno);
+  background: var(--activo);
+}
+
+.formulario-en-linea {
+  margin-bottom: 14px;
+}
+
+th.centro,
+td.centro {
+  text-align: center;
+}
+
+td.sin-permiso {
+  color: var(--contorno);
+}
+
+td input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--acento);
+}
+
+@media (max-width: 800px) {
+  .disposicion-roles {
+    grid-template-columns: 1fr;
+  }
+}

@@ -11,13 +11,20 @@ Panel de gestión para tiendas pequeñas que reemplaza el cuaderno donde se anot
 - **Campos numéricos:** se escriben a mano (sin flechas de aumento ni rueda del ratón); solo admiten dígitos, y el stock admite un "-" inicial.
 - **Confirmaciones:** cada cambio aplicado (producto, venta, factura, documento, orden de tarjetas, tema) muestra el aviso "... correctamente"; las advertencias se muestran sin la marca de éxito.
 - **Animaciones:** esqueletos al cargar cada página y contadores/barras que suben de 0 al valor actual. Respeta la preferencia de reducir animaciones del dispositivo.
-- **Panel:** tarjetas de resumen reordenables, gráfica semanal y últimas ventas. Al arrastrar, la tarjeta se levanta y sigue al puntero, un hueco punteado marca el destino y las demás tarjetas se deslizan a su nueva posición. El orden se guarda en el instante de soltar. Con teclado: flechas sobre el icono de agarre.
-- **Registrar venta** (`nueva-venta.html`, independiente del historial): una venta puede tener varios productos. El buscador filtra por cualquier atributo (ID, nombre, referencia, costo o stock) y acepta varias palabras; Enter elige el primer resultado. Cantidad y valor unitario se escriben a mano; el valor sugerido es el de la última venta de ese producto. Cada producto descuenta su cantidad del stock.
+- **Panel:** tarjetas de resumen reordenables (ventas del día, efectivo en caja, fiados pendientes y productos en negativo), gráfica de las ventas de los últimos 7 días y últimas ventas. Al arrastrar, la tarjeta se levanta y sigue al puntero, un hueco punteado marca el destino y las demás tarjetas se deslizan a su nueva posición. El orden se guarda en el instante de soltar. Con teclado: flechas sobre el icono de agarre.
+- **Registrar venta** (`nueva-venta.html`, independiente del historial): es una cuadrícula con las columnas ID, Referencia, Producto, Costo, Stock, Cantidad, Valor unitario y Subtotal. La búsqueda se hace en la casilla que está debajo de cada columna (ID, referencia, producto, costo o stock); las casillas se combinan y los resultados se abren debajo, alineados con las columnas. Flechas y Enter eligen el producto, que se agrega como línea; el cursor pasa a la cantidad, Enter pasa al valor unitario y otro Enter vuelve a la búsqueda de ID. Una venta puede tener varios productos. Cantidad y valor unitario se escriben a mano; el valor sugerido es el de la última venta de ese producto. Cada producto descuenta su cantidad del stock.
+- **Últimas búsquedas:** al hacer clic en una casilla de búsqueda vacía se muestran las últimas búsquedas (con su columna); un clic en una la repite y "Borrar" limpia el historial. El buscador de las facturas de compra también las muestra.
+- **Recibo:** "Vista previa del recibo" muestra el recibo (formato de 80 mm) antes de registrar la venta; al registrarla, "Ver recibo" lo muestra con su número, y en Ventas cada fila tiene su botón "Recibo". Desde la vista previa, "Imprimir" imprime solo el recibo.
 - **Ventas** (`ventas.html`): historial con número, fecha, cliente, productos, forma de pago y total.
 - **Inventario:** cada producto tiene ID (único, automático si se deja vacío), referencia, nombre, costo y stock (puede ser negativo). Se edita en línea; el ID no se edita porque lo usan las ventas y las facturas. Guarda costo, no precio de venta.
 - **Facturas de compra:** el botón "Ingresar factura" abre un panel con proveedor, número, fecha y productos (con el mismo buscador). Al registrarla suma las cantidades al stock y deja el costo de la factura como costo del producto. No admite repetir el número de factura de un mismo proveedor.
 - **Documentos:** el inventario se descarga y se carga como CSV, un documento de texto que abren e importan directamente las hojas de cálculo del navegador (por ejemplo Google Sheets), sin depender de Excel.
-- **Pantallas de prueba:** Clientes, Caja, Pagos, Reportes, Roles y permisos, Ajustes.
+- **Ajustes** (`ajustes.html`): datos de la tienda (nombre, NIT, teléfono, ciudad y dirección), apariencia (tema claro, oscuro o automático, y menú lateral expandido o recogido), ventas (métodos de pago disponibles, con al menos uno siempre activo, y si se permite vender sin existencias), recibo (mensaje final, mostrar u ocultar los datos de la tienda y un recibo de ejemplo) y restablecer los datos de prueba, con confirmación previa. Los datos de la tienda y el mensaje se muestran en cada recibo.
+- **Roles y permisos** (`roles.html`): lista de roles con una tabla de permisos por módulo (Ver, Crear, Editar, Eliminar; solo aparecen las acciones que cada módulo admite). Activar una acción activa también "Ver" y quitar "Ver" quita todas las del módulo. Se pueden crear, editar y eliminar roles (no se elimina un rol con personas asignadas). El rol Propietario tiene acceso total y no se puede modificar. Cada persona tiene correo, rol y estado activo; siempre debe quedar al menos un propietario activo.
+- **Clientes** (`clientes.html`): lista con búsqueda (ID, nombre, teléfono o correo), alta, edición y eliminación con confirmación. Muestra la deuda de cada uno (ventas a Fiado menos abonos) y su historial de compras. No se elimina un cliente con deuda y, al cambiar un nombre, sus ventas se actualizan. Las ventas a Fiado solo se permiten a clientes registrados.
+- **Caja** (`caja.html`): se abre con una base, muestra el efectivo esperado (base + ventas en efectivo + abonos en efectivo + ingresos - egresos - pagos a proveedores en efectivo), permite registrar ingresos y egresos y se cierra contando el efectivo; guarda la diferencia en el historial de cierres.
+- **Pagos** (`pagos.html`): abonos de clientes con deuda y pagos a proveedores con facturas pendientes; ninguno puede superar lo pendiente. Los métodos son los de Ajustes, sin Fiado. Incluye el historial de pagos.
+- **Reportes** (`reportes.html`): total vendido, número de ventas, ticket promedio y utilidad estimada (con el costo actual) en un rango de fechas, con atajos (hoy, 7 días, este mes); ventas por método de pago, productos más vendidos, productos con stock bajo (5 o menos) y clientes con deuda. Descarga las ventas del rango como CSV.
 
 ## Acceso de prueba
 | Forma | Datos |
@@ -42,19 +49,30 @@ crm-tiendas/
 │   ├── layout.css              Encabezado, menú lateral, contenido, marca
 │   ├── components.css          Tarjetas, botones, tablas, formularios, selector, arrastre
 │   ├── animations.css          Esqueletos de carga, entradas y barras
+│   ├── cuadricula.css          Cuadrícula de Registrar venta y últimas búsquedas
+│   ├── ajustes.css             Pantalla de Ajustes
+│   ├── reportes.css            Reportes, resumen de caja y etiquetas de la gráfica
+│   ├── roles.css               Pantalla de Roles y permisos
+│   ├── recibo.css              Recibo: vista previa e impresión
 │   └── acceso.css              Pantalla de ingreso
 ├── src/
 │   ├── main.js                 Arranque de las páginas protegidas (verifica sesión y monta el menú)
 │   ├── main-acceso.js          Arranque de index.html
-│   ├── config/                 nav.js (menú), routes.js (módulo de cada vista), acceso.js (usuarios de prueba)
+│   ├── config/                 nav.js (menú), routes.js (módulo de cada vista), acceso.js (usuarios de prueba),
+│   │                           permisos.js (módulos y acciones de los permisos),
+│   │                           entorno.js (dirección de la API)
 │   ├── core/                   previo, sesion, router, store, preferencias, template, tema, animate,
-│   │                           numeros, codigos, format, iconos, dom
+│   │                           numeros, codigos, busquedas, format, iconos, dom
 │   ├── components/             header/, sidebar/, logo/, toast/ (aviso), reordenar/ (arrastrar y soltar),
-│   │                           selector-productos/ (buscador con filtro)
+│   │                           buscador-cuadricula/ (fila de búsqueda), selector-productos/ (buscador simple),
+│   │                           recibo/ (vista previa e impresión)
 │   ├── modules/                acceso/, panel/, nueva-venta/, ventas/, inventario/ (incluye factura.js),
+│   │                           ajustes/, roles/, clientes/, caja/, pagos/, reportes/,
 │   │                           placeholder/ (cada uno con su .html y su .js)
-│   ├── services/               inventario.service.js, ventas.service.js (reglas de negocio),
-│   │                           csv.service.js (documentos), api.js (cliente de la API)
+│   ├── services/               inventario.service.js, ventas.service.js, ajustes.service.js, roles.service.js,
+│   │                           clientes.service.js, pagos.service.js, caja.service.js, reportes.service.js
+│   │                           (reglas de negocio),
+│   │                           csv.service.js (documentos), api.js (cliente de la API para el backend)
 │   └── data/seed.js            Datos de prueba
 ├── backend/                    API Spring Boot
 ├── database/                   Migraciones y datos de prueba
@@ -90,6 +108,9 @@ Luego abre la dirección que indique (por ejemplo `http://localhost:8000`). Los 
 Los campos numéricos se declaran con `data-numero="entero"` o `data-numero="entero-negativo"`. Las reglas de negocio (registrar ventas y facturas, buscar productos) viven en `src/services/`, sin tocar la interfaz.
 
 Plantillas: `{{x}}` inserta texto escapado, `{{{x}}}` inserta HTML y `<!--{{{x}}}-->` se usa dentro de tablas.
+
+## Conexión con el backend
+`src/services/api.js` es el cliente de la API (cookie de sesión, error de conexión y cierre de sesión al recibir 401) y la dirección se configura en `src/config/entorno.js`. Las reglas de negocio de `src/services/*.service.js` hoy leen y guardan en el navegador; para conectar el backend cada función se reemplaza por su llamada a `api` (asíncrona) y los módulos de interfaz esperan su respuesta con `await`. Los endpoints esperados están en `docs/api.md`.
 
 ## Formato del CSV de inventario
 Una fila de encabezado con las columnas `ID`, `Referencia`, `Producto`, `Costo` y `Stock` (acepta separador coma o punto y coma). Al cargar el archivo se actualizan los productos con el mismo ID y se crean los nuevos (si la fila no trae ID, se asigna uno). El stock acepta valores negativos. Para trabajar en Google Sheets: súbelo a Drive, edítalo y descárgalo de nuevo como CSV.

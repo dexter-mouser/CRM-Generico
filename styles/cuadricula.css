@@ -1,0 +1,119 @@
+/* Cuadrícula de Registrar venta: encabezado, fila de búsqueda, resultados y líneas comparten las mismas columnas */
+.cuadricula-venta {
+  min-width: 940px;
+}
+
+.cuadricula {
+  --columnas: 84px 104px minmax(0, 1.6fr) 96px 64px 84px 112px 104px 40px;
+  position: relative;
+}
+
+.fila-cuadricula {
+  display: grid;
+  grid-template-columns: var(--columnas);
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.encabezado-cuadricula {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--suave);
+}
+
+.fila-busqueda {
+  background: var(--pasar);
+}
+
+.fila-busqueda .campo,
+.fila-linea .campo {
+  min-width: 0;
+  padding: 6px 8px;
+}
+
+.relleno-resto {
+  grid-column: 6 / -1;
+}
+
+.texto-producto {
+  overflow-wrap: anywhere;
+}
+
+/* Panel que se abre justo debajo de la fila de búsqueda, sin mover las líneas */
+.resultados-cuadricula {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 15;
+  overflow: hidden;
+  border-radius: 0 0 10px 10px;
+  background: var(--superficie);
+  box-shadow: 0 0 0 1px var(--contorno), 0 14px 30px rgba(0, 0, 0, 0.18);
+}
+
+.resultados-cuadricula[hidden] {
+  display: none;
+}
+
+.fila-resultado {
+  cursor: pointer;
+}
+
+.fila-resultado:hover,
+.fila-resultado.activa {
+  background: var(--activo);
+}
+
+.aviso-cuadricula,
+.cabecera-recientes {
+  padding: 8px 12px;
+}
+
+.cabecera-recientes {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Últimas búsquedas */
+.recientes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 12px 12px;
+}
+
+.recientes-selector {
+  align-items: center;
+  padding: 8px 0 0;
+}
+
+.recientes-selector:empty {
+  display: none;
+}
+
+.reciente {
+  padding: 5px 10px;
+  border: 1px solid var(--contorno);
+  border-radius: 20px;
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+  cursor: pointer;
+}
+
+.reciente:hover {
+  background: var(--pasar);
+}
+
+.boton-enlace {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--suave);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

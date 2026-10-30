@@ -1,0 +1,118 @@
+<div id="principal">
+  <h1>Ajustes</h1>
+  <div class="texto-suave separacion-inferior">Configura los datos de tu tienda, la apariencia, las ventas y el recibo.</div>
+
+  <section class="caja seccion-ajustes" aria-labelledby="titulo-tienda">
+    <div>
+      <strong id="titulo-tienda">Tienda</strong>
+      <div class="texto-suave">Estos datos aparecen en el recibo.</div>
+    </div>
+    <div>
+      <div class="dos-campos">
+        <div>
+          <label for="tienda-nombre">Nombre</label>
+          <input id="tienda-nombre" class="campo" autocomplete="off" value="{{nombre}}">
+        </div>
+        <div>
+          <label for="tienda-nit">NIT</label>
+          <input id="tienda-nit" class="campo" autocomplete="off" value="{{nit}}">
+        </div>
+      </div>
+      <div class="dos-campos">
+        <div>
+          <label for="tienda-telefono">Teléfono</label>
+          <input id="tienda-telefono" class="campo" inputmode="tel" autocomplete="off" value="{{telefono}}">
+        </div>
+        <div>
+          <label for="tienda-ciudad">Ciudad</label>
+          <input id="tienda-ciudad" class="campo" autocomplete="off" value="{{ciudad}}">
+        </div>
+      </div>
+      <label for="tienda-direccion">Dirección</label>
+      <input id="tienda-direccion" class="campo" autocomplete="off" value="{{direccion}}">
+      <div class="acciones-fila margen-superior-grande">
+        <button type="button" class="boton primario" id="guardar-tienda">Guardar datos de la tienda</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="caja seccion-ajustes" aria-labelledby="titulo-apariencia">
+    <div>
+      <strong id="titulo-apariencia">Apariencia</strong>
+      <div class="texto-suave">Se aplica al instante y se recuerda en este dispositivo.</div>
+    </div>
+    <div>
+      <label id="etiqueta-tema">Tema</label>
+      <div class="segmentado" role="group" aria-labelledby="etiqueta-tema">
+        <button type="button" data-opcion-tema="claro" aria-pressed="false">Claro</button>
+        <button type="button" data-opcion-tema="oscuro" aria-pressed="false">Oscuro</button>
+        <button type="button" data-opcion-tema="automatico" aria-pressed="false">Automático</button>
+      </div>
+      <label id="etiqueta-menu">Menú lateral</label>
+      <div class="segmentado" role="group" aria-labelledby="etiqueta-menu">
+        <button type="button" data-opcion-menu="abierto" aria-pressed="false">Expandido</button>
+        <button type="button" data-opcion-menu="recogido" aria-pressed="false">Recogido</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="caja seccion-ajustes" aria-labelledby="titulo-ventas">
+    <div>
+      <strong id="titulo-ventas">Ventas</strong>
+      <div class="texto-suave">Qué se puede elegir y qué se permite al registrar una venta.</div>
+    </div>
+    <div>
+      <label id="etiqueta-metodos">Métodos de pago disponibles</label>
+      <div class="lista-casillas" role="group" aria-labelledby="etiqueta-metodos">{{{metodos}}}</div>
+      <label class="interruptor">
+        <input type="checkbox" role="switch" id="permitir-sin-existencias">
+        <span class="interruptor-pista"></span>
+        <span>Permitir vender sin existencias (el stock puede quedar en negativo)</span>
+      </label>
+    </div>
+  </section>
+
+  <section class="caja seccion-ajustes" aria-labelledby="titulo-recibo">
+    <div>
+      <strong id="titulo-recibo">Recibo</strong>
+      <div class="texto-suave">Cómo se ve el recibo de cada venta.</div>
+    </div>
+    <div>
+      <label for="recibo-pie">Mensaje al final del recibo</label>
+      <input id="recibo-pie" class="campo" autocomplete="off" value="{{pie}}">
+      <div class="margen-superior-grande">
+        <label class="interruptor">
+          <input type="checkbox" role="switch" id="mostrar-datos-tienda">
+          <span class="interruptor-pista"></span>
+          <span>Mostrar los datos de la tienda en el recibo</span>
+        </label>
+      </div>
+      <div class="acciones-fila margen-superior-grande">
+        <button type="button" class="boton primario" id="guardar-recibo">Guardar mensaje</button>
+        <button type="button" class="boton" id="ver-recibo-ejemplo">Ver recibo de ejemplo</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="caja seccion-ajustes" aria-labelledby="titulo-datos">
+    <div>
+      <strong id="titulo-datos">Datos de prueba</strong>
+      <div class="texto-suave">Los ajustes, roles y personas no cambian.</div>
+    </div>
+    <div>
+      <div class="texto-suave">Vuelve productos, ventas y facturas a los datos de prueba iniciales.</div>
+      <div class="acciones-fila margen-superior-grande">
+        <button type="button" class="boton peligro" id="restablecer">Restablecer datos de prueba</button>
+      </div>
+      <div class="confirmacion" id="confirmar-restablecer" hidden>
+        <span>¿Seguro? Se perderán las ventas, facturas e inventario actuales.</span>
+        <button type="button" class="boton peligro" id="confirmar-restablecer-si">Sí, restablecer</button>
+        <button type="button" class="boton" id="confirmar-restablecer-no">Cancelar</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<template id="casilla-metodo">
+  <label class="casilla"><input type="checkbox" data-metodo="{{metodo}}"> {{metodo}}</label>
+</template>

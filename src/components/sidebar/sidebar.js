@@ -36,7 +36,13 @@ export async function montarMenuLateral(ranura) {
   if (recogido === '1' || (recogido === null && innerWidth < 800)) menu.classList.add('recogido');
 }
 
-export function alternarMenuLateral() {
-  const recogido = buscar('#menu-lateral').classList.toggle('recogido');
+export const leerMenuRecogido = () => buscar('#menu-lateral').classList.contains('recogido');
+
+export function establecerMenuRecogido(recogido) {
+  buscar('#menu-lateral').classList.toggle('recogido', recogido);
   preferencias.guardar(CLAVE_MENU, recogido ? '1' : '0');
+}
+
+export function alternarMenuLateral() {
+  establecerMenuRecogido(!leerMenuRecogido());
 }

@@ -14,6 +14,13 @@ export function buscarProductos(consulta = '') {
   });
 }
 
+// Filtro por columna: cada casilla con texto debe coincidir con su atributo (id, referencia, nombre, costo, existencias)
+export function filtrarProductos(filtros) {
+  const condiciones = Object.entries(filtros).filter(([, texto]) => texto.trim());
+  return estado.productos.filter((producto) =>
+    condiciones.every(([columna, texto]) => quitarTildes(producto[columna]).includes(quitarTildes(texto.trim()))));
+}
+
 export function agregarProducto({ id, referencia, nombre, costo, existencias }) {
   if (!nombre.trim()) throw new Error('Escribe el nombre del producto');
   const idFinal = id.trim() || siguienteCodigo(estado.productos.map((producto) => producto.id), 'P', 3);
