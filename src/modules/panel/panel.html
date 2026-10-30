@@ -1,0 +1,42 @@
+<div id="principal">
+  <h1>Buenos días, Nombre</h1>
+  <div class="texto-suave separacion-inferior-grande">Texto de prueba: resumen del día de tu tienda. Arrastra las tarjetas para reordenarlas.</div>
+  <div class="tarjetas" id="contenedor-tarjetas">{{{tarjetas}}}</div>
+  <div class="dos-columnas">
+    <div class="caja">
+      <strong>Ventas de la semana</strong>
+      <div class="barras">{{{barras}}}</div>
+    </div>
+    <div class="caja">
+      <strong>Últimas ventas</strong>
+      <div class="desplazable">
+        <table>
+          <tr><th>Cliente</th><th>Productos</th><th>Pago</th><th>Total</th></tr>
+          <!--{{{filas}}}-->
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<template id="tarjeta-resumen">
+  <div class="caja resumen" data-indice="{{indice}}">
+    <div class="cabecera-tarjeta">
+      <span class="texto-suave">{{etiqueta}}</span>
+      <button type="button" class="agarre" aria-label="Mover la tarjeta {{etiqueta}} (arrastra o usa las flechas)" title="Arrastra o usa las flechas del teclado">
+        <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor" aria-hidden="true"><circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/><circle cx="3" cy="8" r="1.5"/><circle cx="9" cy="8" r="1.5"/><circle cx="3" cy="13" r="1.5"/><circle cx="9" cy="13" r="1.5"/></svg>
+      </button>
+    </div>
+    <div class="valor" data-hasta="{{valor}}" data-formato="{{formato}}">0</div>
+    <div class="pista"><div class="relleno" data-porcentaje="{{porcentaje}}"></div></div>
+    <div class="texto-suave margen-superior" data-hasta="{{porcentaje}}" data-formato="porcentaje">0%</div>
+  </div>
+</template>
+
+<template id="barra">
+  <i style="height:{{altura}}px;animation-delay:{{retraso}}ms"></i>
+</template>
+
+<template id="fila-venta">
+  <tr><td>{{cliente}}</td><td class="celda-ancha">{{productos}}</td><td>{{metodo}}</td><td>{{total}}</td></tr>
+</template>

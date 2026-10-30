@@ -1,0 +1,338 @@
+/* Componentes: botones, campos, cajas, tablas y tarjetas */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible,
+label:focus-within {
+  outline: 2px solid var(--texto);
+  outline-offset: 2px;
+}
+
+/* Botones */
+.boton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border: 1px solid var(--contorno);
+  border-radius: 10px;
+  background: var(--superficie);
+  color: var(--texto);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.boton:hover {
+  background: var(--pasar);
+}
+
+.boton.primario {
+  background: var(--acento);
+  border-color: var(--acento);
+  color: var(--acento-texto);
+}
+
+.boton.ancho {
+  width: 100%;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.boton.icono {
+  padding: 9px;
+}
+
+.boton.archivo {
+  margin: 0;
+  color: var(--texto);
+}
+
+/* Formularios */
+.campo {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--contorno);
+  border-radius: 10px;
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+}
+
+label {
+  display: block;
+  margin: 12px 0 4px;
+  font-size: 12px;
+  color: var(--suave);
+}
+
+/* Cajas y textos */
+.caja {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  background: var(--superficie);
+}
+
+.texto-suave {
+  font-size: 13px;
+  color: var(--suave);
+}
+
+.separacion-inferior {
+  margin-bottom: 16px;
+}
+
+.separacion-inferior-grande {
+  margin-bottom: 20px;
+}
+
+.margen-superior {
+  margin-top: 8px;
+}
+
+/* Rejillas */
+.tarjetas,
+.dos-columnas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dos-columnas > * {
+  flex: 1 1 320px;
+}
+
+.dos-columnas.arriba {
+  align-items: flex-start;
+}
+
+.columna-ancha {
+  flex: 4 1 480px;
+}
+
+.columna-angosta {
+  flex: 1 1 220px;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* Tarjetas de resumen del panel */
+.resumen {
+  flex: 1 1 200px;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.cabecera-tarjeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.agarre {
+  padding: 4px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--suave);
+  cursor: grab;
+  touch-action: none;
+}
+
+.agarre:hover {
+  background: var(--pasar);
+}
+
+.valor {
+  margin: 6px 0 12px;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.pista {
+  height: 6px;
+  border-radius: 6px;
+  background: var(--pista);
+}
+
+.relleno {
+  width: 0;
+  height: 6px;
+  border-radius: 6px;
+  background: var(--barra);
+  transition: width 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Arrastrar y soltar: la tarjeta levantada sigue al puntero y el hueco marca el destino */
+.resumen.arrastrando {
+  z-index: 20;
+  cursor: grabbing;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+  border-color: var(--texto);
+}
+
+.hueco {
+  flex: 1 1 200px;
+  border: 2px dashed var(--contorno);
+  border-radius: 14px;
+  background: var(--pasar);
+}
+
+body.arrastre-activo {
+  cursor: grabbing;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Tablas */
+.desplazable {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--borde);
+  text-align: left;
+  white-space: nowrap;
+}
+
+th {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--suave);
+}
+
+td .campo {
+  min-width: 90px;
+  padding: 6px 8px;
+}
+
+.insignia {
+  padding: 2px 8px;
+  border: 1px solid var(--negativo);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--negativo);
+}
+.margen-superior-grande {
+  margin-top: 16px;
+}
+
+/* Botón de tema: la luna se ve en modo claro y el sol en modo oscuro */
+.icono-sol {
+  display: none;
+}
+
+:root[data-tema="oscuro"] .icono-sol {
+  display: block;
+}
+
+:root[data-tema="oscuro"] .icono-luna {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) .icono-sol {
+    display: block;
+  }
+
+  :root:not([data-tema="claro"]) .icono-luna {
+    display: none;
+  }
+}
+
+/* Selector de productos con filtro */
+.resultados {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 320px;
+  margin-top: 8px;
+  overflow: auto;
+}
+
+.resultado {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.resultado:hover {
+  background: var(--pasar);
+}
+
+.resultado-id {
+  font-weight: 600;
+  color: var(--suave);
+}
+
+.resultado-nombre {
+  font-weight: 600;
+}
+
+.resultado .texto-suave {
+  grid-column: 1 / -1;
+}
+
+/* Líneas de venta y de factura */
+.celda-ancha {
+  min-width: 180px;
+  white-space: normal;
+}
+
+td .campo.campo-corto {
+  width: 72px;
+  min-width: 0;
+}
+
+td .campo.campo-medio {
+  width: 104px;
+  min-width: 0;
+}
+
+.total-venta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 16px 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--borde);
+  font-size: 18px;
+}
+
+.dos-campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.acciones-fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

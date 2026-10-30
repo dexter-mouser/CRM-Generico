@@ -1,0 +1,97 @@
+<div id="principal">
+  <h1>Inventario</h1>
+  <div class="texto-suave separacion-inferior">Cada producto tiene ID, referencia, nombre, costo y stock (puede quedar en negativo). Los números se escriben a mano.</div>
+  <div class="acciones">
+    <button type="button" class="boton primario" id="abrir-factura" aria-expanded="false" aria-controls="panel-factura">Ingresar factura</button>
+    <button type="button" class="boton" id="descargar-csv">Descargar CSV</button>
+    <label class="boton archivo">Cargar CSV<input type="file" id="cargar-csv" accept=".csv,text/csv" hidden></label>
+  </div>
+
+  <section class="caja separacion-inferior" id="panel-factura" aria-label="Ingresar factura de compra" hidden>
+    <strong>Ingresar factura de compra</strong>
+    <div class="texto-suave">Suma las cantidades al stock y deja el costo de la factura como costo de cada producto. Si el producto es nuevo, créalo antes en "Nuevo producto".</div>
+    <div class="dos-columnas arriba margen-superior">
+      <div class="columna-angosta">
+        <label for="factura-proveedor">Proveedor</label>
+        <input id="factura-proveedor" class="campo" autocomplete="off">
+        <label for="factura-numero">N° de factura</label>
+        <input id="factura-numero" class="campo" autocomplete="off">
+        <label for="factura-fecha">Fecha</label>
+        <input id="factura-fecha" class="campo" type="date" value="{{hoy}}">
+        {{{selector}}}
+      </div>
+      <div class="columna-ancha">
+        <div class="desplazable">
+          <table>
+            <tr><th>ID</th><th>Producto</th><th>Cantidad</th><th>Costo unitario</th><th>Subtotal</th><th></th></tr>
+            <tbody id="lineas-factura"></tbody>
+          </table>
+        </div>
+        <div class="texto-suave margen-superior" id="sin-lineas-factura">Aún no agregaste productos. Elige uno del buscador.</div>
+        <div class="total-venta"><span>Total de la factura</span><strong id="total-factura">$ 0</strong></div>
+        <div class="acciones-fila">
+          <button type="button" class="boton primario" id="registrar-factura">Registrar factura</button>
+          <button type="button" class="boton" id="vaciar-factura">Vaciar</button>
+        </div>
+      </div>
+    </div>
+    <strong>Últimas facturas</strong>
+    <div class="desplazable">
+      <table>
+        <tr><th>N°</th><th>Proveedor</th><th>Fecha</th><th>Productos</th><th>Total</th></tr>
+        <!--{{{filasFacturas}}}-->
+      </table>
+    </div>
+  </section>
+
+  <div class="dos-columnas arriba">
+    <div class="caja columna-ancha">
+      <div class="desplazable">
+        <table>
+          <tr><th>ID</th><th>Referencia</th><th>Producto</th><th>Costo (COP)</th><th>Stock</th><th></th></tr>
+          <!--{{{filas}}}-->
+        </table>
+      </div>
+    </div>
+    <div class="caja columna-angosta">
+      <strong>Nuevo producto</strong>
+      <label for="nuevo-id">ID</label>
+      <input id="nuevo-id" class="campo" autocomplete="off" placeholder="Automático si lo dejas vacío">
+      <label for="nuevo-referencia">Referencia</label>
+      <input id="nuevo-referencia" class="campo" autocomplete="off">
+      <label for="nuevo-nombre">Nombre</label>
+      <input id="nuevo-nombre" class="campo" autocomplete="off">
+      <label for="nuevo-costo">Costo (COP)</label>
+      <input id="nuevo-costo" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
+      <label for="nuevo-stock">Stock inicial</label>
+      <input id="nuevo-stock" class="campo" data-numero="entero-negativo" autocomplete="off" placeholder="0">
+      <button type="button" class="boton primario ancho" id="agregar-producto">Agregar producto</button>
+    </div>
+  </div>
+</div>
+
+<template id="fila-producto">
+  <tr>
+    <td>{{id}}</td>
+    <td><input class="campo" data-campo="referencia" data-posicion="{{posicion}}" aria-label="Referencia" value="{{referencia}}"></td>
+    <td><input class="campo" data-campo="nombre" data-posicion="{{posicion}}" aria-label="Nombre" value="{{nombre}}"></td>
+    <td><input class="campo" data-campo="costo" data-numero="entero" inputmode="numeric" autocomplete="off" data-posicion="{{posicion}}" aria-label="Costo" value="{{costo}}"></td>
+    <td><input class="campo" data-campo="existencias" data-numero="entero-negativo" autocomplete="off" data-posicion="{{posicion}}" aria-label="Stock" value="{{existencias}}"></td>
+    <td>{{{insignia}}}</td>
+  </tr>
+</template>
+
+<template id="fila-factura">
+  <tr><td>{{numero}}</td><td>{{proveedor}}</td><td>{{fecha}}</td><td class="celda-ancha">{{productos}}</td><td>{{total}}</td></tr>
+</template>
+
+<template id="fila-linea-factura">
+  <tr data-posicion="{{posicion}}">
+    <td>{{id}}</td>
+    <td class="celda-ancha">{{nombre}}</td>
+    <td><input class="campo campo-corto" data-campo="cantidad" data-numero="entero" inputmode="numeric" autocomplete="off" aria-label="Cantidad de {{nombre}}" value="{{cantidad}}"></td>
+    <td><input class="campo campo-medio" data-campo="costoUnitario" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="Costo unitario de {{nombre}}" value="{{costoUnitario}}"></td>
+    <td data-subtotal>{{subtotal}}</td>
+    <td><button type="button" class="boton icono" data-quitar aria-label="Quitar {{nombre}}">{{{icono}}}</button></td>
+  </tr>
+</template>

@@ -1,0 +1,178 @@
+/* Estructura: encabezado, menú lateral y contenido */
+header {
+  height: 64px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  background: var(--superficie);
+  border-bottom: 1px solid var(--borde);
+}
+
+.fila {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+main {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 24px;
+}
+
+/* Marca */
+.marca {
+  display: flex;
+  align-items: center;
+  width: 150px;
+  flex: none;
+  color: var(--texto);
+  text-decoration: none;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--texto);
+}
+
+/* Encabezado */
+.pestanas-superiores {
+  display: flex;
+  gap: 4px;
+}
+
+.pestana-superior {
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--suave);
+  text-decoration: none;
+}
+
+.pestana-superior.activa {
+  background: var(--activo);
+  color: var(--texto);
+  font-weight: 600;
+}
+
+.campo.buscador {
+  width: 220px;
+  flex: none;
+}
+
+.espacio-flexible {
+  flex: 1;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--contorno);
+  font-weight: 600;
+}
+
+/* Menú lateral */
+aside {
+  width: 220px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  overflow: hidden;
+  background: var(--superficie);
+  border-right: 1px solid var(--borde);
+  transition: width 0.2s;
+}
+
+aside.recogido {
+  width: 72px;
+}
+
+.opcion-menu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--suave);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.opcion-menu:hover {
+  background: var(--pasar);
+}
+
+.opcion-menu.activa {
+  background: var(--activo);
+  color: var(--texto);
+  font-weight: 600;
+}
+
+aside.recogido .opcion-menu {
+  justify-content: center;
+  padding: 10px 0;
+}
+
+aside.recogido .opcion-menu span {
+  display: none;
+}
+
+.separador-flexible {
+  flex: 1;
+}
+
+/* Aviso de confirmación */
+#aviso {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 30;
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: var(--acento);
+  color: var(--acento-texto);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+#aviso.visible {
+  opacity: 1;
+}
+
+#aviso[data-tipo="exito"]::before {
+  content: "✓ ";
+  font-weight: 700;
+}
+
+@media (max-width: 800px) {
+  .pestanas-superiores,
+  .campo.buscador {
+    display: none;
+  }
+
+  main {
+    padding: 16px;
+  }
+}

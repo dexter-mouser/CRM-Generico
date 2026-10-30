@@ -1,0 +1,50 @@
+<div id="principal">
+  <h1>Registrar venta</h1>
+  <div class="texto-suave separacion-inferior">Una venta puede incluir varios productos. Busca por ID, nombre, referencia, costo o stock. Cantidad y valor unitario se escriben a mano.</div>
+  <div class="dos-columnas arriba">
+    <div class="caja columna-angosta">{{{selector}}}</div>
+    <div class="caja columna-ancha">
+      <strong>Productos de la venta</strong>
+      <div class="desplazable">
+        <table>
+          <tr><th>ID</th><th>Producto</th><th>Costo</th><th>Cantidad</th><th>Valor unitario</th><th>Subtotal</th><th></th></tr>
+          <tbody id="lineas-venta"></tbody>
+        </table>
+      </div>
+      <div class="texto-suave margen-superior" id="sin-lineas">Aún no agregaste productos. Elige uno del buscador.</div>
+      <div class="total-venta"><span>Total</span><strong id="total-venta">$ 0</strong></div>
+      <div class="dos-campos">
+        <div>
+          <label for="cliente">Cliente</label>
+          <input id="cliente" class="campo" autocomplete="off" placeholder="Cliente sin nombre">
+        </div>
+        <div>
+          <label for="metodo">Método de pago</label>
+          <select id="metodo" class="campo">
+            <option>Efectivo</option>
+            <option>Nequi</option>
+            <option>Tarjeta</option>
+            <option>Transferencia</option>
+            <option>Fiado</option>
+          </select>
+        </div>
+      </div>
+      <div class="acciones-fila margen-superior-grande">
+        <button type="button" class="boton primario" id="registrar-venta">Registrar venta</button>
+        <button type="button" class="boton" id="vaciar-venta">Vaciar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<template id="fila-linea">
+  <tr data-posicion="{{posicion}}">
+    <td>{{id}}</td>
+    <td class="celda-ancha">{{nombre}}</td>
+    <td>{{costo}}</td>
+    <td><input class="campo campo-corto" data-campo="cantidad" data-numero="entero" inputmode="numeric" autocomplete="off" aria-label="Cantidad de {{nombre}}" value="{{cantidad}}"></td>
+    <td><input class="campo campo-medio" data-campo="valorUnitario" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="Valor unitario de {{nombre}}" value="{{valorUnitario}}"></td>
+    <td data-subtotal>{{subtotal}}</td>
+    <td><button type="button" class="boton icono" data-quitar aria-label="Quitar {{nombre}}">{{{icono}}}</button></td>
+  </tr>
+</template>

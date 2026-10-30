@@ -1,0 +1,58 @@
+/* Tono de la interfaz: colores del tema claro y oscuro. Cada tienda puede sobrescribirlos. */
+:root {
+  --fondo: #f1f1f0;
+  --superficie: #ffffff;
+  --borde: #e4e4e2;
+  --texto: #1f1f1e;
+  --suave: #6b6b68;
+  --acento: #2b2b2a;
+  --acento-texto: #ffffff;
+  --barra: #3a3a38;
+  --pista: #ececea;
+  --pasar: #f4f4f2;
+  --activo: #eeeeec;
+  --negativo: #9b2c2c;
+  --contorno: #d6d6d3;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  color-scheme: light;
+}
+
+/* Oscuro automático, según el dispositivo, salvo que la persona haya elegido el claro */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) {
+    --fondo: #161615;
+    --superficie: #222221;
+    --borde: #333331;
+    --texto: #ececea;
+    --suave: #a3a39f;
+    --acento: #ececea;
+    --acento-texto: #161615;
+    --barra: #d6d6d3;
+    --pista: #333331;
+    --pasar: #2a2a29;
+    --activo: #2f2f2e;
+    --negativo: #f0a0a0;
+    --contorno: #444442;
+    color-scheme: dark;
+  }
+}
+
+/* Oscuro elegido con el botón de tema */
+:root[data-tema="oscuro"] {
+  --fondo: #161615;
+  --superficie: #222221;
+  --borde: #333331;
+  --texto: #ececea;
+  --suave: #a3a39f;
+  --acento: #ececea;
+  --acento-texto: #161615;
+  --barra: #d6d6d3;
+  --pista: #333331;
+  --pasar: #2a2a29;
+  --activo: #2f2f2e;
+  --negativo: #f0a0a0;
+  --contorno: #444442;
+  color-scheme: dark;
+}

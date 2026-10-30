@@ -1,0 +1,19 @@
+<div id="principal">
+  <h1>Ventas</h1>
+  <div class="texto-suave separacion-inferior">Historial de las ventas registradas.</div>
+  <div class="acciones">
+    <a class="boton primario" href="nueva-venta.html">Registrar venta</a>
+  </div>
+  <div class="caja">
+    <div class="desplazable">
+      <table>
+        <tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Pago</th><th>Total</th></tr>
+        <!--{{{filas}}}-->
+      </table>
+    </div>
+  </div>
+</div>
+
+<template id="fila-venta">
+  <tr><td>{{id}}</td><td>{{fecha}}</td><td>{{cliente}}</td><td class="celda-ancha">{{productos}}</td><td>{{metodo}}</td><td>{{total}}</td></tr>
+</template>
