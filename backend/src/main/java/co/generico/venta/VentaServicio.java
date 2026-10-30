@@ -32,7 +32,7 @@ public class VentaServicio {
     public record LineaVenta(String productoId, Integer cantidad, Long valorUnitario) {
     }
 
-    public record SolicitudVenta(String cliente, String metodo, List<LineaVenta> items) {
+    public record SolicitudVenta(String cliente, String metodo, Long recibido, String observaciones, List<LineaVenta> items) {
     }
 
     static final int MAXIMO_LINEAS = 200;
@@ -114,14 +114,25 @@ public class VentaServicio {
             throw new ReglaDeNegocioException("Para vender a Fiado, registra primero al cliente en Clientes y escribe su nombre completo");
         }
 
+        // En efectivo se puede indicar con cuánto paga el cliente; la devuelta es la diferencia. En los demás métodos se paga lo exacto
+        long recibido = total;
+        if ("Efectivo".equals(metodo) && solicitud.recibido() != null && solicitud.recibido() > 0) {
+            recibido = Validaciones.entero(solicitud.recibido(), "el monto recibido", 0, Validaciones.VALOR_MAXIMO * 10);
+            if (recibido < total) {
+                throw new ReglaDeNegocioException("El monto recibido no cubre el total de la venta");
+            }
+        }
+        String observaciones = Validaciones.textoOpcional(solicitud.observaciones(), "las observaciones", Validaciones.TEXTO_LARGO);
+
         String codigoVenta = consecutivos.siguiente(quien.tiendaId(), "V", 4);
-        repositorio.insertarVenta(quien.tiendaId(), codigoVenta, cliente.isEmpty() ? "Cliente sin nombre" : cliente, metodo, quien.nombre(), total);
+        repositorio.insertarVenta(quien.tiendaId(), codigoVenta, cliente.isEmpty() ? "Cliente sin nombre" : cliente, metodo, quien.nombre(), total,
+                recibido, recibido - total, observaciones);
         int linea = 1;
         for (VentaDto.Item item : items) {
             repositorio.insertarItemVenta(quien.tiendaId(), codigoVenta, linea++, item);
             repositorio.moverStock(quien.tiendaId(), item.productoId(), -item.cantidad());
         }
-        auditoria.registrar(quien, "ventas", "Venta registrada", codigoVenta + " · " + (cliente.isEmpty() ? "Cliente sin nombre" : cliente) + " · " + metodo + " · $ " + total);
+        auditoria.registrar(quien, "ventas", "Factura de venta registrada", codigoVenta + " · " + (cliente.isEmpty() ? "Cliente sin nombre" : cliente) + " · " + metodo + " · $ " + total);
         return obtener(quien.tiendaId(), codigoVenta);
     }
 
@@ -188,7 +199,8 @@ public class VentaServicio {
             throw new ReglaDeNegocioException("Abre la caja para devolver dinero en efectivo");
         }
 
-        String codigo = consecutivos.siguiente(quien.tiendaId(), "D", 4);
+        // Nota de devolución (ND) o de anulación (NA), anclada a la factura original
+        String codigo = consecutivos.siguiente(quien.tiendaId(), "anulacion".equals(tipo) ? "NA" : "ND", 4);
         repositorio.insertarDevolucion(quien.tiendaId(), codigo, ventaCodigo, tipo, motivoLimpio, quien.nombre(), venta.cliente(), venta.metodo(), total);
         int linea = 1;
         for (VentaDto.Item item : items) {

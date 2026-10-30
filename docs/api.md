@@ -16,8 +16,10 @@ Contrato que debe ofrecer el backend para reemplazar `core/store.js`. Todas las 
 | Método y ruta | Función actual | Descripción |
 |---|---|---|
 | `GET /ventas?desde=&hasta=` | historial y reportes | Ventas con sus items |
-| `POST /ventas` | `registrarVenta` | `{ cliente, metodo, items[] }`; descuenta stock; valida existencias y Fiado |
-| `GET /clientes?consulta=` | `buscarClientes` | Incluye `deuda` calculada |
+| `POST /ventas` | `registrarVenta` | `{ cliente, metodo, recibido?, observaciones?, items[] }`; factura de venta: descuenta stock, valida existencias y Fiado; en efectivo `recibido` ≥ total y la devuelta se calcula |
+| `POST /documentos` | `registrarVenta` (`tipo` remision o cotizacion) | Remisión (REM): descuenta stock sin cobrar. Cotización (COT): no mueve nada. **Pendiente en el backend** (tablas `documento` en la migración V3) |
+| `POST /documentos/{id}/anulacion` | `anularDocumento` | `{ motivo }`; la remisión devuelve el stock; no si ya se facturó |
+| `GET /clientes` | `estado.clientes` | Incluye `deuda` calculada; la búsqueda por columna se hace en la cuadrícula |
 | `POST /clientes` | `agregarCliente` | `{ nombre, telefono, correo, direccion }` |
 | `PUT /clientes/{id}` | `actualizarCliente` | Si cambia el nombre, actualiza sus ventas |
 | `DELETE /clientes/{id}` | `eliminarCliente` | Rechaza si tiene deuda |
@@ -33,9 +35,9 @@ Contrato que debe ofrecer el backend para reemplazar `core/store.js`. Todas las 
 | `GET /contabilidad` | `estado.contabilidad` | Días cerrados y días pendientes |
 | `POST /contabilidad/cierres` | `cerrarDia` | `{ dia }`; solo el día pendiente más antiguo, y sin caja abierta |
 | `DELETE /contabilidad/cierres/ultimo` | `reabrirUltimoDia` | `{ motivo }`; permiso `contabilidad:reabrir`; solo el último día cerrado |
-| `POST /ventas/{id}/devoluciones` | `devolverProductos` | `{ cantidades: { productoId: n }, motivo }`; permiso `ventas:eliminar` |
-| `POST /ventas/{id}/anulacion` | `anularVenta` | `{ motivo }`; rechaza días cerrados; devuelve stock y dinero |
-| `GET /devoluciones` | `estado.devoluciones` | Devoluciones y anulaciones |
+| `POST /ventas/{id}/devoluciones` | `devolverProductos` | `{ cantidades: { productoId: n }, motivo }`; permiso `ventas:eliminar`; genera la nota de devolución ND-0001 |
+| `POST /ventas/{id}/anulacion` | `anularVenta` | `{ motivo }`; rechaza días cerrados; devuelve stock y dinero; genera la nota de anulación NA-0001 |
+| `GET /devoluciones` | `estado.devoluciones` | Notas de devolución y de anulación, ancladas a su factura (`ventaCodigo`) |
 | `GET /auditoria` | `registrosDeAuditoria` | Solo lectura, filtros por módulo y texto |
 | `GET /copias` / `POST /copias/restauracion` | `descargarCopia`, `restaurarCopia` | Valida con `docs/validacion.md` |
 | `GET /pagos` | historial de pagos | |

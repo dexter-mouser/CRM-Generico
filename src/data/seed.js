@@ -181,6 +181,7 @@ export const semilla = {
   ],
   orden: [0, 1, 2, 3],
   devoluciones: [],
+  documentos: [],
   auditoria: [],
   ajustes: {
     tienda: { nombre: 'Mundo Mascota', nit: '900.456.789-1', telefono: '604 555 0100', ciudad: 'Medellín', direccion: 'Calle 50 # 42-18' },

@@ -2,9 +2,12 @@
   <div class="cabecera-vista">
     <div>
       <h1>Roles y permisos</h1>
-      <div class="texto-suave">Define qué puede hacer cada persona en el sistema.</div>
+      <div class="texto-suave">Elige un rol de la lista, marca sus permisos en la tabla y mira abajo cómo lo vería esa persona. Cada cambio queda registrado en Auditoría.</div>
     </div>
-    <button type="button" class="boton primario" id="nuevo-rol">Nuevo rol</button>
+    <div class="acciones-fila">
+      <a class="boton" id="ver-auditoria-roles" href="auditoria.html?modulo=roles" hidden>Ver cambios en Auditoría</a>
+      <button type="button" class="boton primario" id="nuevo-rol">Nuevo rol</button>
+    </div>
   </div>
 
   <section class="caja formulario-en-linea" id="formulario-rol" aria-labelledby="titulo-formulario-rol" hidden>
@@ -57,6 +60,12 @@
         </div>
       </section>
 
+      <section class="caja" aria-labelledby="titulo-vista-previa">
+        <h2 id="titulo-vista-previa">Así lo ve este rol</h2>
+        <div class="texto-suave">Menú que aparece a quien tiene este rol y lo que puede hacer en cada módulo. Se actualiza al marcar permisos.</div>
+        <div class="vista-previa-rol" id="vista-previa-rol"></div>
+      </section>
+
       <section class="caja" aria-labelledby="titulo-personas">
         <div class="cabecera-vista">
           <h2 id="titulo-personas">Personas</h2>
@@ -80,12 +89,7 @@
             <button type="button" class="boton" id="cancelar-persona">Cancelar</button>
           </div>
         </div>
-        <div class="desplazable">
-          <table>
-            <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th class="centro">Activo</th></tr></thead>
-            <tbody id="lista-personas"></tbody>
-          </table>
-        </div>
+        <div id="cuadricula-personas"></div>
       </section>
     </div>
   </div>
@@ -122,16 +126,24 @@
   <option value="{{id}}" {{{seleccion}}}>{{nombre}}</option>
 </template>
 
-<template id="fila-persona">
-  <tr>
-    <td>{{nombre}}</td>
-    <td class="texto-suave">{{correo}}</td>
-    <td><select class="campo" data-persona="{{id}}" aria-label="Rol de {{nombre}}">{{{opciones}}}</select></td>
-    <td class="centro">
-      <label class="interruptor interruptor-solo">
-        <input type="checkbox" role="switch" data-activo="{{id}}" aria-label="Activo: {{nombre}}" {{{marcado}}}>
-        <span class="interruptor-pista"></span>
-      </label>
-    </td>
-  </tr>
+<template id="celda-rol-persona">
+  <select class="campo" data-persona="{{id}}" aria-label="Rol de {{nombre}}">{{{opciones}}}</select>
+</template>
+
+<template id="celda-activo-persona">
+  <label class="interruptor interruptor-solo">
+    <input type="checkbox" role="switch" data-activo="{{id}}" aria-label="Activo: {{nombre}}" {{{marcado}}}>
+    <span class="interruptor-pista"></span>
+  </label>
+</template>
+
+<template id="vista-previa-modulo">
+  <div class="modulo-previa {{clase}}">
+    <strong>{{nombre}}</strong>
+    <span class="texto-suave">{{{acciones}}}</span>
+  </div>
+</template>
+
+<template id="vista-previa-accion">
+  <span class="insignia suave">{{etiqueta}}</span>
 </template>

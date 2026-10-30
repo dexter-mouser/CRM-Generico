@@ -1,39 +1,35 @@
 <div id="principal">
   <h1>Ventas</h1>
-  <div class="texto-suave separacion-inferior">Historial de las ventas registradas. Las devoluciones y anulaciones devuelven el stock y ajustan la caja o la deuda del cliente.</div>
+  <div class="texto-suave separacion-inferior">Facturas, remisiones y cotizaciones. Las devoluciones y anulaciones generan una nota anclada a la factura, devuelven el stock y ajustan la caja o la deuda del cliente.</div>
   <div class="acciones">
     <a class="boton primario" href="nueva-venta.html">Registrar venta</a>
   </div>
 
   <div id="zona-devolucion"></div>
 
-  <div class="caja">
-    <div class="desplazable">
-      <table>
-        <thead><tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Pago</th><th>Total</th><th>Estado</th><th></th></tr></thead>
-        <tbody><!--{{{filas}}}--></tbody>
-      </table>
-    </div>
-  </div>
+  <section class="caja" aria-labelledby="titulo-facturas">
+    <strong id="titulo-facturas">Facturas de venta</strong>
+    <div id="cuadricula-facturas"></div>
+  </section>
 
-  <section class="caja margen-superior-grande">
-    <strong>Devoluciones y anulaciones</strong>
-    <div class="desplazable">
-      <table>
-        <thead><tr><th>N°</th><th>Fecha</th><th>Venta</th><th>Tipo</th><th>Productos</th><th>Motivo</th><th>Registró</th><th>Total</th><th></th></tr></thead>
-        <tbody><!--{{{filasDevoluciones}}}--></tbody>
-      </table>
-    </div>
-    {{{sinDevoluciones}}}
+  <section class="caja margen-superior-grande" aria-labelledby="titulo-documentos">
+    <strong id="titulo-documentos">Remisiones y cotizaciones</strong>
+    <div class="texto-suave">Una remisión descuenta el stock sin cobrar; una cotización es solo una oferta. Ambas se pasan a factura con "Facturar".</div>
+    <div id="cuadricula-documentos"></div>
+  </section>
+
+  <section class="caja margen-superior-grande" aria-labelledby="titulo-notas">
+    <strong id="titulo-notas">Notas de devolución y de anulación</strong>
+    <div class="texto-suave">Cada nota queda anclada a su factura original (ND = devolución, NA = anulación).</div>
+    <div id="cuadricula-notas"></div>
   </section>
 </div>
 
-<template id="fila-venta">
-  <tr>
-    <td>{{id}}</td><td>{{fecha}}</td><td>{{cliente}}</td><td class="celda-ancha">{{productos}}</td><td>{{metodo}}</td><td>{{total}}</td>
-    <td><span class="insignia {{claseEstado}}">{{estado}}</span></td>
-    <td><div class="acciones-fila"><button type="button" class="boton" data-recibo="{{id}}">Recibo</button>{{{acciones}}}</div></td>
-  </tr>
+<template id="acciones-factura">
+  <div class="acciones-fila">
+    <button type="button" class="boton" data-recibo="{{id}}">Comprobante</button>
+    {{{acciones}}}
+  </div>
 </template>
 
 <template id="acciones-venta">
@@ -41,15 +37,23 @@
   <button type="button" class="boton peligro" data-anular="{{id}}">Anular</button>
 </template>
 
-<template id="fila-devolucion">
-  <tr>
-    <td>{{id}}</td><td>{{fecha}}</td><td>{{ventaId}}</td><td>{{tipo}}</td><td class="celda-ancha">{{productos}}</td><td class="celda-ancha">{{motivo}}</td><td>{{usuario}}</td><td>{{total}}</td>
-    <td><button type="button" class="boton" data-comprobante="{{id}}">Comprobante</button></td>
-  </tr>
+<template id="acciones-documento">
+  <div class="acciones-fila">
+    <button type="button" class="boton" data-documento="{{id}}">Comprobante</button>
+    {{{acciones}}}
+  </div>
 </template>
 
-<template id="aviso-vacio">
-  <div class="texto-suave margen-superior">{{texto}}</div>
+<template id="acciones-documento-pendiente">
+  <a class="boton primario" href="nueva-venta.html?documento={{id}}">Facturar</a>
+  <button type="button" class="boton peligro" data-anular-documento="{{id}}">Anular</button>
+</template>
+
+<template id="acciones-nota">
+  <div class="acciones-fila">
+    <button type="button" class="boton" data-comprobante="{{id}}">Comprobante</button>
+    <button type="button" class="boton" data-recibo="{{ventaId}}">Ver factura</button>
+  </div>
 </template>
 
 <template id="panel-devolucion">

@@ -117,3 +117,37 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* Cuadrícula de datos reutilizable (components/cuadricula-datos) */
+.cuadricula-datos {
+  --columnas: repeat(4, minmax(0, 1fr));
+}
+
+.cuadricula-datos .fila-dato:hover {
+  background: var(--pasar);
+}
+
+.cuadricula-datos [role="gridcell"] {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cuadricula-datos .campo {
+  width: 100%;
+  min-width: 0;
+}
+
+.alinear-derecha {
+  text-align: right;
+}
+
+.vacio-cuadricula,
+.pie-cuadricula {
+  padding: 10px 8px;
+}
+
+.pie-cuadricula {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

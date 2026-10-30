@@ -2,9 +2,12 @@ import { buscar, buscarTodos } from '../../core/dom.js';
 import { estado } from '../../core/store.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import { ACCIONES, MODULOS_PERMISOS } from '../../config/permisos.js';
+import { puede } from '../../core/autorizacion.js';
 import * as servicioRoles from '../../services/roles.service.js';
+import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 
 let documento;
+let plantillasCuadricula;
 let rolSeleccionadoId = null;
 
 const contarPersonas = (rolId) => {
@@ -14,6 +17,7 @@ const contarPersonas = (rolId) => {
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./roles.html', import.meta.url));
+  plantillasCuadricula = await cargarPlantillasCuadricula();
   if (!servicioRoles.buscarRol(rolSeleccionadoId)) rolSeleccionadoId = estado.roles[0].id;
   return seccion(documento, 'principal', {
     roles: '',
@@ -76,20 +80,51 @@ export function montar(raiz, contexto) {
     })));
   };
 
+  // Vista previa: los módulos que el rol puede ver y, en cada uno, lo que puede hacer
+  const pintarVistaPrevia = () => {
+    const rol = rolActual();
+    buscar('#vista-previa-rol', raiz).innerHTML = repetir(documento, 'vista-previa-modulo', MODULOS_PERMISOS.map((modulo) => {
+      const concedidas = rol.protegido ? modulo.acciones : (rol.permisos[modulo.id] ?? []).filter((accion) => modulo.acciones.includes(accion));
+      const visible = concedidas.includes('ver');
+      return {
+        nombre: modulo.etiqueta,
+        clase: visible ? '' : 'sin-acceso',
+        acciones: visible
+          ? repetir(documento, 'vista-previa-accion', ACCIONES.filter((accion) => concedidas.includes(accion.id) && accion.id !== 'ver'))
+            || '<span class="texto-suave">Solo consulta</span>'
+          : 'Sin acceso: no aparece en el menú',
+      };
+    }));
+  };
+
+  const filasPersonas = () => estado.usuarios.map((usuario) => ({
+    ...usuario,
+    rolNombre: servicioRoles.buscarRol(usuario.rolId)?.nombre ?? '',
+    estadoTexto: usuario.activo ? 'Activo' : 'Inactivo',
+  }));
+
+  const cuadriculaPersonas = montarCuadricula(buscar('#cuadricula-personas', raiz), {
+    plantillas: plantillasCuadricula,
+    titulo: 'Personas',
+    vacio: 'Aún no hay personas.',
+    columnas: [
+      { clave: 'nombre', titulo: 'Nombre', ancho: 'minmax(0, 1fr)' },
+      { clave: 'correo', titulo: 'Correo', ancho: 'minmax(0, 1.2fr)' },
+      { clave: 'rolNombre', titulo: 'Rol', ancho: '170px', html: (fila) => repetir(documento, 'celda-rol-persona', [{ id: fila.id, nombre: fila.nombre, opciones: opcionesDeRoles(fila.rolId) }]) },
+      { clave: 'estadoTexto', titulo: 'Activo', ancho: '90px', html: (fila) => repetir(documento, 'celda-activo-persona', [{ id: fila.id, nombre: fila.nombre, marcado: fila.activo ? 'checked' : '' }]) },
+    ],
+    filas: filasPersonas(),
+  });
+
   const pintarPersonas = () => {
-    buscar('#lista-personas', raiz).innerHTML = repetir(documento, 'fila-persona', estado.usuarios.map((usuario) => ({
-      id: usuario.id,
-      nombre: usuario.nombre,
-      correo: usuario.correo,
-      opciones: opcionesDeRoles(usuario.rolId),
-      marcado: usuario.activo ? 'checked' : '',
-    })));
+    cuadriculaPersonas.actualizar(filasPersonas());
     buscar('#persona-rol', raiz).innerHTML = opcionesDeRoles(rolSeleccionadoId);
   };
 
   const pintarTodo = () => {
     pintarRoles();
     pintarDetalle();
+    pintarVistaPrevia();
     pintarPersonas();
   };
 
@@ -159,11 +194,11 @@ export function montar(raiz, contexto) {
     );
     if (!aplicado) casilla.checked = !casilla.checked;
     pintarDetalle();
+    pintarVistaPrevia();
   });
 
   // Personas
-  const lista = buscar('#lista-personas', raiz);
-  lista.addEventListener('change', (evento) => {
+  buscar('#cuadricula-personas', raiz).addEventListener('change', (evento) => {
     const selector = evento.target.closest('[data-persona]');
     const interruptor = evento.target.closest('[data-activo]');
     if (selector) {
@@ -192,5 +227,6 @@ export function montar(raiz, contexto) {
     pintarTodo();
   };
 
+  buscar('#ver-auditoria-roles', raiz).hidden = !puede('auditoria', 'ver');
   pintarTodo();
 }

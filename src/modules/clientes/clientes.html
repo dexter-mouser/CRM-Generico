@@ -35,56 +35,30 @@
     </div>
   </section>
 
-  <section class="caja">
-    <label for="buscar-cliente">Buscar</label>
-    <input id="buscar-cliente" class="campo" autocomplete="off" placeholder="ID, nombre, teléfono o correo">
+  <section class="caja" aria-labelledby="titulo-lista-clientes">
+    <strong id="titulo-lista-clientes">Lista de clientes</strong>
     <div class="confirmacion" id="confirmar-eliminar-cliente" hidden>
       <span id="texto-eliminar-cliente"></span>
       <button type="button" class="boton peligro" id="eliminar-cliente-si">Sí, eliminar</button>
       <button type="button" class="boton" id="eliminar-cliente-no">Cancelar</button>
     </div>
-    <div class="desplazable margen-superior-grande">
-      <table>
-        <thead><tr><th>ID</th><th>Nombre</th><th>Teléfono</th><th>Correo</th><th>Deuda</th><th></th></tr></thead>
-        <tbody id="lista-clientes"></tbody>
-      </table>
-    </div>
-    <div class="texto-suave margen-superior" id="sin-clientes" hidden>No hay clientes que coincidan. Crea uno con "Nuevo cliente".</div>
+    <div id="cuadricula-clientes"></div>
   </section>
 
   <section class="caja margen-superior-grande" id="historial-cliente" aria-labelledby="titulo-historial" hidden>
     <strong id="titulo-historial"></strong>
-    <div class="desplazable">
-      <table>
-        <thead><tr><th>N°</th><th>Fecha</th><th>Productos</th><th>Pago</th><th>Total</th></tr></thead>
-        <tbody id="compras-cliente"></tbody>
-      </table>
-    </div>
-    <div class="texto-suave margen-superior" id="sin-compras" hidden>Este cliente aún no tiene ventas.</div>
+    <div id="cuadricula-compras"></div>
   </section>
 </div>
 
-<template id="fila-cliente">
-  <tr>
-    <td>{{id}}</td>
-    <td>{{nombre}}</td>
-    <td>{{telefono}}</td>
-    <td>{{correo}}</td>
-    <td>{{{deuda}}}</td>
-    <td>
-      <div class="acciones-fila">
-        <button type="button" class="boton" data-historial="{{id}}">Historial</button>
-        <button type="button" class="boton" data-editar="{{id}}">Editar</button>
-        <button type="button" class="boton peligro" data-eliminar="{{id}}">Eliminar</button>
-      </div>
-    </td>
-  </tr>
+<template id="acciones-cliente">
+  <div class="acciones-fila">
+    <button type="button" class="boton" data-historial="{{id}}">Historial</button>
+    <button type="button" class="boton" data-editar="{{id}}">Editar</button>
+    <button type="button" class="boton peligro" data-eliminar="{{id}}">Eliminar</button>
+  </div>
 </template>
 
 <template id="deuda-con-saldo">
   <span class="insignia">{{valor}}</span>
-</template>
-
-<template id="fila-compra">
-  <tr><td>{{id}}</td><td>{{fecha}}</td><td class="celda-ancha">{{productos}}</td><td>{{metodo}}</td><td>{{total}}</td></tr>
 </template>

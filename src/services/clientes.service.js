@@ -26,15 +26,6 @@ export function deudaDeCliente(cliente) {
 
 export const clientesConDeuda = () => estado.clientes.filter((cliente) => deudaDeCliente(cliente) > 0);
 
-// Cada palabra escrita debe aparecer en el ID, nombre, teléfono o correo
-export function buscarClientes(consulta = '') {
-  const terminos = normalizar(consulta).split(/\s+/).filter(Boolean);
-  return estado.clientes.filter((cliente) => {
-    const texto = normalizar([cliente.id, cliente.nombre, cliente.telefono, cliente.correo].join(' '));
-    return terminos.every((termino) => texto.includes(termino));
-  });
-}
-
 // Limpia y valida los datos; el nombre no puede repetirse entre clientes
 function prepararDatos(datos, idActual) {
   const limpios = {

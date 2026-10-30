@@ -9,13 +9,13 @@ import { registrarAuditoria } from './auditoria.service.js';
 const sumar = (lista, campo) => lista.reduce((acumulado, elemento) => acumulado + elemento[campo], 0);
 
 // Suma o resta días a una fecha "AAAA-MM-DD" en hora local
-export function sumarDias(dia, cantidad) {
+function sumarDias(dia, cantidad) {
   const [anio, mes, diaDelMes] = dia.split('-').map(Number);
   const fecha = new Date(anio, mes - 1, diaDelMes + cantidad);
   return [fecha.getFullYear(), String(fecha.getMonth() + 1).padStart(2, '0'), String(fecha.getDate()).padStart(2, '0')].join('-');
 }
 
-export const diaDeAyer = () => sumarDias(fechaDeHoy(), -1);
+const diaDeAyer = () => sumarDias(fechaDeHoy(), -1);
 
 export const ultimoDiaCerrado = () => estado.contabilidad.reduce((mayor, cierre) => (cierre.dia > mayor ? cierre.dia : mayor), '');
 

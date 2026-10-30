@@ -1,15 +1,17 @@
-import { buscar, buscarTodos } from '../../core/dom.js';
+import { buscar } from '../../core/dom.js';
 import { estado } from '../../core/store.js';
 import { aPesos, aFecha } from '../../core/format.js';
 import { cargarHtml, seccion, repetir, rellenar } from '../../core/template.js';
 import { resumirItems } from '../../services/ventas.service.js';
 import * as servicioClientes from '../../services/clientes.service.js';
+import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 
 let documento;
-let filtro = '';
+let plantillasCuadricula;
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./clientes.html', import.meta.url));
+  plantillasCuadricula = await cargarPlantillasCuadricula();
   return seccion(documento, 'principal');
 }
 
@@ -30,19 +32,30 @@ export function montar(raiz, contexto) {
     }
   };
 
-  const pintarLista = () => {
-    const clientes = servicioClientes.buscarClientes(filtro);
-    buscar('#lista-clientes', raiz).innerHTML = repetir(documento, 'fila-cliente', clientes.map((cliente) => {
-      const deuda = servicioClientes.deudaDeCliente(cliente);
-      return {
-        ...cliente,
-        deuda: deuda > 0
-          ? rellenar(documento.querySelector('#deuda-con-saldo').innerHTML, { valor: aPesos(deuda) })
-          : aPesos(0),
-      };
-    }));
-    buscar('#sin-clientes', raiz).hidden = clientes.length > 0;
-  };
+  const filasClientes = () => estado.clientes.map((cliente) => {
+    const deuda = servicioClientes.deudaDeCliente(cliente);
+    return {
+      ...cliente,
+      deudaTexto: aPesos(deuda),
+      deudaHtml: deuda > 0 ? rellenar(documento.querySelector('#deuda-con-saldo').innerHTML, { valor: aPesos(deuda) }) : aPesos(0),
+    };
+  });
+
+  const cuadriculaClientes = montarCuadricula(buscar('#cuadricula-clientes', raiz), {
+    plantillas: plantillasCuadricula,
+    titulo: 'Clientes',
+    vacio: 'Aún no hay clientes. Crea uno con "Nuevo cliente".',
+    columnas: [
+      { clave: 'id', titulo: 'ID', ancho: '84px' },
+      { clave: 'nombre', titulo: 'Nombre', ancho: 'minmax(0, 1.2fr)' },
+      { clave: 'telefono', titulo: 'Teléfono', ancho: '130px' },
+      { clave: 'correo', titulo: 'Correo', ancho: 'minmax(0, 1.2fr)' },
+      { clave: 'deudaTexto', titulo: 'Deuda', ancho: '112px', alinear: 'derecha', html: (fila) => fila.deudaHtml },
+      { clave: 'acciones', titulo: 'Acciones', ancho: '300px', filtrable: false, html: (fila) => repetir(documento, 'acciones-cliente', [{ id: fila.id }]) },
+    ],
+    filas: filasClientes(),
+  });
+  const pintarLista = () => cuadriculaClientes.actualizar(filasClientes());
 
   const abrirFormulario = (cliente) => {
     clienteEnEdicion = cliente?.id ?? null;
@@ -67,14 +80,8 @@ export function montar(raiz, contexto) {
     pintarLista();
   };
 
-  buscar('#buscar-cliente', raiz).value = filtro;
-  buscar('#buscar-cliente', raiz).oninput = (evento) => {
-    filtro = evento.target.value;
-    pintarLista();
-  };
-
   // Acciones de cada fila
-  buscar('#lista-clientes', raiz).addEventListener('click', (evento) => {
+  buscar('#cuadricula-clientes', raiz).addEventListener('click', (evento) => {
     const boton = evento.target.closest('button');
     if (!boton) return;
     const id = boton.dataset.editar ?? boton.dataset.eliminar ?? boton.dataset.historial;
@@ -86,12 +93,22 @@ export function montar(raiz, contexto) {
       buscar('#confirmar-eliminar-cliente', raiz).hidden = false;
       buscar('#eliminar-cliente-no', raiz).focus();
     } else {
-      const compras = servicioClientes.ventasDeCliente(cliente);
       buscar('#titulo-historial', raiz).textContent = `Historial de ${cliente.nombre}`;
-      buscar('#compras-cliente', raiz).innerHTML = repetir(documento, 'fila-compra', compras.slice().reverse().map((venta) => ({
-        id: venta.id, fecha: aFecha(venta.fecha), productos: resumirItems(venta), metodo: venta.metodo, total: aPesos(venta.total),
-      })));
-      buscar('#sin-compras', raiz).hidden = compras.length > 0;
+      montarCuadricula(buscar('#cuadricula-compras', raiz), {
+        plantillas: plantillasCuadricula,
+        titulo: `Compras de ${cliente.nombre}`,
+        vacio: 'Este cliente aún no tiene ventas.',
+        columnas: [
+          { clave: 'id', titulo: 'N°', ancho: '84px' },
+          { clave: 'fecha', titulo: 'Fecha', ancho: '140px' },
+          { clave: 'productos', titulo: 'Productos', ancho: 'minmax(0, 2fr)' },
+          { clave: 'metodo', titulo: 'Pago', ancho: '110px' },
+          { clave: 'total', titulo: 'Total', ancho: '112px', alinear: 'derecha' },
+        ],
+        filas: servicioClientes.ventasDeCliente(cliente).slice().reverse().map((venta) => ({
+          id: venta.id, fecha: aFecha(venta.fecha), productos: resumirItems(venta), metodo: venta.metodo, total: aPesos(venta.total),
+        })),
+      });
       buscar('#historial-cliente', raiz).hidden = false;
     }
   });

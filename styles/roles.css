@@ -75,3 +75,30 @@ td input[type="checkbox"] {
     grid-template-columns: 1fr;
   }
 }
+
+/* Vista previa de lo que ve un rol */
+.vista-previa-rol {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.modulo-previa {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+}
+
+.modulo-previa .insignia + .insignia {
+  margin-left: 4px;
+}
+
+.modulo-previa.sin-acceso {
+  opacity: 0.55;
+  border-style: dashed;
+}

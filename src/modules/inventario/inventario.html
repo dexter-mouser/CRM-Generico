@@ -35,23 +35,13 @@
         </div>
       </div>
     </div>
-    <strong>Últimas facturas</strong>
-    <div class="desplazable">
-      <table>
-        <tr><th>N°</th><th>Proveedor</th><th>Fecha</th><th>Productos</th><th>Total</th><th></th></tr>
-        <!--{{{filasFacturas}}}-->
-      </table>
-    </div>
+    <strong>Facturas de compra</strong>
+    <div id="cuadricula-facturas-compra"></div>
   </section>
 
   <div class="dos-columnas arriba">
     <div class="caja columna-ancha">
-      <div class="desplazable">
-        <table>
-          <tr><th>ID</th><th>Referencia</th><th>Producto</th><th>Costo (COP)</th><th>Stock</th><th></th></tr>
-          <!--{{{filas}}}-->
-        </table>
-      </div>
+      <div id="cuadricula-productos"></div>
     </div>
     <div class="caja columna-angosta">
       <strong>Nuevo producto</strong>
@@ -70,19 +60,16 @@
   </div>
 </div>
 
-<template id="fila-producto">
-  <tr>
-    <td>{{id}}</td>
-    <td><input class="campo" data-campo="referencia" data-posicion="{{posicion}}" aria-label="Referencia" value="{{referencia}}"></td>
-    <td><input class="campo" data-campo="nombre" data-posicion="{{posicion}}" aria-label="Nombre" value="{{nombre}}"></td>
-    <td><input class="campo" data-campo="costo" data-numero="entero" inputmode="numeric" autocomplete="off" data-posicion="{{posicion}}" aria-label="Costo" value="{{costo}}"></td>
-    <td><input class="campo" data-campo="existencias" data-numero="entero-negativo" autocomplete="off" data-posicion="{{posicion}}" aria-label="Stock" value="{{existencias}}"></td>
-    <td>{{{insignia}}}</td>
-  </tr>
+<template id="campo-producto-texto">
+  <input class="campo" data-campo="{{campo}}" data-posicion="{{posicion}}" aria-label="{{etiqueta}} de {{nombre}}" value="{{valor}}">
 </template>
 
-<template id="fila-factura">
-  <tr><td>{{numero}}</td><td>{{proveedor}}</td><td>{{fecha}}</td><td class="celda-ancha">{{productos}}</td><td>{{total}}</td><td><button type="button" class="boton" data-factura="{{indice}}">Comprobante</button></td></tr>
+<template id="campo-producto-numero">
+  <input class="campo" data-campo="{{campo}}" data-numero="{{tipo}}" inputmode="numeric" autocomplete="off" data-posicion="{{posicion}}" aria-label="{{etiqueta}} de {{nombre}}" value="{{valor}}">
+</template>
+
+<template id="accion-factura-compra">
+  <button type="button" class="boton" data-factura="{{indice}}">Comprobante</button>
 </template>
 
 <template id="fila-linea-factura">

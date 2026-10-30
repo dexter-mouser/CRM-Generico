@@ -3,7 +3,7 @@ import { icono, ICONO_SOL, ICONO_LUNA } from './iconos.js';
 
 const CLAVE_TEMA = 'generico.tema';
 
-export const TEMA_AUTOMATICO = 'automatico';
+const TEMA_AUTOMATICO = 'automatico';
 
 export const leerTema = () => preferencias.leer(CLAVE_TEMA) || TEMA_AUTOMATICO;
 
@@ -25,7 +25,7 @@ export function aplicarTema(tema) {
 }
 
 // Cambia entre claro y oscuro y devuelve el tema aplicado
-export function alternarTema() {
+function alternarTema() {
   const raiz = document.documentElement;
   const esOscuro = raiz.dataset.tema
     ? raiz.dataset.tema === 'oscuro'

@@ -4,10 +4,10 @@ import { puede } from '../../core/autorizacion.js';
 import { aPesos, aFecha } from '../../core/format.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import * as servicioContabilidad from '../../services/contabilidad.service.js';
+import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 
 let documento;
-
-const avisoVacio = (lista, texto) => (lista.length ? '' : repetir(documento, 'aviso-vacio', [{ texto }]));
+let plantillasCuadricula;
 
 const lineasDeResumen = (resumen) => repetir(documento, 'linea-resumen', [
   ['Ventas registradas', resumen.cantidadVentas],
@@ -49,28 +49,40 @@ function contenidoReabrir() {
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./contabilidad.html', import.meta.url));
-  const cierres = estado.contabilidad.slice().sort((a, b) => b.dia.localeCompare(a.dia)).map((cierre) => ({
-    dia: aFecha(cierre.dia),
-    cantidad: cierre.cantidadVentas,
-    total: aPesos(cierre.totalVentas),
-    devoluciones: aPesos(cierre.devoluciones ?? 0),
-    costo: aPesos(cierre.costoVendido),
-    utilidad: aPesos(cierre.utilidad),
-    fiado: aPesos(cierre.ventasFiado),
-    abonos: aPesos(cierre.abonosClientes),
-    pagos: aPesos(cierre.pagosProveedores),
-    compras: aPesos(cierre.comprasFacturadas),
-    diferencia: aPesos(cierre.diferenciaCaja),
-  }));
+  plantillasCuadricula = await cargarPlantillasCuadricula();
   return seccion(documento, 'principal', {
     contenido: contenidoPendiente(),
     reabrir: contenidoReabrir(),
-    cierres: repetir(documento, 'fila-cierre-dia', cierres),
-    sinCierres: avisoVacio(cierres, 'Aún no hay días cerrados.'),
   });
 }
 
+const COLUMNAS_CIERRES = [
+  ['dia', 'Día', '120px'], ['cantidad', 'Ventas', '80px'], ['total', 'Total vendido', '112px'], ['devoluciones', 'Devoluciones', '112px'],
+  ['costo', 'Costo', '104px'], ['utilidad', 'Utilidad', '104px'], ['fiado', 'Fiado', '96px'], ['abonos', 'Abonos', '96px'],
+  ['pagos', 'Pagos a proveedores', '124px'], ['compras', 'Compras', '104px'], ['diferencia', 'Dif. de caja', '104px'],
+].map(([clave, titulo, ancho]) => ({ clave, titulo, ancho, alinear: clave === 'dia' ? undefined : 'derecha' }));
+
 export function montar(raiz, contexto) {
+  montarCuadricula(buscar('#cuadricula-cierres', raiz), {
+    plantillas: plantillasCuadricula,
+    titulo: 'Días cerrados',
+    vacio: 'Aún no hay días cerrados.',
+    columnas: COLUMNAS_CIERRES,
+    filas: estado.contabilidad.slice().sort((a, b) => b.dia.localeCompare(a.dia)).map((cierre) => ({
+      dia: aFecha(cierre.dia),
+      cantidad: cierre.cantidadVentas,
+      total: aPesos(cierre.totalVentas),
+      devoluciones: aPesos(cierre.devoluciones ?? 0),
+      costo: aPesos(cierre.costoVendido),
+      utilidad: aPesos(cierre.utilidad),
+      fiado: aPesos(cierre.ventasFiado),
+      abonos: aPesos(cierre.abonosClientes),
+      pagos: aPesos(cierre.pagosProveedores),
+      compras: aPesos(cierre.comprasFacturadas),
+      diferencia: aPesos(cierre.diferenciaCaja),
+    })),
+  });
+
   const botonReabrir = buscar('#reabrir-dia-boton', raiz);
   if (botonReabrir) {
     botonReabrir.onclick = () => {

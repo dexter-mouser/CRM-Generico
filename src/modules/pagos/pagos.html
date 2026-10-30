@@ -32,19 +32,9 @@
 
   <section class="caja margen-superior-grande">
     <strong>Historial de pagos</strong>
-    <div class="desplazable">
-      <table>
-        <thead><tr><th>N°</th><th>Fecha</th><th>Tipo</th><th>Cliente o proveedor</th><th>Concepto</th><th>Método</th><th>Valor</th><th></th></tr></thead>
-        <tbody><!--{{{filas}}}--></tbody>
-      </table>
-    </div>
-    {{{sinPagos}}}
+    <div id="cuadricula-pagos"></div>
   </section>
 </div>
-
-<template id="aviso-vacio">
-  <div class="texto-suave margen-superior">{{texto}}</div>
-</template>
 
 <template id="opcion-cliente">
   <option value="{{id}}" data-pendiente="{{pendiente}}">{{nombre}}</option>
@@ -62,6 +52,6 @@
   <option>{{metodo}}</option>
 </template>
 
-<template id="fila-pago">
-  <tr><td>{{id}}</td><td>{{fecha}}</td><td>{{tipo}}</td><td>{{tercero}}</td><td class="celda-ancha">{{concepto}}</td><td>{{metodo}}</td><td>{{valor}}</td><td><button type="button" class="boton" data-comprobante="{{id}}">Comprobante</button></td></tr>
+<template id="accion-pago">
+  <button type="button" class="boton" data-comprobante="{{id}}">Comprobante</button>
 </template>

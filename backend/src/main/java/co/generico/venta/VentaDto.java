@@ -13,7 +13,7 @@ public final class VentaDto {
     }
 
     public record Venta(String codigo, OffsetDateTime fecha, String cliente, String metodo, String usuario, long total,
-            boolean anulada, List<Item> items) {
+            long recibido, long devuelta, String observaciones, String documentoOrigen, boolean anulada, List<Item> items) {
     }
 
     public record Devolucion(String codigo, String ventaCodigo, OffsetDateTime fecha, String tipo, String motivo,

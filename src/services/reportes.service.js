@@ -4,7 +4,7 @@ import { aFechaLocal } from '../core/format.js';
 import { clientesConDeuda, deudaDeCliente } from './clientes.service.js';
 import { estaAnulada } from './ventas.service.js';
 
-export const LIMITE_STOCK_BAJO = 5;
+const LIMITE_STOCK_BAJO = 5;
 
 // Ventas cuya fecha local está entre "desde" y "hasta" (ambas incluidas, formato AAAA-MM-DD)
 export const ventasEntre = (desde, hasta) =>
@@ -14,7 +14,7 @@ export const ventasEntre = (desde, hasta) =>
   });
 
 // Devoluciones y anulaciones registradas entre dos fechas; restan de las ventas del día en que se hicieron
-export const devolucionesEntre = (desde, hasta) =>
+const devolucionesEntre = (desde, hasta) =>
   estado.devoluciones.filter((devolucion) => {
     const dia = aFechaLocal(devolucion.fecha);
     return dia >= desde && dia <= hasta;

@@ -4,11 +4,10 @@ import { aPesos, aFecha } from '../../core/format.js';
 import { leerEntero } from '../../core/numeros.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import * as servicioCaja from '../../services/caja.service.js';
+import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 
 let documento;
-
-// Mensaje que se muestra solo cuando una lista no tiene elementos
-const avisoVacio = (lista, texto) => (lista.length ? '' : repetir(documento, 'aviso-vacio', [{ texto }]));
+let plantillasCuadricula;
 
 const aHora = (iso) => new Intl.DateTimeFormat('es-CO', { timeStyle: 'short' }).format(new Date(iso));
 
@@ -27,35 +26,63 @@ const contenidoCajaAbierta = (caja) => {
     apertura: aFecha(caja.apertura),
     lineas: repetir(documento, 'linea-resumen', lineas),
     esperado: aPesos(resumen.esperado),
-    movimientos: repetir(documento, 'fila-movimiento', resumen.movimientos.slice().reverse().map((movimiento) => ({
-      hora: aHora(movimiento.fecha),
-      tipo: movimiento.tipo === 'ingreso' ? 'Ingreso' : 'Egreso',
-      concepto: movimiento.concepto,
-      valor: aPesos(movimiento.valor),
-    }))),
-    sinMovimientos: avisoVacio(resumen.movimientos, 'Aún no hay ingresos ni egresos manuales.'),
   });
 };
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./caja.html', import.meta.url));
+  plantillasCuadricula = await cargarPlantillasCuadricula();
   const caja = servicioCaja.cajaAbierta();
-  const cierres = estado.cajas.filter((existente) => existente.cierre).reverse().map((existente) => ({
-    id: existente.id,
-    apertura: aFecha(existente.apertura),
-    cierre: aFecha(existente.cierre.fecha),
-    esperado: aPesos(existente.cierre.esperado),
-    contado: aPesos(existente.cierre.contado),
-    diferencia: aPesos(existente.cierre.diferencia),
-  }));
   return seccion(documento, 'principal', {
     contenido: caja ? contenidoCajaAbierta(caja) : seccion(documento, 'caja-cerrada'),
-    cierres: repetir(documento, 'fila-cierre', cierres),
-    sinCierres: avisoVacio(cierres, 'Aún no hay cierres de caja.'),
   });
 }
 
 export function montar(raiz, contexto) {
+  montarCuadricula(buscar('#cuadricula-cierres', raiz), {
+    plantillas: plantillasCuadricula,
+    titulo: 'Cierres anteriores',
+    vacio: 'Aún no hay cierres de caja.',
+    columnas: [
+      { clave: 'id', titulo: 'Caja', ancho: '84px' },
+      { clave: 'apertura', titulo: 'Apertura', ancho: 'minmax(0, 1fr)' },
+      { clave: 'cierre', titulo: 'Cierre', ancho: 'minmax(0, 1fr)' },
+      { clave: 'esperado', titulo: 'Esperado', ancho: '112px', alinear: 'derecha' },
+      { clave: 'contado', titulo: 'Contado', ancho: '112px', alinear: 'derecha' },
+      { clave: 'diferencia', titulo: 'Diferencia', ancho: '112px', alinear: 'derecha' },
+    ],
+    filas: estado.cajas.filter((existente) => existente.cierre).reverse().map((existente) => ({
+      id: existente.id,
+      apertura: aFecha(existente.apertura),
+      cierre: aFecha(existente.cierre.fecha),
+      esperado: aPesos(existente.cierre.esperado),
+      contado: aPesos(existente.cierre.contado),
+      diferencia: aPesos(existente.cierre.diferencia),
+    })),
+  });
+
+  const caja = servicioCaja.cajaAbierta();
+  const contenedorMovimientos = buscar('#cuadricula-movimientos', raiz);
+  if (caja && contenedorMovimientos) {
+    montarCuadricula(contenedorMovimientos, {
+      plantillas: plantillasCuadricula,
+      titulo: 'Movimientos de esta caja',
+      vacio: 'Aún no hay ingresos ni egresos manuales.',
+      columnas: [
+        { clave: 'hora', titulo: 'Hora', ancho: '100px' },
+        { clave: 'tipo', titulo: 'Tipo', ancho: '110px' },
+        { clave: 'concepto', titulo: 'Concepto', ancho: 'minmax(0, 1fr)' },
+        { clave: 'valor', titulo: 'Valor', ancho: '120px', alinear: 'derecha' },
+      ],
+      filas: servicioCaja.resumenDeCaja(caja).movimientos.slice().reverse().map((movimiento) => ({
+        hora: aHora(movimiento.fecha),
+        tipo: movimiento.tipo === 'ingreso' ? 'Ingreso' : 'Egreso',
+        concepto: movimiento.concepto,
+        valor: aPesos(movimiento.valor),
+      })),
+    });
+  }
+
   const ejecutar = (accion, mensaje) => {
     try {
       const resultado = accion();

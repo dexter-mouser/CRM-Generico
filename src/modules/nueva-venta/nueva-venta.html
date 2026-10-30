@@ -1,14 +1,18 @@
 <div id="principal">
   <h1>Registrar venta</h1>
-  <div class="texto-suave separacion-inferior">Busca escribiendo en la casilla debajo de cada columna (ID, referencia, producto, costo o stock) y elige el producto. Cantidad y valor unitario se escriben a mano.</div>
+  <div class="texto-suave separacion-inferior">Elige el documento, busca escribiendo en la casilla debajo de cada columna (ID, referencia, producto, costo o stock) y selecciona el producto. Cantidad y valor unitario se escriben a mano.</div>
 
-  <div class="atajos texto-suave" aria-label="Atajos de teclado">
-    <span><kbd>F2</kbd> o <kbd>/</kbd> buscar</span>
-    <span><kbd>F4</kbd> o <kbd>Ctrl</kbd>+<kbd>Enter</kbd> cobrar</span>
-    <span><kbd>F8</kbd> vista previa</span>
-    <span><kbd>F9</kbd> vaciar</span>
-    <span>Lector de códigos: escanea el ID o la referencia</span>
+  <div class="aviso-origen caja separacion-inferior" id="aviso-origen" hidden>
+    <strong id="texto-origen"></strong>
+    <div class="texto-suave">Las cantidades ya entregadas no se descuentan otra vez del stock.</div>
   </div>
+
+  <div class="segmentado selector-tipo" role="group" aria-label="Tipo de documento">
+    <button type="button" data-tipo="factura" aria-pressed="true">Factura de venta</button>
+    <button type="button" data-tipo="remision" aria-pressed="false">Remisión</button>
+    <button type="button" data-tipo="cotizacion" aria-pressed="false">Cotización</button>
+  </div>
+  <div class="texto-suave separacion-inferior" id="descripcion-tipo"></div>
 
   <section class="caja cuadricula-venta" id="cuadricula-venta">
     <div class="cuadricula" role="grid" aria-label="Productos de la venta">
@@ -30,7 +34,7 @@
         <div role="gridcell"><input class="campo" data-filtro="nombre" aria-label="Buscar por producto" placeholder="Buscar" autocomplete="off"></div>
         <div role="gridcell"><input class="campo" data-filtro="costo" data-numero="entero" inputmode="numeric" aria-label="Buscar por costo" placeholder="Buscar" autocomplete="off"></div>
         <div role="gridcell"><input class="campo" data-filtro="existencias" data-numero="entero-negativo" aria-label="Buscar por stock" placeholder="Buscar" autocomplete="off"></div>
-        <div class="texto-suave relleno-resto">Escribe en una casilla para buscar</div>
+        <div class="texto-suave relleno-resto">Escribe en una casilla para buscar <kbd>F2</kbd> · lector de códigos: escanea el ID o la referencia</div>
       </div>
       <div class="resultados-cuadricula" id="resultados-cuadricula" role="listbox" aria-label="Productos encontrados" hidden></div>
 
@@ -45,30 +49,44 @@
         <input id="cliente" class="campo" list="lista-clientes" autocomplete="off" placeholder="Cliente sin nombre">
         <datalist id="lista-clientes">{{{opcionesCliente}}}</datalist>
       </div>
-      <div>
+      <div id="campo-metodo">
         <label for="metodo">Método de pago</label>
         <select id="metodo" class="campo">{{{opcionesMetodo}}}</select>
       </div>
     </div>
+    <label for="observaciones">Observaciones</label>
+    <input id="observaciones" class="campo" maxlength="300" autocomplete="off" placeholder="Opcional: dirección de entrega, condiciones, notas para el cliente">
+
+    <div class="pago-efectivo" id="pago-efectivo">
+      <label for="monto-recibido">Monto recibido</label>
+      <div class="fichas-monto" id="fichas-monto" role="group" aria-label="Montos rápidos"></div>
+      <input id="monto-recibido" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="Escribe con cuánto paga el cliente (vacío = valor exacto)">
+      <div class="total-venta" id="fila-devuelta"><span>Devuelta</span><strong id="devuelta">$ 0</strong></div>
+    </div>
+
     <div class="acciones-fila margen-superior-grande">
-      <button type="button" class="boton primario" id="registrar-venta">Registrar venta</button>
-      <button type="button" class="boton" id="vista-previa-recibo">Vista previa del recibo</button>
-      <button type="button" class="boton" id="vaciar-venta">Vaciar</button>
+      <button type="button" class="boton primario" id="registrar-venta"><span id="texto-registrar">Registrar factura</span> <kbd>F4</kbd></button>
+      <button type="button" class="boton" id="vista-previa-recibo">Vista previa <kbd>F8</kbd></button>
+      <button type="button" class="boton" id="vaciar-venta">Vaciar <kbd>F9</kbd></button>
     </div>
   </section>
 
   <section class="caja" id="venta-registrada" hidden>
-    <strong>Venta registrada correctamente</strong>
+    <strong id="titulo-registrada">Documento registrado correctamente</strong>
     <div class="texto-suave margen-superior" id="resumen-registrada"></div>
     <div class="acciones-fila margen-superior-grande">
-      <button type="button" class="boton primario" id="ver-recibo">Ver recibo</button>
-      <button type="button" class="boton" id="otra-venta">Registrar otra venta</button>
+      <button type="button" class="boton primario" id="ver-recibo">Ver comprobante</button>
+      <button type="button" class="boton" id="otra-venta">Registrar otro <kbd>F4</kbd></button>
     </div>
   </section>
 </div>
 
 <template id="opcion-cliente">
   <option value="{{nombre}}"></option>
+</template>
+
+<template id="ficha-monto">
+  <button type="button" class="boton ficha" data-monto="{{valor}}">{{texto}}</button>
 </template>
 
 <template id="opcion-metodo">

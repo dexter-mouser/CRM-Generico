@@ -15,7 +15,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class VentaRepositorio {
 
-    private record VentaFila(String codigo, OffsetDateTime fecha, String cliente, String metodo, String usuario, long total, boolean anulada) {
+    private record VentaFila(String codigo, OffsetDateTime fecha, String cliente, String metodo, String usuario, long total,
+            long recibido, long devuelta, String observaciones, String documentoOrigen, boolean anulada) {
     }
 
     private record DevolucionFila(String codigo, String ventaCodigo, OffsetDateTime fecha, String tipo, String motivo,
@@ -33,7 +34,8 @@ public class VentaRepositorio {
     }
 
     private static final String SELECT_VENTA = """
-            select v.codigo, v.fecha, v.cliente, v.metodo, v.usuario, v.total,
+            select v.codigo, v.fecha, v.cliente, v.metodo, v.usuario, v.total, v.recibido, v.devuelta, v.observaciones,
+                   coalesce(v.documento_origen, '') as documento_origen,
                    exists (select 1 from devolucion d where d.tienda_id = v.tienda_id and d.venta_codigo = v.codigo and d.tipo = 'anulacion') as anulada
             from venta v
             """;
@@ -84,7 +86,7 @@ public class VentaRepositorio {
                         Collectors.mapping(item -> new VentaDto.Item(item.productoCodigo(), item.nombre(), item.cantidad(), item.valorUnitario()),
                                 Collectors.toList())));
         return filas.stream().map(fila -> new VentaDto.Venta(fila.codigo(), fila.fecha(), fila.cliente(), fila.metodo(), fila.usuario(),
-                fila.total(), fila.anulada(), items.getOrDefault(fila.codigo(), List.of()))).toList();
+                fila.total(), fila.recibido(), fila.devuelta(), fila.observaciones(), fila.documentoOrigen(), fila.anulada(), items.getOrDefault(fila.codigo(), List.of()))).toList();
     }
 
     public List<VentaDto.Devolucion> listarDevoluciones(UUID tiendaId) {
@@ -159,13 +161,15 @@ public class VentaRepositorio {
 
     // --- Escritura ---------------------------------------------------------------------------------------
 
-    public void insertarVenta(UUID tiendaId, String codigo, String cliente, String metodo, String usuario, long total) {
+    public void insertarVenta(UUID tiendaId, String codigo, String cliente, String metodo, String usuario, long total,
+            long recibido, long devuelta, String observaciones) {
         jdbc.sql("""
-                insert into venta (tienda_id, codigo, cliente, metodo, usuario, total)
-                values (:tienda, :codigo, :cliente, :metodo, :usuario, :total)
+                insert into venta (tienda_id, codigo, cliente, metodo, usuario, total, recibido, devuelta, observaciones)
+                values (:tienda, :codigo, :cliente, :metodo, :usuario, :total, :recibido, :devuelta, :observaciones)
                 """)
                 .param("tienda", tiendaId).param("codigo", codigo).param("cliente", cliente)
                 .param("metodo", metodo).param("usuario", usuario).param("total", total)
+                .param("recibido", recibido).param("devuelta", devuelta).param("observaciones", observaciones)
                 .update();
     }
 

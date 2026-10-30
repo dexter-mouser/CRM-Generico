@@ -458,13 +458,42 @@ td input[type="checkbox"] {
   accent-color: var(--acento);
 }
 
-/* Atajos de teclado de Registrar venta */
-.atajos {
+/* Atajos de teclado: la tecla va dentro del botón de la acción */
+.boton kbd {
+  margin-left: 6px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.8;
+}
+
+.boton.primario kbd {
+  border-color: currentColor;
+}
+
+.selector-tipo {
+  display: inline-flex;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.aviso-origen {
+  border-color: var(--acento);
+}
+
+.pago-efectivo {
+  margin-top: 12px;
+}
+
+.fichas-monto {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 16px;
-  margin-bottom: 12px;
-  font-size: 0.8rem;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.boton.ficha[aria-pressed="true"] {
+  border-color: var(--acento);
+  font-weight: 600;
 }
 
 kbd {

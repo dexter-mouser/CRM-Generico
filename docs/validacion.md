@@ -7,6 +7,9 @@ Todas las reglas viven en un solo archivo, **`src/core/validacion.js`**: JavaScr
 | Texto corto (nombre, proveedor, concepto…) | Sin caracteres de control, espacios recortados, máximo 120 caracteres |
 | Texto largo (dirección, mensaje del recibo, descripción) | Máximo 300 caracteres |
 | Motivo (devolución, anulación, reapertura) | Obligatorio, de 5 a 200 caracteres |
+| Observaciones del documento | Opcional, hasta 300 caracteres |
+| Monto recibido (efectivo) | Entero; si se escribe debe cubrir el total; la devuelta es la diferencia. Vacío = valor exacto |
+| Tipo de documento | `factura`, `remision` o `cotizacion`; solo la factura admite método de pago y monto recibido |
 | Valores en pesos y cantidades | Enteros; máximo 1 000 000 000; el costo, el valor y la cantidad son mayores que 0 donde se pide un valor |
 | Stock | Entero (admite negativos) |
 | Correo | `^[^\s@]+@[^\s@]+\.[^\s@]+$`, máximo 120 caracteres |
@@ -21,4 +24,4 @@ Se valida **toda** la tabla antes de cambiar nada. Si una fila falla, no se impo
 
 ## Copia de seguridad (JSON)
 
-Formato `generico-copia-1` con `version`, `fecha`, `huella` (SHA-256 de `datos`) y `datos`. Antes de restaurar se comprueba: formato, versión, huella, que cada sección exista y que cada registro cumpla `ESQUEMA_DATOS`, que haya ajustes, métodos de pago, rol Propietario y al menos un propietario activo. Solo se copian las claves conocidas.
+Formato `generico-copia-1` con `version`, `fecha`, `huella` (SHA-256 de `datos`) y `datos`. Antes de restaurar se comprueba: formato, versión, huella, que cada sección exista (las copias anteriores a las remisiones y cotizaciones se toman con `documentos` vacío) y que cada registro cumpla `ESQUEMA_DATOS`, que haya ajustes, métodos de pago, rol Propietario y al menos un propietario activo. Solo se copian las claves conocidas.

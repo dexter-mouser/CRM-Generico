@@ -8,15 +8,7 @@
 
   <section class="caja margen-superior-grande">
     <strong>Días cerrados</strong>
-    <div class="desplazable">
-      <table>
-        <thead>
-          <tr><th>Día</th><th>Ventas</th><th>Total vendido</th><th>Devoluciones</th><th>Costo</th><th>Utilidad</th><th>Fiado</th><th>Abonos</th><th>Pagos a proveedores</th><th>Compras</th><th>Dif. de caja</th></tr>
-        </thead>
-        <tbody><!--{{{cierres}}}--></tbody>
-      </table>
-    </div>
-    {{{sinCierres}}}
+    <div id="cuadricula-cierres"></div>
   </section>
 </div>
 
@@ -52,13 +44,6 @@
   <div><dt>{{etiqueta}}</dt><dd>{{valor}}</dd></div>
 </template>
 
-<template id="fila-cierre-dia">
-  <tr>
-    <td>{{dia}}</td><td>{{cantidad}}</td><td>{{total}}</td><td>{{devoluciones}}</td><td>{{costo}}</td><td>{{utilidad}}</td>
-    <td>{{fiado}}</td><td>{{abonos}}</td><td>{{pagos}}</td><td>{{compras}}</td><td>{{diferencia}}</td>
-  </tr>
-</template>
-
 <template id="reabrir-dia">
   <section class="caja margen-superior-grande" aria-labelledby="titulo-reabrir">
     <strong id="titulo-reabrir">Reabrir el último día cerrado ({{dia}})</strong>
@@ -71,6 +56,3 @@
   </section>
 </template>
 
-<template id="aviso-vacio">
-  <div class="texto-suave margen-superior">{{texto}}</div>
-</template>

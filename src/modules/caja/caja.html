@@ -4,13 +4,7 @@
   {{{contenido}}}
   <section class="caja margen-superior-grande">
     <strong>Cierres anteriores</strong>
-    <div class="desplazable">
-      <table>
-        <thead><tr><th>Caja</th><th>Apertura</th><th>Cierre</th><th>Esperado</th><th>Contado</th><th>Diferencia</th></tr></thead>
-        <tbody><!--{{{cierres}}}--></tbody>
-      </table>
-    </div>
-    {{{sinCierres}}}
+    <div id="cuadricula-cierres"></div>
   </section>
 </div>
 
@@ -59,28 +53,12 @@
 
   <section class="caja margen-superior-grande">
     <strong>Movimientos de esta caja</strong>
-    <div class="desplazable">
-      <table>
-        <thead><tr><th>Hora</th><th>Tipo</th><th>Concepto</th><th>Valor</th></tr></thead>
-        <tbody><!--{{{movimientos}}}--></tbody>
-      </table>
-    </div>
-    {{{sinMovimientos}}}
+    <div id="cuadricula-movimientos"></div>
   </section>
 </template>
 
-<template id="aviso-vacio">
-  <div class="texto-suave margen-superior">{{texto}}</div>
-</template>
+
 
 <template id="linea-resumen">
   <div><dt>{{etiqueta}}</dt><dd>{{valor}}</dd></div>
-</template>
-
-<template id="fila-movimiento">
-  <tr><td>{{hora}}</td><td>{{tipo}}</td><td class="celda-ancha">{{concepto}}</td><td>{{valor}}</td></tr>
-</template>
-
-<template id="fila-cierre">
-  <tr><td>{{id}}</td><td>{{apertura}}</td><td>{{cierre}}</td><td>{{esperado}}</td><td>{{contado}}</td><td>{{diferencia}}</td></tr>
 </template>

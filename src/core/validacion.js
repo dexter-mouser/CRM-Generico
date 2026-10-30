@@ -89,6 +89,7 @@ export const ESQUEMA_DATOS = {
   facturas: { numero: 'texto', proveedor: 'texto', fecha: 'texto', total: 'enteroNoNegativo', items: ['lista', { productoId: 'texto', nombre: 'texto', cantidad: 'enteroNoNegativo', costoUnitario: 'enteroNoNegativo' }] },
   clientes: { id: 'texto', nombre: 'texto', telefono: 'textoOpcional', correo: 'textoOpcional', direccion: 'textoOpcional' },
   pagos: { id: 'texto', fecha: 'fecha', tipo: 'texto', tercero: 'texto', metodo: 'texto', valor: 'enteroNoNegativo' },
+  documentos: { id: 'texto', tipo: 'texto', fecha: 'fecha', cliente: 'texto', total: 'enteroNoNegativo', items: ['lista', ESQUEMA_ITEM_VENTA] },
   devoluciones: { id: 'texto', ventaId: 'texto', fecha: 'fecha', tipo: 'texto', motivo: 'texto', metodo: 'texto', total: 'enteroNoNegativo', items: ['lista', ESQUEMA_ITEM_VENTA] },
   cajas: { id: 'texto', apertura: 'fecha', base: 'enteroNoNegativo' },
   movimientosCaja: { id: 'texto', cajaId: 'texto', fecha: 'fecha', tipo: 'texto', concepto: 'texto', valor: 'enteroNoNegativo' },
@@ -125,6 +126,8 @@ export function validarDatos(datos) {
   if (!TIPOS.objeto(datos)) throw new Error('El archivo no contiene datos de la aplicación');
   const conteo = {};
   for (const [seccion, esquema] of Object.entries(ESQUEMA_DATOS)) {
+    // Las copias hechas antes de existir remisiones y cotizaciones no traen "documentos": se toman como vacías
+    if (seccion === 'documentos' && datos[seccion] === undefined) datos[seccion] = [];
     const lista = datos[seccion];
     if (!Array.isArray(lista)) throw new Error(`Falta la sección "${seccion}"`);
     lista.forEach((registro, posicion) => validarRegistro(registro, esquema, `${seccion}[${posicion + 1}]`));
