@@ -5,6 +5,7 @@ import { preferencias } from '../../core/preferencias.js';
 import { cerrarSesion } from '../../core/sesion.js';
 import { vistaActual } from '../../core/router.js';
 import { MENU } from '../../config/nav.js';
+import { puede } from '../../core/autorizacion.js';
 
 const CLAVE_MENU = 'generico.menu-recogido';
 
@@ -16,8 +17,10 @@ export async function montarMenuLateral(ranura) {
   const plantillaEnlace = documento.querySelector('#opcion-enlace').innerHTML;
   const plantillaSalir = documento.querySelector('#opcion-salir').innerHTML;
 
-  const enlaces = MENU.map((opcion, posicion) => {
-    const abreGrupoInferior = opcion.abajo && !MENU[posicion - 1].abajo;
+  // Solo se muestran los módulos que el rol de la persona puede ver
+  const visibles = MENU.filter((opcion) => puede(opcion.id, 'ver'));
+  const enlaces = visibles.map((opcion, posicion) => {
+    const abreGrupoInferior = opcion.abajo && !visibles[posicion - 1]?.abajo;
     const separador = abreGrupoInferior ? '<div class="separador-flexible"></div>' : '';
     return separador + rellenar(plantillaEnlace, {
       id: opcion.id,

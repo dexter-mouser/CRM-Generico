@@ -1,12 +1,13 @@
 import { buscar, buscarTodos } from '../../core/dom.js';
-import { estado, guardarEstado } from '../../core/store.js';
+import { estado } from '../../core/store.js';
 import { aPesos, aFecha, fechaDeHoy } from '../../core/format.js';
 import { leerEntero } from '../../core/numeros.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
-import { agregarProducto, importarProductos } from '../../services/inventario.service.js';
+import { agregarProducto, actualizarProducto, importarProductos } from '../../services/inventario.service.js';
 import { descargarInventarioCsv, leerInventarioCsv } from '../../services/csv.service.js';
 import { dibujarSelector } from '../../components/selector-productos/selector-productos.js';
 import { montarFactura } from './factura.js';
+import { mostrarComprobanteDeFactura } from '../../components/recibo/comprobantes.js';
 
 const CAMPOS_NUMERICOS = ['costo', 'existencias'];
 let documento;
@@ -18,7 +19,8 @@ export async function dibujar() {
     posicion,
     insignia: producto.existencias < 0 ? '<span class="insignia">Negativo</span>' : '',
   }));
-  const filasFacturas = estado.facturas.slice(-5).reverse().map((factura) => ({
+  const filasFacturas = estado.facturas.map((factura, indice) => ({ factura, indice })).slice(-5).reverse().map(({ factura, indice }) => ({
+    indice,
     numero: factura.numero,
     proveedor: factura.proveedor,
     fecha: aFecha(factura.fecha),
@@ -36,19 +38,24 @@ export async function dibujar() {
 export function montar(raiz, contexto) {
   const valorDe = (selector) => buscar(selector, raiz).value;
 
+  buscar('.vista', raiz).addEventListener('click', (evento) => {
+    const boton = evento.target.closest('[data-factura]');
+    if (boton) mostrarComprobanteDeFactura(estado.facturas[Number(boton.dataset.factura)]);
+  });
+
   // Edición en línea de los productos existentes (el ID no se edita porque lo usan las ventas y facturas)
   buscarTodos('[data-campo]', raiz).forEach((campo) => {
     campo.onchange = () => {
       const producto = estado.productos[Number(campo.dataset.posicion)];
       const nombreCampo = campo.dataset.campo;
-      if (nombreCampo === 'nombre' && !campo.value.trim()) {
-        campo.value = producto.nombre;
-        return contexto.alerta('El nombre del producto no puede quedar vacío');
+      try {
+        actualizarProducto(producto.id, nombreCampo, CAMPOS_NUMERICOS.includes(nombreCampo) ? leerEntero(campo.value) : campo.value);
+        contexto.aviso('Producto actualizado correctamente');
+        if (nombreCampo === 'existencias') contexto.redibujar();
+      } catch (error) {
+        campo.value = producto[nombreCampo];
+        contexto.alerta(error.message);
       }
-      producto[nombreCampo] = CAMPOS_NUMERICOS.includes(nombreCampo) ? leerEntero(campo.value) : campo.value.trim();
-      guardarEstado();
-      contexto.aviso('Producto actualizado correctamente');
-      if (nombreCampo === 'existencias') contexto.redibujar();
     };
   });
 

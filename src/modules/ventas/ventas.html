@@ -1,19 +1,83 @@
 <div id="principal">
   <h1>Ventas</h1>
-  <div class="texto-suave separacion-inferior">Historial de las ventas registradas.</div>
+  <div class="texto-suave separacion-inferior">Historial de las ventas registradas. Las devoluciones y anulaciones devuelven el stock y ajustan la caja o la deuda del cliente.</div>
   <div class="acciones">
     <a class="boton primario" href="nueva-venta.html">Registrar venta</a>
   </div>
+
+  <div id="zona-devolucion"></div>
+
   <div class="caja">
     <div class="desplazable">
       <table>
-        <tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Pago</th><th>Total</th><th></th></tr>
-        <!--{{{filas}}}-->
+        <thead><tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>Productos</th><th>Pago</th><th>Total</th><th>Estado</th><th></th></tr></thead>
+        <tbody><!--{{{filas}}}--></tbody>
       </table>
     </div>
   </div>
+
+  <section class="caja margen-superior-grande">
+    <strong>Devoluciones y anulaciones</strong>
+    <div class="desplazable">
+      <table>
+        <thead><tr><th>N°</th><th>Fecha</th><th>Venta</th><th>Tipo</th><th>Productos</th><th>Motivo</th><th>Registró</th><th>Total</th><th></th></tr></thead>
+        <tbody><!--{{{filasDevoluciones}}}--></tbody>
+      </table>
+    </div>
+    {{{sinDevoluciones}}}
+  </section>
 </div>
 
 <template id="fila-venta">
-  <tr><td>{{id}}</td><td>{{fecha}}</td><td>{{cliente}}</td><td class="celda-ancha">{{productos}}</td><td>{{metodo}}</td><td>{{total}}</td><td><button type="button" class="boton" data-recibo="{{id}}">Recibo</button></td></tr>
+  <tr>
+    <td>{{id}}</td><td>{{fecha}}</td><td>{{cliente}}</td><td class="celda-ancha">{{productos}}</td><td>{{metodo}}</td><td>{{total}}</td>
+    <td><span class="insignia {{claseEstado}}">{{estado}}</span></td>
+    <td><div class="acciones-fila"><button type="button" class="boton" data-recibo="{{id}}">Recibo</button>{{{acciones}}}</div></td>
+  </tr>
+</template>
+
+<template id="acciones-venta">
+  <button type="button" class="boton" data-devolver="{{id}}">Devolver</button>
+  <button type="button" class="boton peligro" data-anular="{{id}}">Anular</button>
+</template>
+
+<template id="fila-devolucion">
+  <tr>
+    <td>{{id}}</td><td>{{fecha}}</td><td>{{ventaId}}</td><td>{{tipo}}</td><td class="celda-ancha">{{productos}}</td><td class="celda-ancha">{{motivo}}</td><td>{{usuario}}</td><td>{{total}}</td>
+    <td><button type="button" class="boton" data-comprobante="{{id}}">Comprobante</button></td>
+  </tr>
+</template>
+
+<template id="aviso-vacio">
+  <div class="texto-suave margen-superior">{{texto}}</div>
+</template>
+
+<template id="panel-devolucion">
+  <section class="caja separacion-inferior" aria-labelledby="titulo-devolucion">
+    <strong id="titulo-devolucion">{{titulo}}</strong>
+    <div class="texto-suave">{{descripcion}}</div>
+    <div class="desplazable">
+      <table>
+        <thead><tr><th>Producto</th><th>Valor unitario</th><th>Disponibles</th><th>{{columnaCantidad}}</th></tr></thead>
+        <tbody><!--{{{filas}}}--></tbody>
+      </table>
+    </div>
+    <label for="motivo-devolucion">Motivo (obligatorio)</label>
+    <input id="motivo-devolucion" class="campo" maxlength="200" autocomplete="off" placeholder="Por qué se hace">
+    <div class="acciones-fila margen-superior-grande">
+      <button type="button" class="boton {{claseBoton}}" id="confirmar-devolucion">{{textoBoton}}</button>
+      <button type="button" class="boton" id="cancelar-devolucion">Cancelar</button>
+    </div>
+  </section>
+</template>
+
+<template id="fila-devolver-item">
+  <tr>
+    <td>{{nombre}}</td><td>{{valorUnitario}}</td><td>{{disponibles}}</td>
+    <td><input class="campo" data-cantidad-producto="{{productoId}}" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="Cantidad a devolver de {{nombre}}"></td>
+  </tr>
+</template>
+
+<template id="fila-anular-item">
+  <tr><td>{{nombre}}</td><td>{{valorUnitario}}</td><td>{{disponibles}}</td><td>{{disponibles}}</td></tr>
 </template>

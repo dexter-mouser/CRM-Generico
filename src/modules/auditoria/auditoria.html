@@ -1,0 +1,30 @@
+<div id="principal">
+  <h1>Auditoría</h1>
+  <div class="texto-suave separacion-inferior">Registro de lo que hace cada persona: ventas, devoluciones, cierres, cambios de permisos y más. Solo se puede consultar.</div>
+
+  <section class="caja">
+    <div class="formulario-en-linea">
+      <select id="filtro-modulo" class="campo" aria-label="Filtrar por módulo">
+        <option value="">Todos los módulos</option>
+        {{{opcionesModulo}}}
+      </select>
+      <input id="filtro-texto" class="campo" placeholder="Buscar por persona, acción o detalle" autocomplete="off" aria-label="Buscar en la auditoría">
+      <button type="button" class="boton" id="descargar-auditoria">Exportar CSV</button>
+    </div>
+    <div class="desplazable">
+      <table>
+        <thead><tr><th>Fecha</th><th>Persona</th><th>Módulo</th><th>Acción</th><th>Detalle</th></tr></thead>
+        <tbody id="filas-auditoria"></tbody>
+      </table>
+    </div>
+    <div class="texto-suave margen-superior" id="resumen-auditoria"></div>
+  </section>
+</div>
+
+<template id="opcion-modulo">
+  <option value="{{modulo}}">{{modulo}}</option>
+</template>
+
+<template id="fila-auditoria">
+  <tr><td>{{fecha}}</td><td>{{usuario}}</td><td>{{modulo}}</td><td>{{accion}}</td><td class="celda-ancha">{{detalle}}</td></tr>
+</template>

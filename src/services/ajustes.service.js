@@ -2,56 +2,64 @@
 import { estado, guardarEstado } from '../core/store.js';
 import { semilla } from '../data/seed.js';
 import { borrarBusquedas } from '../core/busquedas.js';
+import { exigirPermiso } from '../core/autorizacion.js';
+import { exigirTelefono, exigirTexto, LIMITES } from '../core/validacion.js';
+import { registrarAuditoria } from './auditoria.service.js';
 
 export const METODOS_DISPONIBLES = ['Efectivo', 'Nequi', 'Tarjeta', 'Transferencia', 'Fiado'];
 
-const TELEFONO_VALIDO = /^[\d\s()+-]{7,20}$/;
-
 export function guardarDatosTienda({ nombre, nit, telefono, ciudad, direccion }) {
-  const nombreLimpio = nombre.trim();
-  if (!nombreLimpio) throw new Error('Escribe el nombre de la tienda');
-  const telefonoLimpio = telefono.trim();
-  if (telefonoLimpio && !TELEFONO_VALIDO.test(telefonoLimpio)) {
-    throw new Error('El teléfono solo puede tener números, espacios, paréntesis, + y -');
-  }
+  exigirPermiso('ajustes', 'editar', 'cambiar los ajustes');
   Object.assign(estado.ajustes.tienda, {
-    nombre: nombreLimpio,
-    nit: nit.trim(),
-    telefono: telefonoLimpio,
-    ciudad: ciudad.trim(),
-    direccion: direccion.trim(),
+    nombre: exigirTexto(nombre, 'el nombre de la tienda'),
+    nit: exigirTexto(nit, 'el NIT', { obligatorio: false, maximo: 30 }),
+    telefono: exigirTelefono(telefono),
+    ciudad: exigirTexto(ciudad, 'la ciudad', { obligatorio: false }),
+    direccion: exigirTexto(direccion, 'la dirección', { obligatorio: false, maximo: LIMITES.textoLargo }),
   });
+  registrarAuditoria('ajustes', 'Datos de la tienda', estado.ajustes.tienda.nombre);
   guardarEstado();
 }
 
 export function guardarMensajeRecibo(pie) {
-  estado.ajustes.recibo.pie = pie.trim();
+  exigirPermiso('ajustes', 'editar', 'cambiar los ajustes');
+  estado.ajustes.recibo.pie = exigirTexto(pie, 'el mensaje del recibo', { obligatorio: false, maximo: LIMITES.textoLargo });
+  registrarAuditoria('ajustes', 'Mensaje del recibo', '');
   guardarEstado();
 }
 
 export function establecerMostrarDatosTienda(valor) {
+  exigirPermiso('ajustes', 'editar', 'cambiar los ajustes');
   estado.ajustes.recibo.mostrarDatosTienda = Boolean(valor);
+  registrarAuditoria('ajustes', 'Datos de la tienda en el recibo', valor ? 'Se muestran' : 'Se ocultan');
   guardarEstado();
 }
 
 // Activa o desactiva un método de pago; siempre debe quedar al menos uno disponible
 export function establecerMetodoPago(metodo, activo) {
+  exigirPermiso('ajustes', 'editar', 'cambiar los ajustes');
   const actuales = estado.ajustes.ventas.metodosPago;
   const nuevos = METODOS_DISPONIBLES.filter((candidato) => (candidato === metodo ? activo : actuales.includes(candidato)));
   if (!nuevos.length) throw new Error('Debe quedar al menos un método de pago disponible');
   estado.ajustes.ventas.metodosPago = nuevos;
+  registrarAuditoria('ajustes', 'Métodos de pago', nuevos.join(', '));
   guardarEstado();
 }
 
 export function establecerPermitirSinExistencias(valor) {
+  exigirPermiso('ajustes', 'editar', 'cambiar los ajustes');
   estado.ajustes.ventas.permitirSinExistencias = Boolean(valor);
+  registrarAuditoria('ajustes', 'Ventas sin existencias', valor ? 'Permitidas' : 'No permitidas');
   guardarEstado();
 }
 
-// Vuelve productos, ventas y facturas a los datos de prueba; los ajustes, roles y personas no cambian
+// Vuelve el inventario, las ventas, los clientes, los pagos, la caja y la contabilidad a los datos de ejemplo; los ajustes, roles y personas no cambian
 export function restablecerDatosDePrueba() {
-  const { productos, ventas, facturas, orden } = structuredClone(semilla);
-  Object.assign(estado, { productos, ventas, facturas, orden });
+  exigirPermiso('ajustes', 'editar', 'cambiar los ajustes');
+  const datos = structuredClone(semilla);
+  const claves = ['productos', 'ventas', 'facturas', 'orden', 'clientes', 'pagos', 'cajas', 'movimientosCaja', 'contabilidad', 'devoluciones'];
+  claves.forEach((clave) => { estado[clave] = datos[clave]; });
   borrarBusquedas();
+  registrarAuditoria('ajustes', 'Datos de ejemplo restablecidos', '');
   guardarEstado();
 }

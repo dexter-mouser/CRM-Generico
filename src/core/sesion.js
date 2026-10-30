@@ -22,12 +22,24 @@ export function iniciarSesion(usuario, recordar) {
   } catch { /* sin almacenamiento */ }
 }
 
-export function cerrarSesion() {
+export function cerrarSesion(motivo = '') {
   try {
     sessionStorage.removeItem(CLAVE_SESION);
     localStorage.removeItem(CLAVE_SESION);
   } catch { /* sin almacenamiento */ }
-  location.replace('index.html');
+  location.replace(motivo ? `index.html?aviso=${motivo}` : 'index.html');
+}
+
+// Cierra la sesión si la persona no toca la página durante los minutos indicados
+const MINUTOS_INACTIVIDAD = 30;
+export function vigilarInactividad(minutos = MINUTOS_INACTIVIDAD) {
+  let temporizador;
+  const reiniciar = () => {
+    clearTimeout(temporizador);
+    temporizador = setTimeout(() => cerrarSesion('inactividad'), minutos * 60000);
+  };
+  ['pointerdown', 'keydown', 'scroll'].forEach((evento) => addEventListener(evento, reiniciar, { passive: true }));
+  reiniciar();
 }
 
 // Se llama al inicio de toda página protegida: devuelve la sesión o redirige al ingreso.

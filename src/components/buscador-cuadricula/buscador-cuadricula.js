@@ -90,7 +90,12 @@ export function montarBuscadorCuadricula(raiz, { plantillas, alElegir }) {
       else if (evento.key === 'ArrowUp') posicionActiva = Math.max(0, posicionActiva - 1);
       else if (evento.key === 'Enter') {
         evento.preventDefault();
-        return elegir(encontrados[posicionActiva]);
+        // Un lector de códigos escribe el ID o la referencia completa y pulsa Enter: gana la coincidencia exacta
+        const escrito = campo.value.trim().toLowerCase();
+        const exacto = ['id', 'referencia'].includes(campo.dataset.filtro) && escrito
+          ? encontrados.find((producto) => String(producto[campo.dataset.filtro]).toLowerCase() === escrito)
+          : null;
+        return elegir(exacto ?? encontrados[posicionActiva]);
       } else return;
       evento.preventDefault();
       marcarActiva();

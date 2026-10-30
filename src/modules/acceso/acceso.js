@@ -5,6 +5,25 @@ import { iniciarSesion } from '../../core/sesion.js';
 import { icono, ICONO_OJO, ICONO_OJO_TACHADO } from '../../core/iconos.js';
 import { USUARIOS } from '../../config/acceso.js';
 import { MENU } from '../../config/nav.js';
+import { estado, guardarEstado } from '../../core/store.js';
+import { registrarAuditoria } from '../../services/auditoria.service.js';
+
+// Bloqueo temporal tras varios intentos fallidos seguidos (en el servidor este control debe repetirse por usuario e IP)
+const CLAVE_INTENTOS = 'generico.intentos';
+const MAXIMO_INTENTOS = 5;
+const MINUTOS_BLOQUEO = 5;
+const MENSAJES_AVISO = {
+  inactividad: 'Tu sesión se cerró por inactividad. Ingresa de nuevo.',
+  desactivado: 'Tu acceso fue desactivado. Pide acceso al dueño de la tienda.',
+};
+
+const leerIntentos = () => {
+  try { return JSON.parse(localStorage.getItem(CLAVE_INTENTOS)) ?? { fallos: 0, hasta: 0 }; } catch { return { fallos: 0, hasta: 0 }; }
+};
+const guardarIntentos = (datos) => {
+  try { localStorage.setItem(CLAVE_INTENTOS, JSON.stringify(datos)); } catch { /* sin almacenamiento */ }
+};
+const minutosDeBloqueo = () => Math.ceil((leerIntentos().hasta - Date.now()) / 60000);
 
 export async function dibujar() {
   const documento = await cargarHtml(new URL('./acceso.html', import.meta.url));
@@ -33,7 +52,30 @@ export function montar(raiz) {
     error.textContent = texto;
     campo.focus();
   };
+  const aviso = new URLSearchParams(location.search).get('aviso');
+  if (MENSAJES_AVISO[aviso]) error.textContent = MENSAJES_AVISO[aviso];
+
+  // Devuelve true si hay un bloqueo vigente y avisa cuánto falta
+  const bloqueado = (campo) => {
+    if (leerIntentos().hasta <= Date.now()) return false;
+    fallar(`Demasiados intentos fallidos. Espera ${minutosDeBloqueo()} minuto(s) e inténtalo de nuevo.`, campo);
+    return true;
+  };
+  const registrarFallo = (motivo) => {
+    const datos = leerIntentos();
+    datos.fallos = datos.hasta && datos.hasta <= Date.now() ? 1 : datos.fallos + 1;
+    if (datos.fallos >= MAXIMO_INTENTOS) {
+      datos.hasta = Date.now() + MINUTOS_BLOQUEO * 60000;
+      datos.fallos = 0;
+    }
+    guardarIntentos(datos);
+    registrarAuditoria('acceso', 'Intento de ingreso fallido', motivo, 'Sin identificar');
+    guardarEstado();
+  };
   const entrar = (usuario) => {
+    guardarIntentos({ fallos: 0, hasta: 0 });
+    registrarAuditoria('acceso', 'Ingreso', usuario.correo, usuario.nombre);
+    guardarEstado();
     iniciarSesion(usuario, recordar.checked);
     location.replace(destinoSeguro());
   };
@@ -45,17 +87,25 @@ export function montar(raiz) {
     const campo = buscar('#correo', raiz);
     const correo = campo.value.trim().toLowerCase();
     if (!correo) return fallar('Escribe tu correo.', campo);
-    const usuario = USUARIOS.find((candidato) => candidato.correo === correo);
-    usuario ? entrar(usuario) : fallar('Ese correo no está autorizado. Pide acceso al dueño de la tienda.', campo);
+    if (bloqueado(campo)) return;
+    // Pueden entrar las personas activas de Roles y permisos y el acceso de prueba
+    const persona = estado.usuarios.find((candidato) => candidato.correo === correo && candidato.activo);
+    if (persona) return entrar({ usuario: persona.correo, nombre: persona.nombre, correo: persona.correo });
+    registrarFallo(correo);
+    fallar('Ese correo no está autorizado. Pide acceso al dueño de la tienda.', campo);
   };
 
   formularios.clave.onsubmit = (evento) => {
     evento.preventDefault();
     const campoUsuario = buscar('#usuario', raiz), campoClave = buscar('#clave', raiz);
     if (!campoUsuario.value.trim() || !campoClave.value) return fallar('Escribe tu usuario y tu clave.', campoUsuario);
+    if (bloqueado(campoClave)) return;
     const usuario = USUARIOS.find((candidato) =>
       candidato.usuario === campoUsuario.value.trim() && candidato.clave === campoClave.value);
-    usuario ? entrar(usuario) : fallar('Usuario o clave incorrectos. Revisa los datos e inténtalo de nuevo.', campoClave);
+    const activa = usuario && estado.usuarios.some((persona) => persona.correo === usuario.correo && persona.activo);
+    if (activa) return entrar(usuario);
+    registrarFallo(campoUsuario.value.trim());
+    fallar('Usuario o clave incorrectos. Revisa los datos e inténtalo de nuevo.', campoClave);
   };
 
   // El botón de la clave es un icono: ojo para mostrar y ojo tachado para ocultar

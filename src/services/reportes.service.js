@@ -2,6 +2,7 @@
 import { estado } from '../core/store.js';
 import { aFechaLocal } from '../core/format.js';
 import { clientesConDeuda, deudaDeCliente } from './clientes.service.js';
+import { estaAnulada } from './ventas.service.js';
 
 export const LIMITE_STOCK_BAJO = 5;
 
@@ -12,10 +13,25 @@ export const ventasEntre = (desde, hasta) =>
     return dia >= desde && dia <= hasta;
   });
 
+// Devoluciones y anulaciones registradas entre dos fechas; restan de las ventas del día en que se hicieron
+export const devolucionesEntre = (desde, hasta) =>
+  estado.devoluciones.filter((devolucion) => {
+    const dia = aFechaLocal(devolucion.fecha);
+    return dia >= desde && dia <= hasta;
+  });
+
+// Ventas del rango menos lo devuelto en el rango
+export const totalNetoEntre = (desde, hasta) =>
+  ventasEntre(desde, hasta).reduce((acumulado, venta) => acumulado + venta.total, 0)
+  - devolucionesEntre(desde, hasta).reduce((acumulado, devolucion) => acumulado + devolucion.total, 0);
+
 // La utilidad usa el costo actual del producto, porque las ventas no guardan el costo del momento
 export function reporteDeVentas(desde, hasta) {
   const ventas = ventasEntre(desde, hasta);
-  const total = ventas.reduce((acumulado, venta) => acumulado + venta.total, 0);
+  const devoluciones = devolucionesEntre(desde, hasta);
+  const devuelto = devoluciones.reduce((acumulado, devolucion) => acumulado + devolucion.total, 0);
+  const total = ventas.reduce((acumulado, venta) => acumulado + venta.total, 0) - devuelto;
+  const cantidad = ventas.filter((venta) => !estaAnulada(venta)).length;
   const costoDe = (productoId) => estado.productos.find((producto) => producto.id === productoId)?.costo ?? 0;
 
   const porMetodo = new Map();
@@ -32,14 +48,28 @@ export function reporteDeVentas(desde, hasta) {
       porProducto.set(item.productoId, anterior);
     }
   }
+  for (const devolucion of devoluciones) {
+    porMetodo.set(devolucion.metodo, (porMetodo.get(devolucion.metodo) ?? 0) - devolucion.total);
+    for (const item of devolucion.items) {
+      const ingreso = item.cantidad * item.valorUnitario;
+      utilidad -= ingreso - item.cantidad * costoDe(item.productoId);
+      const anterior = porProducto.get(item.productoId);
+      if (anterior) {
+        anterior.cantidad -= item.cantidad;
+        anterior.total -= ingreso;
+      }
+    }
+  }
   return {
     ventas,
+    devoluciones,
+    devuelto,
     total,
-    cantidad: ventas.length,
-    ticketPromedio: ventas.length ? Math.round(total / ventas.length) : 0,
+    cantidad,
+    ticketPromedio: cantidad ? Math.round(total / cantidad) : 0,
     utilidad,
     porMetodo: [...porMetodo].map(([metodo, valor]) => ({ metodo, valor })).sort((a, b) => b.valor - a.valor),
-    masVendidos: [...porProducto.values()].sort((a, b) => b.cantidad - a.cantidad).slice(0, 5),
+    masVendidos: [...porProducto.values()].filter((producto) => producto.cantidad > 0).sort((a, b) => b.cantidad - a.cantidad).slice(0, 5),
   };
 }
 
@@ -57,7 +87,7 @@ export function ventasPorDia(dias) {
   for (let atras = dias - 1; atras >= 0; atras--) {
     const fecha = new Date(Date.now() - atras * 86400000);
     const dia = aFechaLocal(fecha.toISOString());
-    const total = ventasEntre(dia, dia).reduce((acumulado, venta) => acumulado + venta.total, 0);
+    const total = totalNetoEntre(dia, dia);
     resultado.push({ dia, fecha, total });
   }
   return resultado;

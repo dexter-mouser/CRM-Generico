@@ -1,6 +1,6 @@
 // Inventario <-> CSV. Es un documento de texto que abre y importa directamente cualquier hoja de cálculo del navegador.
 // Columnas: ID, Referencia, Producto, Costo, Stock (el stock admite negativos).
-import { leerEntero } from '../core/numeros.js';
+import { LIMITES } from '../core/validacion.js';
 
 const COLUMNAS = ['ID', 'Referencia', 'Producto', 'Costo', 'Stock'];
 
@@ -48,6 +48,7 @@ function separarFilas(texto, delimitador) {
 }
 
 export async function leerInventarioCsv(archivo) {
+  if (archivo.size > LIMITES.archivoMaximoBytes) throw new Error('El archivo es demasiado grande (máximo 10 MB)');
   const texto = (await archivo.text()).replace(/^\ufeff/, '');
   const primeraLinea = texto.split(/\r?\n/)[0] ?? '';
   const delimitador = (primeraLinea.match(/;/g) || []).length > (primeraLinea.match(/,/g) || []).length ? ';' : ',';
@@ -61,15 +62,19 @@ export async function leerInventarioCsv(archivo) {
   if (posiciones.nombre < 0) throw new Error('El archivo debe tener la columna Producto');
 
   const leer = (fila, clave) => (posiciones[clave] >= 0 ? (fila[posiciones[clave]] ?? '').trim() : '');
-  return filas
-    .map((fila) => ({
-      id: leer(fila, 'id'),
-      referencia: leer(fila, 'referencia'),
-      nombre: leer(fila, 'nombre'),
-      costo: leerEntero(leer(fila, 'costo')),
-      existencias: leerEntero(leer(fila, 'existencias')),
-    }))
-    .filter((producto) => producto.nombre);
+  // Un valor que no es un entero se deja como NaN para que la validación avise en qué fila está el error
+  const aEntero = (texto) => {
+    const limpio = texto.replace(/[\s$.]/g, '');
+    if (limpio === '') return 0;
+    return /^-?\d+$/.test(limpio) ? Number(limpio) : NaN;
+  };
+  return filas.map((fila) => ({
+    id: leer(fila, 'id'),
+    referencia: leer(fila, 'referencia'),
+    nombre: leer(fila, 'nombre'),
+    costo: aEntero(leer(fila, 'costo')),
+    existencias: aEntero(leer(fila, 'existencias')),
+  }));
 }
 
 // Descarga cualquier tabla como CSV: columnas = ['Fecha', ...], filas = [[...], ...]

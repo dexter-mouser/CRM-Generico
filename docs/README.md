@@ -2,6 +2,8 @@
 
 ## Contenido
 - `api.md`: endpoints que debe ofrecer el backend.
+- `seguridad.md`: medidas de seguridad de la interfaz y requisitos del backend.
+- `validacion.md`: reglas de validación compartidas por la interfaz y el backend.
 
 ## Qué agregar
 - `arquitectura.md`: capas, flujo de una venta y aislamiento multitienda.

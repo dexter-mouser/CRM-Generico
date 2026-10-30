@@ -1,15 +1,20 @@
-# backend/ — API (etapa 2)
+# Backend (Spring Boot 3 + PostgreSQL)
 
-Aquí va el servidor: Java 21 + Spring Boot 3.
+Java 21, Maven, JdbcClient, Flyway, JWT en cookie HttpOnly. Todo está separado por tienda (`tienda_id`).
 
-## Qué agregar
-- `src/main/java/.../auth`: inicio de sesión con Google (OAuth2/OIDC), emisión de sesión en cookie HttpOnly y lista de correos autorizados por tienda.
-- `.../tienda`: tiendas, membresías y configuración por tienda.
-- `.../rol`: roles y permisos creables y eliminables por el dueño.
-- `.../cliente`, `.../producto`, `.../venta`, `.../pago`, `.../caja`: un paquete por proceso (controlador, servicio, repositorio, DTO).
-- `.../inventario`: crear, editar y stock negativo; importar y exportar documentos CSV (y, más adelante, integración con Google Sheets/Docs mediante la API de Google).
-- `.../campos`: definiciones y valores de campos personalizados (JSONB).
-- `.../auditoria`: registro de quién cambió qué y cuándo.
-- `.../config`: seguridad, CORS, límite de peticiones y filtro que aplica `tienda_id` en cada consulta.
-- `src/test`: pruebas con JUnit 5 y Testcontainers.
-- `pom.xml` o `build.gradle`, `application.yml` por entorno.
+## Módulos disponibles
+Autenticación (`/api/auth/ingreso|salida|yo`), roles, usuarios, productos (con importación validada), clientes, ventas con devoluciones y anulaciones, auditoría.
+
+## Pendientes
+Caja, abonos/pagos, facturas, contabilidad (cierre y reapertura), reportes, ajustes, copia de seguridad, ingreso con Google.
+
+## Ejecutar en desarrollo
+1. PostgreSQL con base `generico` (o `docker compose up base` en `deploy/`).
+2. Variables: `SPRING_PROFILES_ACTIVE=dev`, `BASE_URL`, `BASE_USUARIO`, `BASE_CLAVE`.
+3. `mvn spring-boot:run`. El perfil `dev` crea la tienda de demostración (clave en `CLAVE_DEMO`, por defecto `admin123`).
+
+## Producción
+Define `JWT_SECRETO` (≥ 32 caracteres), `ORIGENES_PERMITIDOS`, y no uses el perfil `dev`. Ver `deploy/`.
+
+## Seguridad
+Contraseñas BCrypt, bloqueo tras 5 intentos, permisos leídos de la base en cada petición, cabecera `X-Generico: 1` obligatoria en escrituras, auditoría que no se puede modificar ni borrar.

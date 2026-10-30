@@ -38,7 +38,7 @@
     <strong>Últimas facturas</strong>
     <div class="desplazable">
       <table>
-        <tr><th>N°</th><th>Proveedor</th><th>Fecha</th><th>Productos</th><th>Total</th></tr>
+        <tr><th>N°</th><th>Proveedor</th><th>Fecha</th><th>Productos</th><th>Total</th><th></th></tr>
         <!--{{{filasFacturas}}}-->
       </table>
     </div>
@@ -82,7 +82,7 @@
 </template>
 
 <template id="fila-factura">
-  <tr><td>{{numero}}</td><td>{{proveedor}}</td><td>{{fecha}}</td><td class="celda-ancha">{{productos}}</td><td>{{total}}</td></tr>
+  <tr><td>{{numero}}</td><td>{{proveedor}}</td><td>{{fecha}}</td><td class="celda-ancha">{{productos}}</td><td>{{total}}</td><td><button type="button" class="boton" data-factura="{{indice}}">Comprobante</button></td></tr>
 </template>
 
 <template id="fila-linea-factura">

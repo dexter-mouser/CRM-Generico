@@ -5,6 +5,7 @@ import { leerEntero, activarCamposNumericos } from '../../core/numeros.js';
 import { icono, ICONO_PAPELERA } from '../../core/iconos.js';
 import { repetir } from '../../core/template.js';
 import { registrarFactura } from '../../services/inventario.service.js';
+import { mostrarComprobanteDeFactura } from '../../components/recibo/comprobantes.js';
 import { montarSelectorProductos } from '../../components/selector-productos/selector-productos.js';
 
 export function montarFactura(raiz, contexto, documento) {
@@ -72,6 +73,7 @@ export function montarFactura(raiz, contexto, documento) {
       });
       contexto.aviso(`Factura ${factura.numero} registrada correctamente: inventario actualizado`);
       contexto.redibujar();
+      mostrarComprobanteDeFactura(factura);
     } catch (error) {
       contexto.alerta(error.message);
     }

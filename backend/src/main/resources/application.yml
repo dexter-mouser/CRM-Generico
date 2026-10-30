@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: generico-api
+  datasource:
+    url: ${BASE_URL:jdbc:postgresql://localhost:5432/generico}
+    username: ${BASE_USUARIO:generico}
+    password: ${BASE_CLAVE:}
+  flyway:
+    enabled: true
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+  forward-headers-strategy: native
+  error:
+    include-message: never
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+generico:
+  jwt:
+    # Obligatorio y secreto: mínimo 32 caracteres. Se entrega por variable de entorno, nunca en el repositorio.
+    secreto: ${JWT_SECRETO}
+    inactividad-minutos: 30
+    duracion-maxima-horas: 8
+  cookie:
+    segura: true
+  cors:
+    origenes: ${ORIGENES_PERMITIDOS:http://localhost:3000}
+  demo:
+    sembrar: false
+    clave: ""

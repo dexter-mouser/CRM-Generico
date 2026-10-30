@@ -17,7 +17,8 @@ async function solicitar(metodo, ruta, cuerpo) {
     respuesta = await fetch(URL_API + ruta, {
       method: metodo,
       credentials: 'include',
-      headers: cuerpo === undefined ? {} : { 'Content-Type': 'application/json' },
+      // X-Generico: defensa CSRF; el backend lo exige en POST/PUT/PATCH/DELETE
+      headers: cuerpo === undefined ? { 'X-Generico': '1' } : { 'Content-Type': 'application/json', 'X-Generico': '1' },
       body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
     });
   } catch {
@@ -28,6 +29,7 @@ async function solicitar(metodo, ruta, cuerpo) {
     throw new ErrorApi('Tu sesión venció. Ingresa de nuevo.', 401);
   }
   const datos = respuesta.status === 204 ? null : await respuesta.json().catch(() => null);
+  if (respuesta.status === 429) throw new ErrorApi(datos?.mensaje ?? 'Demasiados intentos. Espera unos minutos.', 429);
   if (!respuesta.ok) throw new ErrorApi(datos?.mensaje ?? 'No se pudo completar la operación.', respuesta.status);
   return datos;
 }

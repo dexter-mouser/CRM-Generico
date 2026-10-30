@@ -1,0 +1,11 @@
+# Perfil de desarrollo: SPRING_PROFILES_ACTIVE=dev
+generico:
+  jwt:
+    secreto: ${JWT_SECRETO:solo-para-desarrollo-cambiar-en-produccion-0123456789}
+  cookie:
+    segura: false
+  cors:
+    origenes: http://localhost:3000,http://localhost:5173,http://localhost:8123
+  demo:
+    sembrar: true
+    clave: ${CLAVE_DEMO:admin123}

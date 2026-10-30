@@ -21,6 +21,7 @@ const contenidoCajaAbierta = (caja) => {
     ['Ingresos', resumen.ingresos],
     ['Egresos', 0 - resumen.egresos],
     ['Pagos a proveedores en efectivo', 0 - resumen.pagosProveedores],
+    ['Devoluciones en efectivo', 0 - resumen.reembolsos],
   ].map(([etiqueta, valor]) => ({ etiqueta, valor: aPesos(valor) }));
   return seccion(documento, 'caja-abierta', {
     apertura: aFecha(caja.apertura),

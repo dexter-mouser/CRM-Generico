@@ -4,6 +4,7 @@ import { activarCamposNumericos } from './numeros.js';
 import { MENU } from '../config/nav.js';
 import { rutas } from '../config/routes.js';
 import { mostrarAviso } from '../components/toast/toast.js';
+import { puede } from './autorizacion.js';
 
 const ESQUELETO = '<div class="tarjetas">' + '<div class="esqueleto"></div>'.repeat(4) + '</div>'
   + '<div class="dos-columnas"><div class="esqueleto alto"></div><div class="esqueleto alto"></div></div>';
@@ -19,6 +20,10 @@ async function mostrar(conEsqueleto) {
     if (conEsqueleto) {
       raiz.innerHTML = ESQUELETO;
       await new Promise((resolver) => setTimeout(resolver, 450));
+    }
+    if (!puede(id, 'ver')) {
+      raiz.innerHTML = '<div class="caja"><strong>No tienes acceso a esta pantalla</strong><div class="texto-suave margen-superior">Tu rol no incluye este módulo. Pide acceso al dueño de la tienda.</div></div>';
+      return;
     }
     const modulo = await (rutas[id] || rutas.placeholder)();
     const opcion = MENU.find((elemento) => elemento.id === id) || { etiqueta: id };

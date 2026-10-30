@@ -94,18 +94,48 @@
     </div>
   </section>
 
+  <section class="caja seccion-ajustes" aria-labelledby="titulo-copia">
+    <div>
+      <strong id="titulo-copia">Copia de seguridad</strong>
+      <div class="texto-suave">Guarda todos los datos en un archivo o restáuralos desde uno. Antes de restaurar se valida todo el archivo.</div>
+    </div>
+    <div>
+      <div class="acciones-fila">
+        <button type="button" class="boton primario" id="descargar-copia">Descargar copia</button>
+        <label class="boton" for="cargar-copia">Restaurar desde archivo</label>
+        <input id="cargar-copia" type="file" accept="application/json,.json" hidden>
+      </div>
+      <div class="confirmacion" id="confirmar-copia" hidden>
+        <span id="texto-copia"></span>
+        <button type="button" class="boton peligro" id="confirmar-copia-si">Sí, restaurar</button>
+        <button type="button" class="boton" id="confirmar-copia-no">Cancelar</button>
+      </div>
+      <div class="acciones-fila margen-superior-grande">
+        <select id="tabla-csv" class="campo" aria-label="Tabla a exportar">
+          <option value="ventas">Ventas</option>
+          <option value="devoluciones">Devoluciones y anulaciones</option>
+          <option value="clientes">Clientes</option>
+          <option value="pagos">Pagos</option>
+          <option value="contabilidad">Días cerrados</option>
+          <option value="auditoria">Auditoría</option>
+        </select>
+        <button type="button" class="boton" id="descargar-tabla">Exportar CSV</button>
+      </div>
+    </div>
+  </section>
+
   <section class="caja seccion-ajustes" aria-labelledby="titulo-datos">
     <div>
       <strong id="titulo-datos">Datos de prueba</strong>
       <div class="texto-suave">Los ajustes, roles y personas no cambian.</div>
     </div>
     <div>
-      <div class="texto-suave">Vuelve productos, ventas y facturas a los datos de prueba iniciales.</div>
+      <div class="texto-suave">Vuelve el inventario, las ventas, los clientes, los pagos, la caja y la contabilidad a los datos de ejemplo iniciales.</div>
       <div class="acciones-fila margen-superior-grande">
         <button type="button" class="boton peligro" id="restablecer">Restablecer datos de prueba</button>
       </div>
       <div class="confirmacion" id="confirmar-restablecer" hidden>
-        <span>¿Seguro? Se perderán las ventas, facturas e inventario actuales.</span>
+        <span>¿Seguro? Se perderán los datos actuales de inventario, ventas, clientes, pagos, caja y contabilidad.</span>
         <button type="button" class="boton peligro" id="confirmar-restablecer-si">Sí, restablecer</button>
         <button type="button" class="boton" id="confirmar-restablecer-no">Cancelar</button>
       </div>

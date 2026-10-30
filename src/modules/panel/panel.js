@@ -3,10 +3,10 @@ import { estado, guardarEstado } from '../../core/store.js';
 import { aPesos, fechaDeHoy } from '../../core/format.js';
 import { sesionActual } from '../../core/sesion.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
-import { resumirItems } from '../../services/ventas.service.js';
+import { resumirItems, estaAnulada } from '../../services/ventas.service.js';
 import { cajaAbierta, efectivoEnCaja } from '../../services/caja.service.js';
 import { clientesConDeuda, deudaDeCliente } from '../../services/clientes.service.js';
-import { ventasEntre, ventasPorDia } from '../../services/reportes.service.js';
+import { ventasEntre, totalNetoEntre, ventasPorDia } from '../../services/reportes.service.js';
 import { habilitarReordenamiento } from '../../components/reordenar/reordenar.js';
 
 const ALTURA_MAXIMA_BARRA = 170;
@@ -23,7 +23,7 @@ function saludoSegunHora() {
 export async function dibujar() {
   const documento = await cargarHtml(new URL('./panel.html', import.meta.url));
   const hoy = fechaDeHoy();
-  const ventasDeHoy = ventasEntre(hoy, hoy);
+  const ventasDeHoy = ventasEntre(hoy, hoy).filter((venta) => !estaAnulada(venta));
   const semana = ventasPorDia(7);
   const mayorDia = Math.max(...semana.map((dia) => dia.total), 0);
   const conDeuda = clientesConDeuda();
@@ -32,7 +32,7 @@ export async function dibujar() {
   const metricas = [
     {
       etiqueta: 'Ventas del día',
-      valor: ventasDeHoy.reduce((acumulado, venta) => acumulado + venta.total, 0),
+      valor: totalNetoEntre(hoy, hoy),
       formato: 'pesos',
       detalle: `${ventasDeHoy.length} ${ventasDeHoy.length === 1 ? 'venta' : 'ventas'} hoy`,
     },

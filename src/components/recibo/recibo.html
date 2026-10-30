@@ -1,4 +1,8 @@
 <dialog id="recibo" class="recibo-dialogo" aria-labelledby="recibo-titulo">
+  <div class="recibo-formato" role="group" aria-label="Formato de impresión">
+    <button type="button" class="boton" data-formato="tirilla" aria-pressed="true">Tirilla 80 mm</button>
+    <button type="button" class="boton" data-formato="carta" aria-pressed="false">Hoja carta</button>
+  </div>
   <div class="recibo" id="contenido-recibo"></div>
   <div class="recibo-acciones">
     <button type="button" class="boton primario" id="imprimir-recibo">Imprimir</button>
@@ -13,13 +17,12 @@
     <div id="recibo-titulo">{{titulo}}</div>
     <div class="recibo-suave">{{subtitulo}}</div>
   </div>
-  <div class="recibo-datos">
-    <div><span>Fecha</span><span>{{fecha}}</span></div>
-    <div><span>Cliente</span><span>{{cliente}}</span></div>
-    <div><span>Pago</span><span>{{metodo}}</span></div>
-  </div>
+  {{{sello}}}
+  <div class="recibo-datos">{{{datos}}}</div>
   <div class="recibo-lineas">{{{lineas}}}</div>
-  <div class="recibo-total"><span>TOTAL</span><span>{{total}}</span></div>
+  <div class="recibo-totales">{{{totales}}}</div>
+  {{{notas}}}
+  <div class="recibo-firmas">{{{firmas}}}</div>
   <div class="recibo-pie">{{pie}}</div>
 </template>
 
@@ -27,12 +30,32 @@
   <div class="recibo-suave">{{texto}}</div>
 </template>
 
+<template id="recibo-dato">
+  <div><span>{{etiqueta}}</span><span>{{valor}}</span></div>
+</template>
+
 <template id="recibo-linea">
   <div class="recibo-linea">
     <div>
       <div class="recibo-nombre">{{nombre}}</div>
-      <div class="recibo-suave">{{cantidad}} × {{valorUnitario}}</div>
+      <div class="recibo-suave">{{detalle}}</div>
     </div>
-    <span>{{subtotal}}</span>
+    <span>{{valor}}</span>
   </div>
+</template>
+
+<template id="recibo-total">
+  <div class="recibo-total {{clase}}"><span>{{etiqueta}}</span><span>{{valor}}</span></div>
+</template>
+
+<template id="recibo-sello">
+  <div class="recibo-sello">{{texto}}</div>
+</template>
+
+<template id="recibo-nota">
+  <div class="recibo-nota">{{texto}}</div>
+</template>
+
+<template id="recibo-firma">
+  <div class="recibo-firma"><span>{{texto}}</span></div>
 </template>

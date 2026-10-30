@@ -1,0 +1,36 @@
+# Entorno local: PostgreSQL + API. Uso: copiar .env.example a .env y ejecutar `docker compose up --build` desde esta carpeta.
+services:
+  base:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: generico
+      POSTGRES_USER: generico
+      POSTGRES_PASSWORD: ${BASE_CLAVE:?Falta BASE_CLAVE en .env}
+    volumes:
+      - datos:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U generico -d generico"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  api:
+    build: ../backend
+    depends_on:
+      base:
+        condition: service_healthy
+    environment:
+      BASE_URL: jdbc:postgresql://base:5432/generico
+      BASE_USUARIO: generico
+      BASE_CLAVE: ${BASE_CLAVE}
+      JWT_SECRETO: ${JWT_SECRETO:?Falta JWT_SECRETO en .env (mínimo 32 caracteres)}
+      ORIGENES_PERMITIDOS: ${ORIGENES_PERMITIDOS:-http://localhost:3000}
+      SPRING_PROFILES_ACTIVE: ${PERFIL:-}
+      CLAVE_DEMO: ${CLAVE_DEMO:-}
+    ports:
+      - "127.0.0.1:8080:8080"
+
+volumes:
+  datos:

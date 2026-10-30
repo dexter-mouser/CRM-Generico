@@ -8,16 +8,20 @@ export const ACCIONES = [
   { id: 'crear', etiqueta: 'Crear' },
   { id: 'editar', etiqueta: 'Editar' },
   { id: 'eliminar', etiqueta: 'Eliminar' },
+  { id: 'reabrir', etiqueta: 'Reabrir' },
 ];
 
-const TODAS_LAS_ACCIONES = ACCIONES.map((accion) => accion.id);
+// "Reabrir" es un permiso especial: solo lo admiten los módulos que lo declaran
+const TODAS_LAS_ACCIONES = ['ver', 'crear', 'editar', 'eliminar'];
 
 // Módulos que no admiten todas las acciones
 const ACCIONES_POR_MODULO = {
   panel: ['ver'],
   'nueva-venta': ['ver', 'crear'],
   ventas: ['ver', 'eliminar'],
+  auditoria: ['ver'],
   reportes: ['ver'],
+  contabilidad: ['ver', 'crear', 'reabrir'],
   ajustes: ['ver', 'editar'],
 };
 

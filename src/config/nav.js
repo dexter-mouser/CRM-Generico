@@ -32,6 +32,11 @@ export const MENU = [
     icono: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M16 14h2"/>',
   },
   {
+    id: 'contabilidad',
+    etiqueta: 'Contabilidad',
+    icono: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M12 12h2M8 16h2M12 16h2M16 12v4"/>',
+  },
+  {
     id: 'pagos',
     etiqueta: 'Pagos',
     icono: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/>',
@@ -40,6 +45,11 @@ export const MENU = [
     id: 'reportes',
     etiqueta: 'Reportes',
     icono: '<path d="M5 20V10M12 20V4M19 20v-7"/>',
+  },
+  {
+    id: 'auditoria',
+    etiqueta: 'Auditoría',
+    icono: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
   },
   {
     id: 'roles',

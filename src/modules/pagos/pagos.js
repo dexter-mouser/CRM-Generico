@@ -5,6 +5,7 @@ import { leerEntero } from '../../core/numeros.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import { clientesConDeuda, deudaDeCliente } from '../../services/clientes.service.js';
 import * as servicioPagos from '../../services/pagos.service.js';
+import { mostrarComprobanteDePago } from '../../components/recibo/comprobantes.js';
 
 let documento;
 
@@ -37,6 +38,11 @@ export async function dibujar() {
 }
 
 export function montar(raiz, contexto) {
+  buscar('.vista', raiz).addEventListener('click', (evento) => {
+    const boton = evento.target.closest('[data-comprobante]');
+    if (boton) mostrarComprobanteDePago(estado.pagos.find((pago) => pago.id === boton.dataset.comprobante));
+  });
+
   const valorDe = (selector) => buscar(selector, raiz).value;
 
   // Muestra lo pendiente de la persona elegida en cada lista
@@ -54,11 +60,13 @@ export function montar(raiz, contexto) {
   buscar('#pago-proveedor', raiz).onchange = pintarPendientes;
   pintarPendientes();
 
+  // Tras registrar un pago se abre su comprobante para imprimirlo
   const ejecutar = (accion, mensaje) => {
     try {
-      accion();
+      const pago = accion();
       contexto.aviso(mensaje);
       contexto.redibujar();
+      mostrarComprobanteDePago(pago);
     } catch (error) {
       contexto.alerta(error.message);
     }

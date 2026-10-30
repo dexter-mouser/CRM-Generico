@@ -2,8 +2,9 @@
 import { estado, guardarEstado } from '../core/store.js';
 import { siguienteCodigo } from '../core/codigos.js';
 import { ID_ROL_PROPIETARIO, MODULOS_PERMISOS } from '../config/permisos.js';
-
-const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { exigirPermiso } from '../core/autorizacion.js';
+import { exigirCorreo, exigirTexto, LIMITES } from '../core/validacion.js';
+import { registrarAuditoria } from './auditoria.service.js';
 
 const normalizar = (texto) => String(texto).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
@@ -22,24 +23,28 @@ function exigirNombreLibre(nombre, idActual) {
 }
 
 export function crearRol({ nombre, descripcion }) {
-  const nombreLimpio = nombre.trim();
+  exigirPermiso('roles', 'crear', 'administrar roles y personas');
+  const nombreLimpio = exigirTexto(nombre, 'el nombre del rol', { maximo: 60 });
   exigirNombreLibre(nombreLimpio, null);
   const base = normalizar(nombreLimpio).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'rol';
   let id = base;
   for (let numero = 2; buscarRol(id); numero++) id = `${base}-${numero}`;
-  const rol = { id, nombre: nombreLimpio, descripcion: descripcion.trim(), protegido: false, permisos: { panel: ['ver'] } };
+  const rol = { id, nombre: nombreLimpio, descripcion: exigirTexto(descripcion, 'la descripción', { obligatorio: false, maximo: LIMITES.textoLargo }), protegido: false, permisos: { panel: ['ver'] } };
   estado.roles.push(rol);
+  registrarAuditoria('roles', 'Rol creado', rol.nombre);
   guardarEstado();
   return rol;
 }
 
 export function actualizarRol(id, { nombre, descripcion }) {
+  exigirPermiso('roles', 'editar', 'administrar roles y personas');
   const rol = buscarRol(id);
   exigirEditable(rol);
-  const nombreLimpio = nombre.trim();
+  const nombreLimpio = exigirTexto(nombre, 'el nombre del rol', { maximo: 60 });
   exigirNombreLibre(nombreLimpio, id);
   rol.nombre = nombreLimpio;
-  rol.descripcion = descripcion.trim();
+  rol.descripcion = exigirTexto(descripcion, 'la descripción', { obligatorio: false, maximo: LIMITES.textoLargo });
+  registrarAuditoria('roles', 'Rol editado', rol.nombre);
   guardarEstado();
 }
 
@@ -62,26 +67,32 @@ function aplicarPermiso(rol, moduloId, accion, activo) {
 }
 
 export function establecerPermiso(rolId, moduloId, accion, activo) {
+  exigirPermiso('roles', 'editar', 'administrar roles y personas');
   const rol = buscarRol(rolId);
   exigirEditable(rol);
   aplicarPermiso(rol, moduloId, accion, activo);
+  registrarAuditoria('roles', 'Permiso cambiado', `${rol.nombre} · ${moduloId} · ${accion} ${activo ? 'activado' : 'desactivado'}`);
   guardarEstado();
 }
 
 // cambios: [{ moduloId, accion, activo }], aplicados en orden y guardados una sola vez
 export function establecerPermisos(rolId, cambios) {
+  exigirPermiso('roles', 'editar', 'administrar roles y personas');
   const rol = buscarRol(rolId);
   exigirEditable(rol);
   cambios.forEach(({ moduloId, accion, activo }) => aplicarPermiso(rol, moduloId, accion, activo));
+  registrarAuditoria('roles', 'Permisos cambiados', `${rol.nombre} · ${cambios.length} cambio(s)`);
   guardarEstado();
 }
 
 export function eliminarRol(id) {
+  exigirPermiso('roles', 'eliminar', 'administrar roles y personas');
   const rol = buscarRol(id);
   exigirEditable(rol);
   const miembros = miembrosDeRol(id);
   if (miembros) throw new Error(`Hay ${miembros} persona(s) con este rol: cámbialas de rol antes de eliminarlo`);
   estado.roles = estado.roles.filter((candidato) => candidato.id !== id);
+  registrarAuditoria('roles', 'Rol eliminado', rol.nombre);
   guardarEstado();
 }
 
@@ -91,10 +102,9 @@ const quedaOtroPropietarioActivo = (usuarioId) =>
   estado.usuarios.some((usuario) => usuario.id !== usuarioId && usuario.activo && usuario.rolId === ID_ROL_PROPIETARIO);
 
 export function agregarUsuario({ nombre, correo, rolId }) {
-  const nombreLimpio = nombre.trim();
-  const correoLimpio = correo.trim().toLowerCase();
-  if (!nombreLimpio) throw new Error('Escribe el nombre de la persona');
-  if (!CORREO_VALIDO.test(correoLimpio)) throw new Error('Escribe un correo válido, por ejemplo nombre@tienda.com');
+  exigirPermiso('roles', 'crear', 'administrar roles y personas');
+  const nombreLimpio = exigirTexto(nombre, 'el nombre de la persona');
+  const correoLimpio = exigirCorreo(correo);
   if (estado.usuarios.some((usuario) => usuario.correo === correoLimpio)) throw new Error('Ese correo ya está registrado');
   if (!buscarRol(rolId)) throw new Error('Elige el rol de la persona');
   const usuario = {
@@ -105,11 +115,13 @@ export function agregarUsuario({ nombre, correo, rolId }) {
     activo: true,
   };
   estado.usuarios.push(usuario);
+  registrarAuditoria('roles', 'Persona agregada', `${usuario.nombre} · ${usuario.correo}`);
   guardarEstado();
   return usuario;
 }
 
 export function cambiarRolUsuario(usuarioId, rolId) {
+  exigirPermiso('roles', 'editar', 'administrar roles y personas');
   const usuario = buscarUsuario(usuarioId);
   if (!usuario || !buscarRol(rolId)) throw new Error('No se pudo cambiar el rol');
   const dejaDeSerPropietario = usuario.rolId === ID_ROL_PROPIETARIO && rolId !== ID_ROL_PROPIETARIO;
@@ -117,15 +129,18 @@ export function cambiarRolUsuario(usuarioId, rolId) {
     throw new Error('Debe quedar al menos un propietario activo');
   }
   usuario.rolId = rolId;
+  registrarAuditoria('roles', 'Rol de una persona cambiado', `${usuario.nombre} → ${buscarRol(rolId).nombre}`);
   guardarEstado();
 }
 
 export function cambiarEstadoUsuario(usuarioId, activo) {
+  exigirPermiso('roles', 'editar', 'administrar roles y personas');
   const usuario = buscarUsuario(usuarioId);
   if (!usuario) throw new Error('No se pudo cambiar el estado');
   if (!activo && usuario.rolId === ID_ROL_PROPIETARIO && !quedaOtroPropietarioActivo(usuarioId)) {
     throw new Error('Debe quedar al menos un propietario activo');
   }
   usuario.activo = Boolean(activo);
+  registrarAuditoria('roles', activo ? 'Persona activada' : 'Persona desactivada', usuario.nombre);
   guardarEstado();
 }

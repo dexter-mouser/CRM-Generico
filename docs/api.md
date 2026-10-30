@@ -30,6 +30,14 @@ Contrato que debe ofrecer el backend para reemplazar `core/store.js`. Todas las 
 | `POST /cajas` | `abrirCaja` | `{ base }`; rechaza si ya hay una abierta |
 | `POST /cajas/actual/movimientos` | `registrarMovimiento` | `{ tipo, concepto, valor }` |
 | `POST /cajas/actual/cierre` | `cerrarCaja` | `{ contado }`; devuelve esperado y diferencia |
+| `GET /contabilidad` | `estado.contabilidad` | Días cerrados y días pendientes |
+| `POST /contabilidad/cierres` | `cerrarDia` | `{ dia }`; solo el día pendiente más antiguo, y sin caja abierta |
+| `DELETE /contabilidad/cierres/ultimo` | `reabrirUltimoDia` | `{ motivo }`; permiso `contabilidad:reabrir`; solo el último día cerrado |
+| `POST /ventas/{id}/devoluciones` | `devolverProductos` | `{ cantidades: { productoId: n }, motivo }`; permiso `ventas:eliminar` |
+| `POST /ventas/{id}/anulacion` | `anularVenta` | `{ motivo }`; rechaza días cerrados; devuelve stock y dinero |
+| `GET /devoluciones` | `estado.devoluciones` | Devoluciones y anulaciones |
+| `GET /auditoria` | `registrosDeAuditoria` | Solo lectura, filtros por módulo y texto |
+| `GET /copias` / `POST /copias/restauracion` | `descargarCopia`, `restaurarCopia` | Valida con `docs/validacion.md` |
 | `GET /pagos` | historial de pagos | |
 | `POST /pagos/abonos` | `registrarAbono` | `{ clienteId, valor, metodo }` |
 | `POST /pagos/proveedores` | `registrarPagoProveedor` | `{ proveedor, concepto, valor, metodo }` |
