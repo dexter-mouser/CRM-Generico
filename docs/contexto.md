@@ -76,6 +76,15 @@ Hecho y probado en el navegador (escritorio y móvil, sin errores de consola):
 2. Probar en escritorio (1280 px) y móvil (390 px), sin errores en consola ni desbordes.
 3. Si no se ven los cambios: Ctrl+F5 y revisar que el servidor sirva la carpeta correcta.
 
+## Funciones de CRM
+- **Clientes:** documento (CC, NIT, CE, PAS, TI), tipo de persona, etiquetas, autorización de datos (Ley 1581), cupo de crédito y plazo. Sin cumpleaños. Ficha con seguimiento, compras, cartera, cotizaciones y remisiones, abonos y devoluciones.
+- **Seguimiento:** actividades (llamada, WhatsApp, visita, correo, nota) y tareas con fecha y responsable.
+- **Embudo:** cotización = oportunidad (enviada, en negociación, ganada, perdida). Perdida exige motivo; la cotización vencida sin cerrar genera una alerta para su vendedor (campana del encabezado; el Propietario ve todas).
+- **Cartera:** vencimiento por factura a crédito, cupo por cliente y cartera por edades (abonos aplicados a la factura más antigua).
+- **Inventario:** precio de venta con IVA incluido, tarifa de IVA (0, 5, 19), categoría, stock mínimo y kardex calculado desde los documentos y los ajustes manuales.
+- **Proveedores:** entidad propia (PV-001) con órdenes de compra (OC-0001) que se reciben con la factura de compra.
+- **Reportes:** clientes nuevos y recurrentes, inactivos (más de 60 días), conversión de cotizaciones y ventas por vendedor.
+
 ## Entorno de trabajo
 - Copia en la nube: `/home/claude/crm-tiendas`, servida con `python3 -m http.server 8123` para pruebas con Playwright.
 - Maven Central está bloqueado en la nube: el backend no se puede compilar allí.

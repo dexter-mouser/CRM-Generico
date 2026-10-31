@@ -27,6 +27,11 @@ h1 {
   height: 100%;
 }
 
+/* Un elemento con el atributo hidden nunca se muestra, aunque su clase le dé otro display */
+[hidden] {
+  display: none !important;
+}
+
 /* Las ranuras solo contienen el menú que se monta en ellas */
 [data-ranura] {
   display: contents;

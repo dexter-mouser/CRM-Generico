@@ -67,17 +67,63 @@ export function exigirFecha(valor, etiqueta = 'la fecha') {
 
 export const exigirMotivo = (valor) => exigirTexto(valor, 'el motivo', { maximo: LIMITES.motivo, minimo: LIMITES.minimoMotivo });
 
+// Tarifas de IVA vigentes en Colombia (los precios de venta incluyen el IVA)
+export const TARIFAS_IVA = [0, 5, 19];
+
 // Datos de un producto del inventario. El ID es solo números y opcional: se genera uno si está vacío.
 // Los ceros a la izquierda se quitan para que "007" y "7" sean el mismo producto.
-export function validarProducto({ id = '', referencia = '', nombre, costo, existencias }) {
+export function validarProducto({ id = '', referencia = '', nombre, categoria = '', costo, precio = 0, iva = 19, stockMinimo = 0, existencias }) {
+  if (!TARIFAS_IVA.includes(iva)) throw new Error(`El IVA debe ser ${TARIFAS_IVA.join(', ')} %`);
   const idLimpio = limpiarTexto(id);
   if (idLimpio && !PATRONES.codigoProducto.test(idLimpio)) throw new Error(`El ID "${idLimpio}" solo puede tener números`);
   return {
     id: idLimpio ? String(Number(idLimpio)) : '',
     referencia: exigirTexto(referencia, 'la referencia', { obligatorio: false, maximo: 40 }),
     nombre: exigirTexto(nombre, 'el nombre del producto'),
+    categoria: exigirTexto(categoria, 'la categoría', { obligatorio: false, maximo: 60 }),
     costo: exigirEntero(costo, 'el costo'),
+    precio: exigirEntero(precio, 'el precio de venta'),
+    iva,
+    stockMinimo: exigirEntero(stockMinimo, 'el stock mínimo'),
     existencias: exigirEntero(existencias, 'el stock', { minimo: -LIMITES.valorMaximo }),
+  };
+}
+
+// --- Clientes ----------------------------------------------------------------------------------------------
+export const TIPOS_DOCUMENTO = { CC: 'Cédula de ciudadanía', NIT: 'NIT', CE: 'Cédula de extranjería', PAS: 'Pasaporte', TI: 'Tarjeta de identidad' };
+export const TIPOS_PERSONA = { natural: 'Persona natural', juridica: 'Persona jurídica' };
+
+export function validarCliente(datos) {
+  const tipoDocumento = TIPOS_DOCUMENTO[datos.tipoDocumento] ? datos.tipoDocumento : '';
+  const documento = limpiarTexto(datos.documento);
+  if (documento && !/^[0-9A-Za-z.-]{3,20}$/.test(documento)) throw new Error('El documento solo puede tener números, letras, punto y guion');
+  if (documento && !tipoDocumento) throw new Error('Elige el tipo de documento');
+  const etiquetas = [...new Set(String(datos.etiquetas ?? '').split(',').map((etiqueta) => limpiarTexto(etiqueta)).filter(Boolean))];
+  if (etiquetas.some((etiqueta) => etiqueta.length > 30)) throw new Error('Cada etiqueta puede tener hasta 30 caracteres');
+  return {
+    nombre: exigirTexto(datos.nombre, 'el nombre del cliente'),
+    tipoDocumento,
+    documento,
+    tipoPersona: TIPOS_PERSONA[datos.tipoPersona] ? datos.tipoPersona : 'natural',
+    telefono: exigirTelefono(datos.telefono),
+    correo: exigirCorreo(datos.correo, { obligatorio: false }),
+    direccion: exigirTexto(datos.direccion, 'la dirección', { obligatorio: false, maximo: LIMITES.textoLargo }),
+    etiquetas: etiquetas.slice(0, 10),
+    autorizaDatos: Boolean(datos.autorizaDatos),
+    limiteCredito: exigirEntero(datos.limiteCredito ?? 0, 'el cupo de crédito'),
+    plazoDias: exigirEntero(datos.plazoDias ?? 30, 'el plazo', { minimo: 1, maximo: 365 }),
+  };
+}
+
+// Proveedor: nombre obligatorio, NIT y contacto opcionales
+export function validarProveedor(datos) {
+  return {
+    nombre: exigirTexto(datos.nombre, 'el nombre del proveedor'),
+    nit: exigirTexto(datos.nit, 'el NIT', { obligatorio: false, maximo: 30 }),
+    telefono: exigirTelefono(datos.telefono),
+    correo: exigirCorreo(datos.correo, { obligatorio: false }),
+    contacto: exigirTexto(datos.contacto, 'el contacto', { obligatorio: false }),
+    plazoDias: exigirEntero(datos.plazoDias ?? 30, 'el plazo de pago', { minimo: 0, maximo: 365 }),
   };
 }
 
@@ -107,6 +153,10 @@ export const ESQUEMA_DATOS = {
   movimientosCaja: { id: 'texto', cajaId: 'texto', fecha: 'fecha', tipo: 'texto', concepto: 'texto', valor: 'enteroNoNegativo' },
   contabilidad: { dia: 'texto', cerradoEn: 'fecha' },
   auditoria: { id: 'texto', fecha: 'fecha', usuario: 'texto', modulo: 'texto', accion: 'texto', detalle: 'textoOpcional' },
+  actividades: { id: 'texto', clienteId: 'texto', tipo: 'texto', descripcion: 'texto', fecha: 'fecha', completada: 'booleano' },
+  proveedores: { id: 'texto', nombre: 'texto' },
+  ordenesCompra: { id: 'texto', proveedorId: 'texto', fecha: 'fecha', estado: 'texto', items: ['lista', { productoId: 'texto', nombre: 'texto', cantidad: 'enteroNoNegativo', costoUnitario: 'enteroNoNegativo' }] },
+  ajustesInventario: { id: 'texto', fecha: 'fecha', productoId: 'texto', cantidad: 'entero', motivo: 'texto' },
   roles: { id: 'texto', nombre: 'texto', protegido: 'booleano', permisos: 'objeto' },
   usuarios: { id: 'texto', nombre: 'texto', correo: 'texto', rolId: 'texto', activo: 'booleano' },
 };

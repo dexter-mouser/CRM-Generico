@@ -8,12 +8,13 @@
 import { estado, guardarEstado } from '../core/store.js';
 import { numeroMayor, siguienteNumero } from '../core/codigos.js';
 import { aFechaLocal } from '../core/format.js';
-import { exigirPermiso, nombreDeUsuario } from '../core/autorizacion.js';
+import { exigirPermiso, nombreDeUsuario, usuarioActual } from '../core/autorizacion.js';
 import { exigirEntero, exigirMotivo, exigirTexto, validarLineas, LIMITES } from '../core/validacion.js';
 import { registrarAuditoria } from './auditoria.service.js';
 import { ultimoDiaCerrado } from './contabilidad.service.js';
 import { cajaAbierta } from './caja.service.js';
-import { buscarCliente, deudaDeCliente } from './clientes.service.js';
+import { buscarCliente, deudaDeCliente, cupoDisponible } from './clientes.service.js';
+import { aPesos } from '../core/format.js';
 
 const DIAS_VIGENCIA_COTIZACION = 15;
 
@@ -38,13 +39,33 @@ const mismoNombre = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
 const buscarProducto = (id) => estado.productos.find((candidato) => candidato.id === id);
 export const buscarClientePorNombre = (nombre) => estado.clientes.find((cliente) => mismoNombre(cliente.nombre, nombre));
 
-// El inventario guarda costo, no precio: se sugiere el valor de la última venta de ese producto
+// Valor sugerido al agregar un producto: su precio de venta; si no tiene, el de su última venta
 export function ultimoValorDeVenta(productoId) {
+  const precio = buscarProducto(productoId)?.precio;
+  if (precio) return precio;
   for (let posicion = estado.ventas.length - 1; posicion >= 0; posicion--) {
     const item = estado.ventas[posicion].items.find((candidato) => candidato.productoId === productoId);
     if (item) return item.valorUnitario;
   }
   return 0;
+}
+
+// IVA incluido en un valor con la tarifa indicada: valor 11.900 al 19 % -> base 10.000 e IVA 1.900
+export const ivaIncluido = (valor, tarifa) => (tarifa ? Math.round(valor - valor / (1 + tarifa / 100)) : 0);
+
+// Base e IVA de un documento, agrupados por tarifa (los precios incluyen el IVA)
+export function impuestosDe(documento) {
+  const porTarifa = new Map();
+  documento.items.forEach((item) => {
+    const tarifa = item.iva ?? buscarProducto(item.productoId)?.iva ?? 0;
+    const valor = item.cantidad * item.valorUnitario;
+    const anterior = porTarifa.get(tarifa) ?? { tarifa, base: 0, iva: 0 };
+    const iva = ivaIncluido(valor, tarifa);
+    anterior.iva += iva;
+    anterior.base += valor - iva;
+    porTarifa.set(tarifa, anterior);
+  });
+  return [...porTarifa.values()].sort((a, b) => a.tarifa - b.tarifa);
 }
 
 // --- Documentos sin factura: remisiones y cotizaciones ---------------------------------------------------
@@ -89,8 +110,16 @@ export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo'
     referencia: buscarProducto(productoId)?.referencia ?? '',
     cantidad,
     valorUnitario,
+    iva: buscarProducto(productoId)?.iva ?? 0,
   }));
   const total = items.reduce((acumulado, item) => acumulado + item.cantidad * item.valorUnitario, 0);
+  // A crédito solo hasta el cupo del cliente
+  if (tipo === 'factura' && metodo === METODO_CREDITO) {
+    if (!registrado.limiteCredito) throw new Error(`${registrado.nombre} no tiene cupo de crédito: asígnalo en Clientes`);
+    if (total > cupoDisponible(registrado)) {
+      throw new Error(`La venta supera el cupo de crédito de ${registrado.nombre}: disponible ${aPesos(cupoDisponible(registrado))}`);
+    }
+  }
   const ahora = new Date();
   const documento = {
     tipo,
@@ -98,6 +127,7 @@ export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo'
     cliente: nombreCliente || 'Cliente sin nombre',
     clienteId: registrado?.id ?? '',
     usuario: nombreDeUsuario(),
+    usuarioCorreo: usuarioActual()?.correo ?? '',
     observaciones: exigirTexto(observaciones, 'las observaciones', { obligatorio: false, maximo: LIMITES.textoLargo }),
     items,
     total,
@@ -106,8 +136,10 @@ export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo'
   if (tipo !== 'cotizacion') documento.documentoOrigen = documentoOrigen;
   if (tipo === 'cotizacion') {
     documento.vigenciaHasta = new Date(ahora.getTime() + DIAS_VIGENCIA_COTIZACION * 86_400_000).toISOString();
+    documento.etapa = 'enviada';
   } else if (tipo === 'factura') {
     documento.metodo = metodo;
+    if (metodo === METODO_CREDITO) documento.plazoDias = registrado.plazoDias ?? 30;
     // En efectivo se puede escribir con cuánto paga el cliente; la devuelta es la diferencia
     const pagaCon = metodo === 'Efectivo' && recibido ? exigirEntero(recibido, 'el monto recibido', { minimo: 0 }) : total;
     if (pagaCon < total) throw new Error('El monto recibido no cubre el total de la venta');
@@ -158,7 +190,10 @@ export function registrarVenta(datos) {
     if (registro.tipo === 'remision') moverStock(registro.items, 1);
     registrarAuditoria('ventas', `${etiqueta} registrada`, `${id} · ${registro.cliente} · $ ${registro.total}${desde}`);
   }
-  if (origen) origen.convertidoEn = id;
+  if (origen) {
+    origen.convertidoEn = id;
+    if (origen.tipo === 'cotizacion') origen.etapa = 'ganada';
+  }
   guardarEstado();
   return registro;
 }
@@ -173,6 +208,12 @@ export function anularDocumento(id, motivo) {
   if (documento.anulado) throw new Error(`${id} ya está anulado`);
   documento.anulado = true;
   documento.motivoAnulacion = motivoLimpio;
+  // Una cotización anulada es una oportunidad perdida con ese motivo
+  if (documento.tipo === 'cotizacion') {
+    documento.etapa = 'perdida';
+    documento.motivoPerdida = documento.motivoPerdida || 'Otro';
+    documento.detallePerdida = motivoLimpio;
+  }
   if (documento.tipo === 'remision') moverStock(documento.items, -1);
   registrarAuditoria('ventas', `${TIPOS_DOCUMENTO[documento.tipo].etiqueta} anulada`, `${id} · ${motivoLimpio}`);
   guardarEstado();

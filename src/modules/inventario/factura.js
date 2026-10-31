@@ -8,8 +8,10 @@ import { registrarFactura } from '../../services/inventario.service.js';
 import { mostrarComprobanteDeFactura } from '../../components/recibo/comprobantes.js';
 import { montarSelectorProductos } from '../../components/selector-productos/selector-productos.js';
 
+// Devuelve cargarOrden(orden): llena el panel con el proveedor y los productos de una orden de compra
 export function montarFactura(raiz, contexto, documento) {
   const lineas = [];
+  let ordenId = '';
   const cuerpo = buscar('#lineas-factura', raiz);
   const subtotal = (linea) => linea.cantidad * linea.costoUnitario;
 
@@ -67,11 +69,13 @@ export function montarFactura(raiz, contexto, documento) {
     try {
       const factura = registrarFactura({
         numero: buscar('#factura-numero', raiz).value,
-        proveedor: buscar('#factura-proveedor', raiz).value,
+        proveedorId: buscar('#factura-proveedor', raiz).value,
         fecha: buscar('#factura-fecha', raiz).value,
+        ordenId,
         lineas,
       });
-      contexto.aviso(`Factura ${factura.numero} registrada correctamente: inventario actualizado`);
+      contexto.aviso(`Factura ${factura.numero} registrada correctamente: inventario actualizado${factura.ordenId ? ` y orden ${factura.ordenId} recibida` : ''}`);
+      history.replaceState(null, '', location.pathname);
       contexto.redibujar();
       mostrarComprobanteDeFactura(factura);
     } catch (error) {
@@ -80,4 +84,15 @@ export function montarFactura(raiz, contexto, documento) {
   };
 
   pintarLineas();
+
+  return (orden) => {
+    ordenId = orden.id;
+    buscar('#factura-proveedor', raiz).value = orden.proveedorId;
+    buscar('#factura-proveedor', raiz).disabled = true;
+    lineas.length = 0;
+    orden.items.forEach((item) => lineas.push({ ...item }));
+    buscar('#aviso-orden', raiz).hidden = false;
+    buscar('#texto-orden', raiz).textContent = `Recibiendo la orden ${orden.id} de ${orden.proveedor}: revisa cantidades y costos según la factura y escribe su número.`;
+    pintarLineas();
+  };
 }

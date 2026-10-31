@@ -1,11 +1,21 @@
 <div id="principal">
   <h1>Registrar venta</h1>
-  <div class="texto-suave separacion-inferior">Elige el documento, busca escribiendo en la casilla debajo de cada columna (ID, referencia, producto, costo o stock) y selecciona el producto. Cantidad y valor unitario se escriben a mano.</div>
+  <div class="texto-suave separacion-inferior">Primero el cliente, luego el documento y los productos: busca escribiendo en la casilla debajo de cada columna (ID, referencia, producto, costo o stock). Cantidad y valor unitario se escriben a mano.</div>
 
   <div class="aviso-origen caja separacion-inferior" id="aviso-origen" hidden>
     <strong id="texto-origen"></strong>
     <div class="texto-suave" id="detalle-origen"></div>
   </div>
+
+  <section class="caja datos-cliente separacion-inferior" id="datos-cliente">
+    <div class="campo-cliente">
+      <label for="cliente">Cliente</label>
+      <input id="cliente" class="campo" list="lista-clientes" autocomplete="off" placeholder="Escribe el nombre · vacío = cliente sin nombre">
+      <datalist id="lista-clientes">{{{opcionesCliente}}}</datalist>
+      <div class="texto-suave">Enter pasa a la búsqueda de productos.</div>
+    </div>
+    <div class="ficha-cliente" id="ficha-cliente" aria-live="polite"></div>
+  </section>
 
   <div class="segmentado selector-tipo" role="group" aria-label="Tipo de documento">
     <button type="button" data-tipo="factura" aria-pressed="true">Factura de venta</button>
@@ -43,16 +53,10 @@
 
     <div class="texto-suave margen-superior" id="sin-lineas">Aún no hay productos en la venta. Busca arriba y elige uno.</div>
     <div class="total-venta"><span>Total</span><strong id="total-venta">$ 0</strong></div>
-    <div class="dos-campos">
-      <div>
-        <label for="cliente">Cliente</label>
-        <input id="cliente" class="campo" list="lista-clientes" autocomplete="off" placeholder="Cliente sin nombre">
-        <datalist id="lista-clientes">{{{opcionesCliente}}}</datalist>
-      </div>
-      <div id="campo-metodo">
-        <label for="metodo">Método de pago</label>
-        <select id="metodo" class="campo">{{{opcionesMetodo}}}</select>
-      </div>
+    <div class="texto-suave iva-venta" id="iva-venta"></div>
+    <div id="campo-metodo">
+      <label for="metodo">Método de pago</label>
+      <select id="metodo" class="campo">{{{opcionesMetodo}}}</select>
     </div>
     <label for="observaciones">Observaciones</label>
     <input id="observaciones" class="campo" maxlength="300" autocomplete="off" placeholder="Opcional: dirección de entrega, condiciones, notas para el cliente">
@@ -107,6 +111,19 @@
     </div>
   </section>
 </div>
+
+<template id="ficha-registrado">
+  <div class="dato-cliente"><span>Código</span><strong>{{id}}</strong></div>
+  <div class="dato-cliente"><span>Teléfono</span><strong>{{telefono}}</strong></div>
+  <div class="dato-cliente"><span>Dirección</span><strong>{{direccion}}</strong></div>
+  <div class="dato-cliente {{claseDeuda}}"><span>Deuda</span><strong>{{deuda}}</strong></div>
+  <div class="dato-cliente"><span>Cupo disponible</span><strong>{{cupo}}</strong></div>
+</template>
+
+<template id="ficha-sin-registro">
+  <div class="texto-suave">{{texto}}</div>
+  {{{enlace}}}
+</template>
 
 <template id="opcion-cliente">
   <option value="{{nombre}}"></option>

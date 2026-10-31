@@ -2,7 +2,7 @@
   <div class="cabecera-vista">
     <div>
       <h1>Reportes</h1>
-      <div class="texto-suave">Ventas por rango de fechas, productos con poco stock y clientes con deuda.</div>
+      <div class="texto-suave">Ventas, clientes, embudo y vendedores por rango de fechas; cartera por antigüedad, clientes inactivos y productos bajo su stock mínimo.</div>
     </div>
     <button type="button" class="boton" id="descargar-ventas">Descargar ventas CSV</button>
   </div>
@@ -26,6 +26,41 @@
   </section>
 
   <div class="indicadores margen-superior-grande" id="indicadores"></div>
+  <div class="indicadores" id="indicadores-clientes"></div>
+
+  <div class="dos-columnas arriba">
+    <section class="caja">
+      <strong>Ventas por vendedor</strong>
+      <div class="desplazable">
+        <table>
+          <thead><tr><th>Vendedor</th><th>Facturas</th><th>Total neto</th></tr></thead>
+          <tbody id="por-vendedor"></tbody>
+        </table>
+      </div>
+    </section>
+    <section class="caja">
+      <strong>Clientes inactivos (más de 60 días sin comprar)</strong>
+      <div class="desplazable">
+        <table>
+          <thead><tr><th>Cliente</th><th>Última compra</th><th>Días</th></tr></thead>
+          <tbody id="inactivos"></tbody>
+        </table>
+      </div>
+      <div class="texto-suave margen-superior" id="sin-inactivos" hidden>Todos los clientes han comprado en los últimos 60 días.</div>
+    </section>
+  </div>
+
+  <section class="caja margen-superior-grande">
+    <strong>Cartera por antigüedad</strong>
+    <div class="texto-suave">Saldo de las facturas a crédito según los días de vencidas. Los abonos se aplican primero a la factura más antigua.</div>
+    <div class="desplazable">
+      <table>
+        <thead><tr><th>Cliente</th><th>Por vencer</th><th>1 a 30 días</th><th>31 a 60 días</th><th>61 a 90 días</th><th>Más de 90 días</th><th>Total</th></tr></thead>
+        <tbody id="cartera"></tbody>
+      </table>
+    </div>
+    <div class="texto-suave margen-superior" id="sin-cartera" hidden>No hay cartera pendiente.</div>
+  </section>
 
   <div class="dos-columnas arriba">
     <section class="caja">
@@ -51,10 +86,10 @@
 
   <div class="dos-columnas arriba">
     <section class="caja">
-      <strong>Stock bajo (5 unidades o menos)</strong>
+      <strong>Stock bajo (en o por debajo del mínimo)</strong>
       <div class="desplazable">
         <table>
-          <thead><tr><th>ID</th><th>Producto</th><th>Stock</th></tr></thead>
+          <thead><tr><th>ID</th><th>Producto</th><th>Mínimo</th><th>Stock</th></tr></thead>
           <tbody id="stock-bajo"></tbody>
         </table>
       </div>
@@ -86,7 +121,19 @@
 </template>
 
 <template id="fila-stock-bajo">
-  <tr><td>{{id}}</td><td>{{nombre}}</td><td>{{existencias}}</td></tr>
+  <tr><td>{{id}}</td><td>{{nombre}}</td><td>{{stockMinimo}}</td><td>{{existencias}}</td></tr>
+</template>
+
+<template id="fila-vendedor">
+  <tr><td>{{vendedor}}</td><td>{{cantidad}}</td><td>{{total}}</td></tr>
+</template>
+
+<template id="fila-inactivo">
+  <tr><td><a href="clientes.html?ficha={{id}}">{{nombre}}</a></td><td>{{ultima}}</td><td>{{dias}}</td></tr>
+</template>
+
+<template id="fila-cartera">
+  <tr class="{{clase}}"><td>{{nombre}}</td><td>{{corriente}}</td><td>{{d30}}</td><td>{{d60}}</td><td>{{d90}}</td><td>{{mas90}}</td><td><strong>{{total}}</strong></td></tr>
 </template>
 
 <template id="fila-deuda">

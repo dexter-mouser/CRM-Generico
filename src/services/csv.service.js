@@ -1,8 +1,9 @@
 // Inventario <-> CSV. Es un documento de texto que abre y importa directamente cualquier hoja de cálculo del navegador.
-// Columnas: ID, Referencia, Producto, Costo, Stock (el stock admite negativos).
+// Columnas: ID, Referencia, Producto, Categoría, Costo, Precio, IVA, Stock mínimo, Stock (el stock admite negativos).
+// Al importar, las columnas que no traiga el archivo conservan el valor actual del producto.
 import { LIMITES } from '../core/validacion.js';
 
-const COLUMNAS = ['ID', 'Referencia', 'Producto', 'Costo', 'Stock'];
+const COLUMNAS = ['ID', 'Referencia', 'Producto', 'Categoría', 'Costo', 'Precio', 'IVA', 'Stock mínimo', 'Stock'];
 
 const escapar = (valor) => {
   const texto = String(valor ?? '');
@@ -10,7 +11,8 @@ const escapar = (valor) => {
 };
 
 export function descargarInventarioCsv(productos) {
-  const filas = productos.map((producto) => [producto.id, producto.referencia, producto.nombre, producto.costo, producto.existencias]);
+  const filas = productos.map((producto) => [producto.id, producto.referencia, producto.nombre, producto.categoria ?? '', producto.costo,
+    producto.precio ?? 0, producto.iva ?? 0, producto.stockMinimo ?? 0, producto.existencias]);
   const contenido = [COLUMNAS, ...filas].map((fila) => fila.map(escapar).join(',')).join('\r\n');
   const enlace = document.createElement('a');
   enlace.href = URL.createObjectURL(new Blob(['\ufeff' + contenido], { type: 'text/csv;charset=utf-8' }));
@@ -53,26 +55,34 @@ export async function leerInventarioCsv(archivo) {
   const primeraLinea = texto.split(/\r?\n/)[0] ?? '';
   const delimitador = (primeraLinea.match(/;/g) || []).length > (primeraLinea.match(/,/g) || []).length ? ';' : ',';
   const [encabezado = [], ...filas] = separarFilas(texto, delimitador);
-  const columna = (...nombres) => encabezado.findIndex((titulo) => nombres.includes(titulo.trim().toLowerCase()));
+  const sinTildes = (texto) => texto.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const columna = (...nombres) => encabezado.findIndex((titulo) => nombres.includes(sinTildes(titulo)));
 
   const posiciones = {
-    id: columna('id'), referencia: columna('referencia'), nombre: columna('producto', 'nombre'),
-    costo: columna('costo'), existencias: columna('stock', 'existencias'),
+    id: columna('id'), referencia: columna('referencia'), nombre: columna('producto', 'nombre'), categoria: columna('categoria'),
+    costo: columna('costo'), precio: columna('precio', 'precio de venta'), iva: columna('iva'),
+    stockMinimo: columna('stock minimo', 'minimo'), existencias: columna('stock', 'existencias'),
   };
   if (posiciones.nombre < 0) throw new Error('El archivo debe tener la columna Producto');
 
-  const leer = (fila, clave) => (posiciones[clave] >= 0 ? (fila[posiciones[clave]] ?? '').trim() : '');
+  // Una columna que no existe en el archivo queda sin definir para conservar el valor actual
+  const leer = (fila, clave) => (posiciones[clave] >= 0 ? (fila[posiciones[clave]] ?? '').trim() : undefined);
   // Un valor que no es un entero se deja como NaN para que la validación avise en qué fila está el error
   const aEntero = (texto) => {
-    const limpio = texto.replace(/[\s$.]/g, '');
+    if (texto === undefined) return undefined;
+    const limpio = texto.replace(/[\s$.%]/g, '');
     if (limpio === '') return 0;
     return /^-?\d+$/.test(limpio) ? Number(limpio) : NaN;
   };
   return filas.map((fila) => ({
-    id: leer(fila, 'id'),
+    id: leer(fila, 'id') ?? '',
     referencia: leer(fila, 'referencia'),
     nombre: leer(fila, 'nombre'),
+    categoria: leer(fila, 'categoria'),
     costo: aEntero(leer(fila, 'costo')),
+    precio: aEntero(leer(fila, 'precio')),
+    iva: aEntero(leer(fila, 'iva')),
+    stockMinimo: aEntero(leer(fila, 'stockMinimo')),
     existencias: aEntero(leer(fila, 'existencias')),
   }));
 }

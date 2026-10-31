@@ -1,6 +1,6 @@
 <div id="principal">
   <h1>Inventario</h1>
-  <div class="texto-suave separacion-inferior">Cada producto tiene ID, referencia, nombre, costo y stock (puede quedar en negativo). Los números se escriben a mano.</div>
+  <div class="texto-suave separacion-inferior">Cada producto tiene ID, referencia, nombre, categoría, costo, precio de venta (con IVA incluido), tarifa de IVA, stock mínimo y stock (puede quedar en negativo). Los números se escriben a mano. "Kardex" muestra cada entrada y salida.</div>
   <div class="acciones">
     <button type="button" class="boton primario" id="abrir-factura" aria-expanded="false" aria-controls="panel-factura">Ingresar factura</button>
     <button type="button" class="boton" id="descargar-csv">Descargar CSV</button>
@@ -9,11 +9,12 @@
 
   <section class="caja separacion-inferior" id="panel-factura" aria-label="Ingresar factura de compra" hidden>
     <strong>Ingresar factura de compra</strong>
-    <div class="texto-suave">Suma las cantidades al stock y deja el costo de la factura como costo de cada producto. Si el producto es nuevo, créalo antes en "Nuevo producto".</div>
+    <div class="texto-suave">Suma las cantidades al stock y deja el costo de la factura como costo de cada producto. Si el producto es nuevo, créalo antes en "Nuevo producto"; si el proveedor es nuevo, créalo en Proveedores.</div>
+    <div class="aviso-origen caja margen-superior" id="aviso-orden" hidden><strong id="texto-orden"></strong></div>
     <div class="dos-columnas arriba margen-superior">
       <div class="columna-angosta">
         <label for="factura-proveedor">Proveedor</label>
-        <input id="factura-proveedor" class="campo" autocomplete="off">
+        <select id="factura-proveedor" class="campo">{{{opcionesProveedor}}}</select>
         <label for="factura-numero">N° de factura</label>
         <input id="factura-numero" class="campo" autocomplete="off">
         <label for="factura-fecha">Fecha</label>
@@ -51,14 +52,50 @@
       <input id="nuevo-referencia" class="campo" autocomplete="off">
       <label for="nuevo-nombre">Nombre</label>
       <input id="nuevo-nombre" class="campo" autocomplete="off">
+      <label for="nuevo-categoria">Categoría</label>
+      <input id="nuevo-categoria" class="campo" list="lista-categorias" autocomplete="off">
+      <datalist id="lista-categorias">{{{opcionesCategoria}}}</datalist>
       <label for="nuevo-costo">Costo (COP)</label>
       <input id="nuevo-costo" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
+      <label for="nuevo-precio">Precio de venta con IVA (COP)</label>
+      <input id="nuevo-precio" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
+      <label for="nuevo-iva">IVA</label>
+      <select id="nuevo-iva" class="campo">{{{opcionesIva}}}</select>
+      <label for="nuevo-minimo">Stock mínimo</label>
+      <input id="nuevo-minimo" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
       <label for="nuevo-stock">Stock inicial</label>
       <input id="nuevo-stock" class="campo" data-numero="entero-negativo" autocomplete="off" placeholder="0">
       <button type="button" class="boton primario ancho" id="agregar-producto">Agregar producto</button>
     </div>
   </div>
+
+  <section class="caja margen-superior-grande" id="panel-kardex" aria-labelledby="titulo-kardex" hidden>
+    <div class="cabecera-vista">
+      <div>
+        <h2 id="titulo-kardex"></h2>
+        <div class="texto-suave">Entradas (+) y salidas (−) del producto con el saldo después de cada movimiento.</div>
+      </div>
+      <button type="button" class="boton" id="cerrar-kardex">Cerrar kardex</button>
+    </div>
+    <div id="cuadricula-kardex"></div>
+  </section>
 </div>
+
+<template id="campo-producto-iva">
+  <select class="campo" data-campo="iva" data-posicion="{{posicion}}" aria-label="IVA de {{nombre}}">{{{opciones}}}</select>
+</template>
+
+<template id="opcion-iva">
+  <option value="{{valor}}" {{seleccion}}>{{valor}} %</option>
+</template>
+
+<template id="opcion">
+  <option value="{{valor}}">{{texto}}</option>
+</template>
+
+<template id="acciones-producto">
+  <button type="button" class="boton" data-kardex="{{id}}">Kardex</button>
+</template>
 
 <template id="campo-producto-texto">
   <input class="campo" data-campo="{{campo}}" data-posicion="{{posicion}}" aria-label="{{etiqueta}} de {{nombre}}" value="{{valor}}">

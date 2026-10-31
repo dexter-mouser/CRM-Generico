@@ -23,6 +23,7 @@ const ACCIONES_POR_MODULO = {
   reportes: ['ver'],
   contabilidad: ['ver', 'crear', 'reabrir'],
   ajustes: ['ver', 'editar'],
+  embudo: ['ver', 'editar'],
 };
 
 export const MODULOS_PERMISOS = MENU.map((opcion) => ({

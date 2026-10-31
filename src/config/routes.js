@@ -12,5 +12,8 @@ export const rutas = {
   reportes: () => import('../modules/reportes/reportes.js'),
   roles: () => import('../modules/roles/roles.js'),
   inventario: () => import('../modules/inventario/inventario.js'),
+  seguimiento: () => import('../modules/seguimiento/seguimiento.js'),
+  embudo: () => import('../modules/embudo/embudo.js'),
+  proveedores: () => import('../modules/proveedores/proveedores.js'),
   placeholder: () => import('../modules/placeholder/placeholder.js'),
 };

@@ -3,8 +3,10 @@ import { estado } from '../core/store.js';
 import { aFechaLocal } from '../core/format.js';
 import { clientesConDeuda, deudaDeCliente } from './clientes.service.js';
 import { estaAnulada } from './ventas.service.js';
+import { productosBajoMinimo } from './inventario.service.js';
+import { cotizaciones, resumenDelEmbudo } from './embudo.service.js';
 
-const LIMITE_STOCK_BAJO = 5;
+const DIAS_INACTIVIDAD = 60;
 
 // Ventas cuya fecha local está entre "desde" y "hasta" (ambas incluidas, formato AAAA-MM-DD)
 export const ventasEntre = (desde, hasta) =>
@@ -73,9 +75,65 @@ export function reporteDeVentas(desde, hasta) {
   };
 }
 
-export const productosConStockBajo = () =>
-  estado.productos.filter((producto) => producto.existencias <= LIMITE_STOCK_BAJO)
-    .sort((a, b) => a.existencias - b.existencias);
+// Productos en o por debajo de su stock mínimo
+export const productosConStockBajo = productosBajoMinimo;
+
+// --- Indicadores de clientes ---------------------------------------------------------------------------------
+// Primera compra de cada cliente registrado
+const primeraCompra = () => {
+  const primeras = new Map();
+  estado.ventas.filter((venta) => venta.clienteId).forEach((venta) => {
+    const dia = aFechaLocal(venta.fecha);
+    if (!primeras.has(venta.clienteId) || dia < primeras.get(venta.clienteId)) primeras.set(venta.clienteId, dia);
+  });
+  return primeras;
+};
+
+// En el rango: clientes que compraron por primera vez (nuevos) y los que ya habían comprado antes (recurrentes)
+export function clientesNuevosYRecurrentes(desde, hasta) {
+  const primeras = primeraCompra();
+  const compradores = new Set(ventasEntre(desde, hasta).filter((venta) => venta.clienteId).map((venta) => venta.clienteId));
+  let nuevos = 0, recurrentes = 0;
+  compradores.forEach((id) => { if (primeras.get(id) >= desde) nuevos++; else recurrentes++; });
+  return { nuevos, recurrentes };
+}
+
+// Clientes que compraron alguna vez pero llevan más de 60 días sin comprar
+export function clientesInactivos(ahora = Date.now()) {
+  return estado.clientes.map((cliente) => {
+    const ventas = estado.ventas.filter((venta) => venta.clienteId === cliente.id);
+    if (!ventas.length) return null;
+    const ultima = ventas.reduce((mayor, venta) => (venta.fecha > mayor ? venta.fecha : mayor), '');
+    const dias = Math.floor((ahora - new Date(ultima).getTime()) / 86_400_000);
+    return dias > DIAS_INACTIVIDAD ? { id: cliente.id, nombre: cliente.nombre, ultima, dias } : null;
+  }).filter(Boolean).sort((a, b) => b.dias - a.dias);
+}
+
+// Cotizaciones creadas en el rango y cuántas se convirtieron (ganadas sobre ganadas + perdidas)
+export function conversionDeCotizaciones(desde, hasta) {
+  const delRango = cotizaciones().filter((cotizacion) => {
+    const dia = aFechaLocal(cotizacion.fecha);
+    return dia >= desde && dia <= hasta;
+  });
+  return { cantidad: delRango.length, ...resumenDelEmbudo(delRango) };
+}
+
+// Ventas netas por vendedor (quien registró la factura) en el rango
+export function ventasPorVendedor(desde, hasta) {
+  const porVendedor = new Map();
+  ventasEntre(desde, hasta).forEach((venta) => {
+    const actual = porVendedor.get(venta.usuario) ?? { vendedor: venta.usuario || 'Sin registro', cantidad: 0, total: 0 };
+    actual.cantidad += estaAnulada(venta) ? 0 : 1;
+    actual.total += venta.total;
+    porVendedor.set(venta.usuario, actual);
+  });
+  devolucionesEntre(desde, hasta).forEach((nota) => {
+    const venta = estado.ventas.find((candidata) => candidata.id === nota.ventaId);
+    const actual = venta && porVendedor.get(venta.usuario);
+    if (actual) actual.total -= nota.total;
+  });
+  return [...porVendedor.values()].sort((a, b) => b.total - a.total);
+}
 
 export const deudasDeClientes = () =>
   clientesConDeuda().map((cliente) => ({ nombre: cliente.nombre, deuda: deudaDeCliente(cliente) }))

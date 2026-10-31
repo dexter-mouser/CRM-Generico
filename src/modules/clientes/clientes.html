@@ -2,24 +2,38 @@
   <div class="cabecera-vista">
     <div>
       <h1>Clientes</h1>
-      <div class="texto-suave">Datos de contacto y deuda de cada cliente. La deuda sale de las ventas a Crédito menos las devoluciones y los abonos de Pagos.</div>
+      <div class="texto-suave">Ficha de cada cliente con su documento, contacto, etiquetas, cupo de crédito e historial. La deuda sale de las ventas a Crédito menos las devoluciones y los abonos.</div>
     </div>
     <button type="button" class="boton primario" id="nuevo-cliente">Nuevo cliente</button>
   </div>
 
   <section class="caja formulario-en-linea" id="formulario-cliente" aria-labelledby="titulo-formulario-cliente" hidden>
     <strong id="titulo-formulario-cliente">Nuevo cliente</strong>
-    <div class="dos-campos">
+    <div class="tres-campos">
       <div>
-        <label for="cliente-nombre">Nombre</label>
+        <label for="cliente-nombre">Nombre o razón social</label>
         <input id="cliente-nombre" class="campo" autocomplete="off">
       </div>
+      <div>
+        <label for="cliente-tipoPersona">Tipo de persona</label>
+        <select id="cliente-tipoPersona" class="campo">{{{opcionesPersona}}}</select>
+      </div>
+      <div class="campo-documento">
+        <div>
+          <label for="cliente-tipoDocumento">Documento</label>
+          <select id="cliente-tipoDocumento" class="campo">{{{opcionesDocumento}}}</select>
+        </div>
+        <div>
+          <label for="cliente-documento">Número</label>
+          <input id="cliente-documento" class="campo" autocomplete="off" placeholder="Sin puntos">
+        </div>
+      </div>
+    </div>
+    <div class="tres-campos">
       <div>
         <label for="cliente-telefono">Teléfono</label>
         <input id="cliente-telefono" class="campo" inputmode="tel" autocomplete="off">
       </div>
-    </div>
-    <div class="dos-campos">
       <div>
         <label for="cliente-correo">Correo</label>
         <input id="cliente-correo" class="campo" type="email" autocomplete="off">
@@ -29,6 +43,22 @@
         <input id="cliente-direccion" class="campo" autocomplete="off">
       </div>
     </div>
+    <div class="tres-campos">
+      <div>
+        <label for="cliente-etiquetas">Etiquetas</label>
+        <input id="cliente-etiquetas" class="campo" list="lista-etiquetas" autocomplete="off" placeholder="Separadas por coma: Mayorista, Frecuente">
+        <datalist id="lista-etiquetas">{{{opcionesEtiquetas}}}</datalist>
+      </div>
+      <div>
+        <label for="cliente-limiteCredito">Cupo de crédito (COP)</label>
+        <input id="cliente-limiteCredito" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0 = sin crédito">
+      </div>
+      <div>
+        <label for="cliente-plazoDias">Plazo de pago (días)</label>
+        <input id="cliente-plazoDias" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="30">
+      </div>
+    </div>
+    <label class="marca-check"><input type="checkbox" id="cliente-autorizaDatos"> El cliente autoriza el tratamiento de sus datos personales (Ley 1581 de 2012)</label>
     <div class="acciones-fila margen-superior-grande">
       <button type="button" class="boton primario" id="guardar-cliente">Guardar cliente</button>
       <button type="button" class="boton" id="cancelar-cliente">Cancelar</button>
@@ -45,15 +75,59 @@
     <div id="cuadricula-clientes"></div>
   </section>
 
-  <section class="caja margen-superior-grande" id="historial-cliente" aria-labelledby="titulo-historial" hidden>
-    <strong id="titulo-historial"></strong>
-    <div id="cuadricula-compras"></div>
+  <section class="caja margen-superior-grande ficha-cliente-completa" id="ficha" aria-labelledby="titulo-ficha" hidden>
+    <div class="cabecera-vista">
+      <div>
+        <h2 id="titulo-ficha"></h2>
+        <div class="texto-suave" id="subtitulo-ficha"></div>
+        <div class="etiquetas-cliente" id="etiquetas-ficha"></div>
+      </div>
+      <button type="button" class="boton" id="cerrar-ficha">Cerrar ficha</button>
+    </div>
+    <div class="indicadores" id="indicadores-ficha"></div>
+
+    <div class="pestanas-ficha segmentado" role="tablist" aria-label="Secciones de la ficha">
+      <button type="button" role="tab" data-seccion="actividades" aria-pressed="true">Seguimiento</button>
+      <button type="button" role="tab" data-seccion="compras" aria-pressed="false">Compras</button>
+      <button type="button" role="tab" data-seccion="cartera" aria-pressed="false">Cartera</button>
+      <button type="button" role="tab" data-seccion="documentos" aria-pressed="false">Cotizaciones y remisiones</button>
+      <button type="button" role="tab" data-seccion="pagos" aria-pressed="false">Abonos</button>
+      <button type="button" role="tab" data-seccion="devoluciones" aria-pressed="false">Devoluciones</button>
+    </div>
+
+    <div data-panel="actividades">
+      <div class="nueva-actividad" id="nueva-actividad" hidden>
+        <div class="tres-campos">
+          <div>
+            <label for="actividad-tipo">Tipo</label>
+            <select id="actividad-tipo" class="campo">{{{opcionesActividad}}}</select>
+          </div>
+          <div>
+            <label for="actividad-vence">Fecha de la tarea</label>
+            <input id="actividad-vence" class="campo" type="date" value="{{hoy}}" disabled>
+          </div>
+          <div>
+            <label for="actividad-responsable">Responsable</label>
+            <select id="actividad-responsable" class="campo">{{{opcionesResponsable}}}</select>
+          </div>
+        </div>
+        <label for="actividad-descripcion">Descripción</label>
+        <input id="actividad-descripcion" class="campo" maxlength="300" autocomplete="off" placeholder="Qué se habló o qué hay que hacer">
+        <button type="button" class="boton primario margen-superior" id="registrar-actividad">Registrar</button>
+      </div>
+      <div id="cuadricula-actividades"></div>
+    </div>
+    <div data-panel="compras" hidden><div id="cuadricula-compras"></div></div>
+    <div data-panel="cartera" hidden><div id="cuadricula-cartera"></div></div>
+    <div data-panel="documentos" hidden><div id="cuadricula-documentos-cliente"></div></div>
+    <div data-panel="pagos" hidden><div id="cuadricula-abonos"></div></div>
+    <div data-panel="devoluciones" hidden><div id="cuadricula-devoluciones-cliente"></div></div>
   </section>
 </div>
 
 <template id="acciones-cliente">
   <div class="acciones-fila">
-    <button type="button" class="boton" data-historial="{{id}}">Historial</button>
+    <button type="button" class="boton" data-ficha="{{id}}">Ficha</button>
     <button type="button" class="boton" data-editar="{{id}}">Editar</button>
     <button type="button" class="boton peligro" data-eliminar="{{id}}">Eliminar</button>
   </div>
@@ -61,4 +135,20 @@
 
 <template id="deuda-con-saldo">
   <span class="insignia">{{valor}}</span>
+</template>
+
+<template id="etiqueta-cliente">
+  <span class="etiqueta-cliente">{{texto}}</span>
+</template>
+
+<template id="indicador">
+  <div class="caja indicador"><span class="texto-suave">{{etiqueta}}</span><strong class="{{clase}}">{{valor}}</strong></div>
+</template>
+
+<template id="accion-tarea">
+  <button type="button" class="boton" data-completar="{{id}}">Marcar hecha</button>
+</template>
+
+<template id="opcion">
+  <option value="{{valor}}">{{texto}}</option>
 </template>

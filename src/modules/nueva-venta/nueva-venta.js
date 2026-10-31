@@ -5,7 +5,9 @@ import { leerEntero, activarCamposNumericos } from '../../core/numeros.js';
 import { icono, ICONO_PAPELERA } from '../../core/iconos.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import { buscarProductoPorCodigo } from '../../services/inventario.service.js';
-import { armarVenta, registrarVenta, ultimoValorDeVenta, buscarDocumento, documentoPendiente, TIPOS_DOCUMENTO, DESTINOS_POSIBLES } from '../../services/ventas.service.js';
+import { armarVenta, registrarVenta, ultimoValorDeVenta, buscarDocumento, documentoPendiente, buscarClientePorNombre, impuestosDe, TIPOS_DOCUMENTO, DESTINOS_POSIBLES } from '../../services/ventas.service.js';
+import { deudaDeCliente, cupoDisponible } from '../../services/clientes.service.js';
+import { puede } from '../../core/autorizacion.js';
 import { cargarPlantillasBuscador, montarBuscadorCuadricula } from '../../components/buscador-cuadricula/buscador-cuadricula.js';
 import { mostrarReciboDeVenta as mostrarRecibo } from '../../components/recibo/comprobantes.js';
 
@@ -106,8 +108,38 @@ export function montar(raiz, contexto) {
     elemento.classList.add('rebote');
   };
 
+  // Ficha del cliente: si está registrado muestra sus datos y su deuda; si no, cómo queda la venta
+  const pintarCliente = () => {
+    const escrito = buscar('#cliente', raiz).value.trim();
+    const registrado = escrito ? buscarClientePorNombre(escrito) : null;
+    const ficha = buscar('#ficha-cliente', raiz);
+    if (registrado) {
+      const deuda = deudaDeCliente(registrado);
+      ficha.innerHTML = repetir(documento, 'ficha-registrado', [{
+        id: registrado.id,
+        telefono: registrado.telefono || '—',
+        direccion: registrado.direccion || '—',
+        deuda: aPesos(deuda),
+        claseDeuda: deuda > 0 ? 'con-deuda' : '',
+        cupo: registrado.limiteCredito ? aPesos(cupoDisponible(registrado)) : 'Sin crédito',
+      }]);
+      return;
+    }
+    const enlace = escrito && puede('clientes', 'crear') ? '<a class="boton" href="clientes.html">Registrar cliente</a>' : '';
+    ficha.innerHTML = repetir(documento, 'ficha-sin-registro', [{
+      texto: escrito
+        ? `«${escrito}» no está registrado: la venta queda a ese nombre y no se puede vender a Crédito.`
+        : 'Sin cliente: la venta queda como «Cliente sin nombre».',
+      enlace,
+    }]);
+  };
+
   const pintarTotal = () => {
     buscar('#total-venta', raiz).textContent = aPesos(totalActual());
+    const impuestos = impuestosDe({ items: lineas }).filter((grupo) => grupo.tarifa);
+    buscar('#iva-venta', raiz).textContent = impuestos.length
+      ? `IVA incluido: ${impuestos.map((grupo) => `${grupo.tarifa} % ${aPesos(grupo.iva)}`).join(' · ')}`
+      : '';
     pintarPago();
   };
 
@@ -211,6 +243,7 @@ export function montar(raiz, contexto) {
       ventaRegistrada = registrarVenta(datosDeVenta());
       const etiqueta = TIPOS_DOCUMENTO[ventaRegistrada.tipo].etiqueta;
       buscar('#cuadricula-venta', raiz).hidden = true;
+      buscar('#datos-cliente', raiz).hidden = true;
       buscar('#venta-registrada', raiz).hidden = false;
       buscar('#titulo-registrada', raiz).textContent = `${etiqueta} ${ventaRegistrada.id} registrada correctamente`;
       const devuelta = ventaRegistrada.devuelta ? ` · Devuelta ${aPesos(ventaRegistrada.devuelta)}` : '';
@@ -227,6 +260,14 @@ export function montar(raiz, contexto) {
   buscar('#otra-venta', raiz).onclick = () => contexto.redibujar();
 
   buscarTodos('[data-tipo]', raiz).forEach((boton) => { boton.onclick = () => elegirTipo(boton.dataset.tipo); });
+  const campoCliente = buscar('#cliente', raiz);
+  campoCliente.addEventListener('input', pintarCliente);
+  // Enter en el cliente pasa a la búsqueda de productos
+  campoCliente.addEventListener('keydown', (evento) => {
+    if (evento.key !== 'Enter') return;
+    evento.preventDefault();
+    buscar('[data-filtro="id"]', raiz).focus();
+  });
   buscar('#metodo', raiz).onchange = pintarPago;
   const zonaEfectivo = buscar('#pago-efectivo', raiz);
   // Clic: suma la pieza. Clic derecho: quita una de esa denominación
@@ -266,7 +307,7 @@ export function montar(raiz, contexto) {
   // La cotización se pasa a remisión o a factura; la remisión, solo a factura. El nuevo documento conserva el número.
   const parametros = new URLSearchParams(location.search);
   const origen = buscarDocumento(parametros.get('documento') ?? '');
-  let tipoInicial = 'factura';
+  let tipoInicial = TIPOS_DOCUMENTO[parametros.get('tipo')] && !parametros.get('documento') ? parametros.get('tipo') : 'factura';
   if (origen && documentoPendiente(origen)) {
     const destinos = DESTINOS_POSIBLES[origen.tipo];
     tipoInicial = destinos.includes(parametros.get('tipo')) ? parametros.get('tipo') : destinos[0];
@@ -289,6 +330,9 @@ export function montar(raiz, contexto) {
 
   elegirTipo(tipoInicial);
   pintarLineas();
+  pintarCliente();
+  // El cliente es lo primero que se llena (si viene de otro documento ya está escrito y se pasa a los productos)
+  (origen && documentoPendiente(origen) ? buscar('[data-filtro="id"]', raiz) : campoCliente).focus();
 }
 
 // Atajos de teclado y lector de códigos de barras de Registrar venta.

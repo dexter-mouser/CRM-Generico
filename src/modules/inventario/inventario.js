@@ -4,13 +4,15 @@ import { aPesos, aFecha, fechaDeHoy } from '../../core/format.js';
 import { leerEntero, activarCamposNumericos } from '../../core/numeros.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
-import { agregarProducto, actualizarProducto, importarProductos } from '../../services/inventario.service.js';
+import { agregarProducto, actualizarProducto, importarProductos, kardexDeProducto, buscarProductoPorId, categorias } from '../../services/inventario.service.js';
+import { TARIFAS_IVA } from '../../core/validacion.js';
+import { buscarOrden } from '../../services/proveedores.service.js';
 import { descargarInventarioCsv, leerInventarioCsv } from '../../services/csv.service.js';
 import { dibujarSelector } from '../../components/selector-productos/selector-productos.js';
 import { montarFactura } from './factura.js';
 import { mostrarComprobanteDeFactura } from '../../components/recibo/comprobantes.js';
 
-const CAMPOS_NUMERICOS = ['costo', 'existencias'];
+const CAMPOS_NUMERICOS = ['costo', 'precio', 'stockMinimo', 'existencias'];
 let documento;
 let plantillasCuadricula;
 
@@ -20,6 +22,9 @@ export async function dibujar() {
   return seccion(documento, 'principal', {
     hoy: fechaDeHoy(),
     selector: await dibujarSelector(),
+    opcionesProveedor: repetir(documento, 'opcion', estado.proveedores.map((proveedor) => ({ valor: proveedor.id, texto: `${proveedor.nombre} · ${proveedor.id}` }))),
+    opcionesCategoria: repetir(documento, 'opcion', categorias().map((categoria) => ({ valor: categoria, texto: categoria }))),
+    opcionesIva: repetir(documento, 'opcion-iva', TARIFAS_IVA.map((valor) => ({ valor, seleccion: valor === 19 ? 'selected' : '' }))),
   });
 }
 
@@ -29,26 +34,43 @@ export function montar(raiz, contexto) {
   buscar('.vista', raiz).addEventListener('click', (evento) => {
     const boton = evento.target.closest('[data-factura]');
     if (boton) mostrarComprobanteDeFactura(estado.facturas[Number(boton.dataset.factura)]);
+    const kardex = evento.target.closest('[data-kardex]');
+    if (kardex) abrirKardex(kardex.dataset.kardex);
   });
 
   // Cuadrícula de productos con edición en línea (el ID no se edita porque lo usan las ventas y facturas)
   const campoDe = (producto, posicion, campo, etiqueta) => repetir(documento,
     CAMPOS_NUMERICOS.includes(campo) ? 'campo-producto-numero' : 'campo-producto-texto',
-    [{ campo, posicion, etiqueta, nombre: producto.nombre, valor: producto[campo], tipo: campo === 'existencias' ? 'entero-negativo' : 'entero' }]);
+    [{ campo, posicion, etiqueta, nombre: producto.nombre, valor: producto[campo] ?? '', tipo: campo === 'existencias' ? 'entero-negativo' : 'entero' }]);
+  const campoIva = (producto, posicion) => repetir(documento, 'campo-producto-iva', [{
+    posicion,
+    nombre: producto.nombre,
+    opciones: repetir(documento, 'opcion-iva', TARIFAS_IVA.map((valor) => ({ valor, seleccion: valor === producto.iva ? 'selected' : '' }))),
+  }]);
 
   montarCuadricula(buscar('#cuadricula-productos', raiz), {
     plantillas: plantillasCuadricula,
     titulo: 'Productos',
     vacio: 'Aún no hay productos. Agrega uno con "Nuevo producto".',
     columnas: [
-      { clave: 'id', titulo: 'ID', ancho: '84px' },
-      { clave: 'referencia', titulo: 'Referencia', ancho: '124px', html: (fila) => campoDe(fila.producto, fila.posicion, 'referencia', 'Referencia') },
+      { clave: 'id', titulo: 'ID', ancho: '60px' },
+      { clave: 'referencia', titulo: 'Referencia', ancho: '116px', html: (fila) => campoDe(fila.producto, fila.posicion, 'referencia', 'Referencia') },
       { clave: 'nombre', titulo: 'Producto', ancho: 'minmax(0, 1.6fr)', html: (fila) => campoDe(fila.producto, fila.posicion, 'nombre', 'Nombre') },
-      { clave: 'costo', titulo: 'Costo (COP)', ancho: '116px', html: (fila) => campoDe(fila.producto, fila.posicion, 'costo', 'Costo') },
-      { clave: 'existencias', titulo: 'Stock', ancho: '84px', html: (fila) => campoDe(fila.producto, fila.posicion, 'existencias', 'Stock') },
-      { clave: 'estado', titulo: 'Estado', ancho: '90px', html: (fila) => (fila.estado ? '<span class="insignia">Negativo</span>' : '') },
+      { clave: 'categoria', titulo: 'Categoría', ancho: '116px', html: (fila) => campoDe(fila.producto, fila.posicion, 'categoria', 'Categoría') },
+      { clave: 'costo', titulo: 'Costo', ancho: '100px', html: (fila) => campoDe(fila.producto, fila.posicion, 'costo', 'Costo') },
+      { clave: 'precio', titulo: 'Precio con IVA', ancho: '108px', html: (fila) => campoDe(fila.producto, fila.posicion, 'precio', 'Precio') },
+      { clave: 'iva', titulo: 'IVA', ancho: '84px', html: (fila) => campoIva(fila.producto, fila.posicion) },
+      { clave: 'stockMinimo', titulo: 'Mínimo', ancho: '76px', html: (fila) => campoDe(fila.producto, fila.posicion, 'stockMinimo', 'Stock mínimo') },
+      { clave: 'existencias', titulo: 'Stock', ancho: '76px', html: (fila) => campoDe(fila.producto, fila.posicion, 'existencias', 'Stock') },
+      { clave: 'estado', titulo: 'Estado', ancho: '96px', html: (fila) => (fila.estado ? `<span class="insignia">${fila.estado}</span>` : '') },
+      { clave: 'acciones', titulo: '', ancho: '96px', filtrable: false, html: (fila) => repetir(documento, 'acciones-producto', [{ id: fila.id }]) },
     ],
-    filas: estado.productos.map((producto, posicion) => ({ ...producto, producto, posicion, estado: producto.existencias < 0 ? 'Negativo' : '' })),
+    filas: estado.productos.map((producto, posicion) => ({
+      ...producto,
+      producto,
+      posicion,
+      estado: producto.existencias < 0 ? 'Negativo' : (producto.existencias <= (producto.stockMinimo ?? 0) ? 'Bajo mínimo' : ''),
+    })),
     alPintar: activarCamposNumericos,
   });
 
@@ -58,9 +80,10 @@ export function montar(raiz, contexto) {
     const producto = estado.productos[Number(campo.dataset.posicion)];
     const nombreCampo = campo.dataset.campo;
     try {
-      actualizarProducto(producto.id, nombreCampo, CAMPOS_NUMERICOS.includes(nombreCampo) ? leerEntero(campo.value) : campo.value);
+      const valor = CAMPOS_NUMERICOS.includes(nombreCampo) || nombreCampo === 'iva' ? leerEntero(campo.value) : campo.value;
+      actualizarProducto(producto.id, nombreCampo, valor);
       contexto.aviso('Producto actualizado correctamente');
-      if (nombreCampo === 'existencias') contexto.redibujar();
+      if (nombreCampo === 'existencias' || nombreCampo === 'stockMinimo') contexto.redibujar();
     } catch (error) {
       campo.value = producto[nombreCampo];
       contexto.alerta(error.message);
@@ -95,7 +118,11 @@ export function montar(raiz, contexto) {
         id: valorDe('#nuevo-id'),
         referencia: valorDe('#nuevo-referencia'),
         nombre: valorDe('#nuevo-nombre'),
+        categoria: valorDe('#nuevo-categoria'),
         costo: leerEntero(valorDe('#nuevo-costo')),
+        precio: leerEntero(valorDe('#nuevo-precio')),
+        iva: leerEntero(valorDe('#nuevo-iva')),
+        stockMinimo: leerEntero(valorDe('#nuevo-minimo')),
         existencias: leerEntero(valorDe('#nuevo-stock')),
       });
       contexto.aviso('Producto agregado correctamente');
@@ -113,7 +140,49 @@ export function montar(raiz, contexto) {
     botonFactura.setAttribute('aria-expanded', String(!panelFactura.hidden));
     if (!panelFactura.hidden) buscar('#factura-proveedor', raiz).focus();
   };
-  montarFactura(raiz, contexto, documento);
+  const cargarOrden = montarFactura(raiz, contexto, documento);
+
+  // Recibir una orden de compra: llega desde Proveedores con ?orden=OC-0001
+  const orden = buscarOrden(new URLSearchParams(location.search).get('orden') ?? '');
+  if (orden?.estado === 'abierta') {
+    panelFactura.hidden = false;
+    botonFactura.setAttribute('aria-expanded', 'true');
+    cargarOrden(orden);
+    buscar('#factura-numero', raiz).focus();
+  }
+
+  // Kardex de un producto
+  function abrirKardex(id) {
+    const producto = buscarProductoPorId(id);
+    buscar('#titulo-kardex', raiz).textContent = `Kardex de ${producto.nombre} · ID ${producto.id} · stock actual ${producto.existencias}`;
+    montarCuadricula(buscar('#cuadricula-kardex', raiz), {
+      plantillas: plantillasCuadricula,
+      titulo: 'Movimientos',
+      vacio: 'Este producto aún no tiene movimientos.',
+      columnas: [
+        { clave: 'fecha', titulo: 'Fecha', ancho: '140px' },
+        { clave: 'documento', titulo: 'Documento', ancho: '110px' },
+        { clave: 'detalle', titulo: 'Detalle', ancho: 'minmax(0, 2fr)' },
+        { clave: 'entrada', titulo: 'Entrada', ancho: '90px', alinear: 'derecha' },
+        { clave: 'salida', titulo: 'Salida', ancho: '90px', alinear: 'derecha' },
+        { clave: 'saldo', titulo: 'Saldo', ancho: '90px', alinear: 'derecha' },
+        { clave: 'costo', titulo: 'Costo', ancho: '104px', alinear: 'derecha' },
+      ],
+      filas: kardexDeProducto(id).reverse().map((movimiento) => ({
+        fecha: aFecha(movimiento.fecha),
+        documento: movimiento.documento,
+        detalle: movimiento.detalle,
+        entrada: movimiento.cantidad > 0 ? movimiento.cantidad : '',
+        salida: movimiento.cantidad < 0 ? -movimiento.cantidad : '',
+        saldo: movimiento.saldo,
+        costo: movimiento.costo === null ? '' : aPesos(movimiento.costo),
+      })),
+    });
+    const panel = buscar('#panel-kardex', raiz);
+    panel.hidden = false;
+    panel.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }
+  buscar('#cerrar-kardex', raiz).onclick = () => { buscar('#panel-kardex', raiz).hidden = true; };
 
   // Documentos CSV: se abren y se importan directamente en las hojas de cálculo del navegador
   buscar('#descargar-csv', raiz).onclick = () => {

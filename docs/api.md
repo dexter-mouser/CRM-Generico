@@ -6,11 +6,11 @@ Contrato que debe ofrecer el backend para reemplazar `core/store.js`. Todas las 
 | Método y ruta | Función actual | Descripción |
 |---|---|---|
 | `GET /productos?consulta=` | `buscarProductos` | Filtra por ID, nombre, referencia, costo o stock |
-| `POST /productos` | `agregarProducto` | `{ id?, referencia, nombre, costo, existencias }`; `id` solo números (vacío: el mayor más uno) |
+| `POST /productos` | `agregarProducto` | `{ id?, referencia, nombre, categoria, costo, precio, iva, stockMinimo, existencias }`; `id` solo números (vacío: el mayor más uno) |
 | `PUT /productos/{id}` | edición en línea | Cambia referencia, nombre, costo o stock |
 | `POST /productos/importacion` | `importarProductos` | Lista de filas del CSV; devuelve `{ agregados, actualizados }` |
 | `GET /facturas` | lista de facturas | Últimas facturas de compra |
-| `POST /facturas` | `registrarFactura` | `{ numero, proveedor, fecha, items[] }`; suma stock y actualiza el costo |
+| `POST /facturas` | `registrarFactura` | `{ numero, proveedorId, fecha, ordenId?, items[] }`; suma stock, actualiza el costo y deja recibida la orden de compra |
 
 ## Ventas y clientes
 | Método y ruta | Función actual | Descripción |
@@ -42,14 +42,33 @@ Contrato que debe ofrecer el backend para reemplazar `core/store.js`. Todas las 
 | `GET /copias` / `POST /copias/restauracion` | `descargarCopia`, `restaurarCopia` | Valida con `docs/validacion.md` |
 | `GET /pagos` | historial de pagos | |
 | `POST /pagos/abonos` | `registrarAbono` | `{ clienteId, valor, metodo }` |
-| `POST /pagos/proveedores` | `registrarPagoProveedor` | `{ proveedor, concepto, valor, metodo }` |
+| `POST /pagos/proveedores` | `registrarPagoProveedor` | `{ proveedorId, concepto, valor, metodo }` |
 | `GET /proveedores/saldos` | `proveedoresConSaldo` | Proveedores con saldo pendiente |
+
+## CRM (pendiente en el backend)
+| Método y ruta | Función actual | Descripción |
+|---|---|---|
+| `GET /clientes/{id}/ficha` | ficha en `clientes.js` | Datos, indicadores, compras, cartera, documentos, abonos, devoluciones y actividades |
+| `GET /cartera` | `carteraPorEdades` | Saldo por cliente en rangos de días de vencido |
+| `GET /actividades?clienteId=&pendientes=` | `tareasPendientes`, `actividadesDeCliente` | Actividades y tareas; las pendientes se filtran por responsable salvo el Propietario |
+| `POST /actividades` | `registrarActividad` | `{ clienteId, tipo, descripcion, vence?, responsableCorreo? }` |
+| `POST /actividades/{id}/completar` | `completarTarea` | `{ resultado? }` |
+| `GET /embudo` | `cotizaciones`, `resumenDelEmbudo` | Cotizaciones con etapa y resumen |
+| `PUT /embudo/{id}/etapa` | `cambiarEtapa` | `{ etapa }` solo `enviada` o `negociacion` |
+| `POST /embudo/{id}/perdida` | `marcarPerdida` | `{ motivo, detalle }` |
+| `GET /alertas` | `alertasDeCotizaciones`, tareas | Alertas del usuario de la sesión |
+| `GET /proveedores`, `POST /proveedores`, `PUT /proveedores/{id}`, `DELETE /proveedores/{id}` | `proveedores.service.js` | Incluye `saldo` por proveedor |
+| `GET /ordenes-compra`, `POST /ordenes-compra` | `registrarOrden` | `{ proveedorId, observaciones, items[] }` |
+| `POST /ordenes-compra/{id}/anulacion` | `anularOrden` | `{ motivo }` |
+| `GET /productos/{id}/kardex` | `kardexDeProducto` | Movimientos con saldo |
 
 ## Reportes
 | Método y ruta | Función actual | Descripción |
 |---|---|---|
 | `GET /reportes/ventas?desde=&hasta=` | `reporteDeVentas` | Total, cantidad, ticket promedio, utilidad, por método y más vendidos |
-| `GET /reportes/stock-bajo` | `productosConStockBajo` | Productos con 5 unidades o menos |
+| `GET /reportes/stock-bajo` | `productosConStockBajo` | Productos en o por debajo de su stock mínimo |
+| `GET /reportes/clientes?desde=&hasta=` | `clientesNuevosYRecurrentes`, `clientesInactivos` | Nuevos, recurrentes e inactivos |
+| `GET /reportes/vendedores?desde=&hasta=` | `ventasPorVendedor` | Ventas netas por vendedor |
 | `GET /reportes/deudas` | `deudasDeClientes` | Clientes con deuda |
 | `GET /reportes/ventas-diarias?dias=7` | `ventasPorDia` | Total por día para la gráfica del panel |
 

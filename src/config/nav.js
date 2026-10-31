@@ -22,9 +22,24 @@ export const MENU = [
     icono: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
   },
   {
+    id: 'seguimiento',
+    etiqueta: 'Seguimiento',
+    icono: '<rect x="4" y="4" width="16" height="17" rx="2"/><path d="M8 2v4M16 2v4M4 10h16M8 14l2 2 4-4"/>',
+  },
+  {
+    id: 'embudo',
+    etiqueta: 'Embudo',
+    icono: '<path d="M3 4h18l-7 8v6l-4 2v-8z"/>',
+  },
+  {
     id: 'inventario',
     etiqueta: 'Inventario',
     icono: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+  },
+  {
+    id: 'proveedores',
+    etiqueta: 'Proveedores',
+    icono: '<path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>',
   },
   {
     id: 'caja',

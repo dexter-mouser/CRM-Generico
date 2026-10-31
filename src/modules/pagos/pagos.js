@@ -96,7 +96,7 @@ export function montar(raiz, contexto) {
   }), 'Abono registrado correctamente');
 
   buscar('#registrar-pago', raiz).onclick = () => ejecutar(() => servicioPagos.registrarPagoProveedor({
-    proveedor: valorDe('#pago-proveedor'),
+    proveedorId: valorDe('#pago-proveedor'),
     concepto: valorDe('#pago-concepto'),
     valor: leerEntero(valorDe('#pago-valor')),
     metodo: valorDe('#pago-metodo'),

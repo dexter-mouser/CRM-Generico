@@ -2,9 +2,10 @@
 import { aPesos, aFecha } from '../../core/format.js';
 import { mostrarComprobante } from './recibo.js';
 import { estado } from '../../core/store.js';
-import { devolucionesDeVenta, estaAnulada, buscarClientePorNombre, TIPOS_DOCUMENTO, ETIQUETA_NOTA, METODO_CREDITO } from '../../services/ventas.service.js';
-import { buscarCliente, deudaDeCliente } from '../../services/clientes.service.js';
+import { devolucionesDeVenta, estaAnulada, buscarClientePorNombre, impuestosDe, TIPOS_DOCUMENTO, ETIQUETA_NOTA, METODO_CREDITO } from '../../services/ventas.service.js';
+import { buscarCliente, deudaDeCliente, vencimientoDe } from '../../services/clientes.service.js';
 import { proveedoresConSaldo } from '../../services/pagos.service.js';
+import { buscarProveedor, ESTADOS_ORDEN } from '../../services/proveedores.service.js';
 
 // Línea del comprobante: nombre, referencia y "cantidad × valor"
 const lineasDe = (items, campoValor) => items.map((item) => ({
@@ -20,6 +21,7 @@ function datosDelCliente(documento) {
   const cliente = documento.clienteId ? buscarCliente(documento.clienteId) : buscarClientePorNombre(documento.cliente);
   const datos = [['Cliente', documento.cliente]];
   if (cliente?.id) datos.push(['Código cliente', cliente.id]);
+  if (cliente?.documento) datos.push([cliente.tipoDocumento, cliente.documento]);
   if (cliente?.telefono) datos.push(['Teléfono', cliente.telefono]);
   if (cliente?.direccion) datos.push(['Dirección', cliente.direccion]);
   return datos;
@@ -32,6 +34,11 @@ const datosComunes = (documento) => [
   ['Unidades', unidades(documento.items)],
   ...(documento.usuario ? [['Atendió', documento.usuario]] : []),
 ];
+
+// Base e IVA por tarifa (los precios incluyen el IVA)
+const totalesDeImpuestos = (documento) => impuestosDe(documento).flatMap((grupo) => (grupo.tarifa
+  ? [{ etiqueta: `Base IVA ${grupo.tarifa} %`, valor: aPesos(grupo.base) }, { etiqueta: `IVA ${grupo.tarifa} %`, valor: aPesos(grupo.iva) }]
+  : [{ etiqueta: 'Excluido de IVA', valor: aPesos(grupo.base) }]));
 
 // Factura de venta, remisión o cotización; registrada (con número) o aún sin registrar (vista previa)
 export function mostrarReciboDeVenta(documento) {
@@ -48,6 +55,7 @@ export function mostrarReciboDeVenta(documento) {
     datos.splice(1, 0, ['Pago', documento.metodo]);
     const notasDeLaFactura = registrado ? devolucionesDeVenta(documento.id) : [];
     const devuelto = notasDeLaFactura.reduce((acumulado, nota) => acumulado + nota.total, 0);
+    totales.push(...totalesDeImpuestos(documento));
     totales.push({ etiqueta: 'TOTAL', valor: aPesos(documento.total), fuerte: !devuelto });
     if (documento.metodo === 'Efectivo' && documento.recibido) {
       totales.push({ etiqueta: 'Recibido', valor: aPesos(documento.recibido) });
@@ -59,7 +67,10 @@ export function mostrarReciboDeVenta(documento) {
     }
     notas.push(...notasDeLaFactura.map((nota) => `${nota.id} · ${nota.tipo === 'anulacion' ? 'Anulada' : 'Devolución'} (${aFecha(nota.fecha)}): ${nota.motivo}`));
     if (registrado && estaAnulada(documento)) sello = 'ANULADA';
-    if (documento.metodo === METODO_CREDITO) notas.push('Venta a crédito: el valor queda como deuda del cliente.');
+    if (documento.metodo === METODO_CREDITO) {
+      datos.push(['Vence', aFecha(vencimientoDe(documento).slice(0, 10))]);
+      notas.push(`Venta a crédito a ${documento.plazoDias ?? 30} días: el valor queda como deuda del cliente.`);
+    }
   } else if (tipo === 'remision') {
     totales.push({ etiqueta: 'VALOR DE LA MERCANCÍA', valor: aPesos(documento.total), fuerte: true });
     notas.push('Mercancía entregada. Este documento no es una factura ni un comprobante de pago.');
@@ -67,6 +78,7 @@ export function mostrarReciboDeVenta(documento) {
     firmas = ['Entregó', 'Recibí conforme'];
   } else {
     datos.push(['Válida hasta', aFecha(documento.vigenciaHasta)]);
+    totales.push(...totalesDeImpuestos(documento));
     totales.push({ etiqueta: 'TOTAL COTIZADO', valor: aPesos(documento.total), fuerte: true });
     notas.push('Oferta sujeta a existencias. No es una factura ni descuenta inventario.');
     if (documento.convertidoEn) notas.push(`Pasada a ${documento.convertidoEn}`);
@@ -144,7 +156,9 @@ export function mostrarComprobanteDePago(pago) {
 }
 
 export function mostrarComprobanteDeFactura(factura) {
-  const datos = [['Proveedor', factura.proveedor], ['N° de factura', factura.numero], ['Fecha', aFecha(factura.fecha)], ['Unidades', unidades(factura.items)]];
+  const proveedor = buscarProveedor(factura.proveedorId);
+  const datos = [['Proveedor', factura.proveedor], ...(proveedor?.nit ? [['NIT', proveedor.nit]] : []), ['N° de factura', factura.numero], ['Fecha', aFecha(factura.fecha)], ['Unidades', unidades(factura.items)]];
+  if (factura.ordenId) datos.push(['Orden de compra', factura.ordenId]);
   if (factura.usuario) datos.push(['Registró', factura.usuario]);
   return mostrarComprobante({
     titulo: 'Factura de compra',
@@ -153,5 +167,28 @@ export function mostrarComprobanteDeFactura(factura) {
     lineas: lineasDe(factura.items, 'costoUnitario'),
     totales: [{ etiqueta: 'TOTAL FACTURA', valor: aPesos(factura.total), fuerte: true }],
     notas: ['Las cantidades se sumaron al inventario.'],
+  });
+}
+
+// Orden de compra para enviar al proveedor
+export function mostrarComprobanteDeOrden(orden) {
+  const proveedor = buscarProveedor(orden.proveedorId);
+  const datos = [['Proveedor', orden.proveedor]];
+  if (proveedor?.nit) datos.push(['NIT', proveedor.nit]);
+  if (proveedor?.contacto) datos.push(['Contacto', proveedor.contacto]);
+  datos.push(['Fecha', aFecha(orden.fecha)], ['Estado', ESTADOS_ORDEN[orden.estado]], ['Unidades', unidades(orden.items)], ['Elaboró', orden.usuario]);
+  const notas = [];
+  if (orden.observaciones) notas.push(`Observaciones: ${orden.observaciones}`);
+  if (orden.facturaNumero) notas.push(`Recibida con la factura ${orden.facturaNumero}`);
+  if (orden.motivoAnulacion) notas.push(`Anulada: ${orden.motivoAnulacion}`);
+  return mostrarComprobante({
+    titulo: 'Orden de compra',
+    subtitulo: `N° ${orden.id}`,
+    datos,
+    lineas: lineasDe(orden.items, 'costoUnitario'),
+    totales: [{ etiqueta: 'TOTAL ORDEN', valor: aPesos(orden.total), fuerte: true }],
+    sello: orden.estado === 'anulada' ? 'ANULADA' : '',
+    notas,
+    firmas: ['Elaboró', 'Proveedor'],
   });
 }

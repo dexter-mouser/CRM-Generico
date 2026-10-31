@@ -1,0 +1,56 @@
+<div id="principal">
+  <div class="cabecera-vista">
+    <div>
+      <h1>Seguimiento</h1>
+      <div class="texto-suave">Llamadas, mensajes de WhatsApp, visitas, correos y notas con cada cliente, y tareas con fecha y responsable.</div>
+    </div>
+  </div>
+
+  <div class="dos-columnas arriba">
+    <section class="caja columna-angosta" id="formulario-actividad" aria-labelledby="titulo-nueva-actividad">
+      <strong id="titulo-nueva-actividad">Registrar actividad o tarea</strong>
+      <label for="actividad-cliente">Cliente</label>
+      <select id="actividad-cliente" class="campo">{{{opcionesCliente}}}</select>
+      <label for="actividad-tipo">Tipo</label>
+      <select id="actividad-tipo" class="campo">{{{opcionesActividad}}}</select>
+      <label for="actividad-descripcion">Descripción</label>
+      <input id="actividad-descripcion" class="campo" maxlength="300" autocomplete="off" placeholder="Qué se habló o qué hay que hacer">
+      <div id="campos-tarea" hidden>
+        <label for="actividad-vence">Fecha de la tarea</label>
+        <input id="actividad-vence" class="campo" type="date" value="{{hoy}}">
+        <label for="actividad-responsable">Responsable</label>
+        <select id="actividad-responsable" class="campo">{{{opcionesResponsable}}}</select>
+      </div>
+      <button type="button" class="boton primario ancho" id="registrar-actividad">Registrar</button>
+    </section>
+
+    <section class="caja columna-ancha" aria-labelledby="titulo-tareas">
+      <strong id="titulo-tareas">Tareas pendientes</strong>
+      <div class="texto-suave" id="alcance-tareas"></div>
+      <div id="cuadricula-tareas"></div>
+    </section>
+  </div>
+
+  <section class="caja margen-superior-grande" aria-label="Historial de actividades">
+    <div id="cuadricula-actividades"></div>
+  </section>
+</div>
+
+<template id="acciones-tarea">
+  <div class="acciones-fila">
+    <a class="boton" href="clientes.html?ficha={{clienteId}}">Ficha</a>
+    {{{completar}}}
+  </div>
+</template>
+
+<template id="boton-completar">
+  <button type="button" class="boton primario" data-completar="{{id}}">Marcar hecha</button>
+</template>
+
+<template id="estado-tarea">
+  <span class="insignia {{clase}}">{{texto}}</span>
+</template>
+
+<template id="opcion">
+  <option value="{{valor}}">{{texto}}</option>
+</template>

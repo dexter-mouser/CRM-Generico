@@ -1,2 +1,2 @@
-\xef\xbb\xbfID,Referencia,Producto,Costo,Stock
-1,REF-A01,Producto de ejemplo,8000,25
+﻿ID,Referencia,Producto,Categoría,Costo,Precio,IVA,Stock mínimo,Stock
+1,REF-A01,Producto de ejemplo,General,8000,11900,19,5,25

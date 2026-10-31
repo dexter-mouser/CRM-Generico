@@ -3,6 +3,7 @@ import { aPesos, aFecha, fechaDeHoy, aFechaLocal } from '../../core/format.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import { descargarCsv } from '../../services/csv.service.js';
 import * as servicioReportes from '../../services/reportes.service.js';
+import { carteraPorEdades, RANGOS_CARTERA } from '../../services/clientes.service.js';
 
 let documento;
 
@@ -32,6 +33,30 @@ export function montar(raiz, contexto) {
     buscar('#sin-ventas', raiz).hidden = reporte.cantidad > 0;
     buscar('#mas-vendidos', raiz).innerHTML = repetir(documento, 'fila-mas-vendido',
       reporte.masVendidos.map((fila) => ({ ...fila, total: aPesos(fila.total) })));
+
+    const clientes = servicioReportes.clientesNuevosYRecurrentes(desde.value, hasta.value);
+    const conversion = servicioReportes.conversionDeCotizaciones(desde.value, hasta.value);
+    buscar('#indicadores-clientes', raiz).innerHTML = repetir(documento, 'indicador', [
+      { etiqueta: 'Clientes nuevos', valor: clientes.nuevos },
+      { etiqueta: 'Clientes recurrentes', valor: clientes.recurrentes },
+      { etiqueta: 'Cotizaciones creadas', valor: conversion.cantidad },
+      { etiqueta: 'Conversión de cotizaciones', valor: `${conversion.conversion} %` },
+    ]);
+    buscar('#por-vendedor', raiz).innerHTML = repetir(documento, 'fila-vendedor',
+      servicioReportes.ventasPorVendedor(desde.value, hasta.value).map((fila) => ({ ...fila, total: aPesos(fila.total) })));
+    const inactivos = servicioReportes.clientesInactivos();
+    buscar('#inactivos', raiz).innerHTML = repetir(documento, 'fila-inactivo',
+      inactivos.map((fila) => ({ ...fila, ultima: aFecha(fila.ultima.slice(0, 10)) })));
+    buscar('#sin-inactivos', raiz).hidden = inactivos.length > 0;
+    const cartera = carteraPorEdades();
+    const totales = { nombre: 'Total', clase: 'fila-total', total: 0, ...Object.fromEntries(RANGOS_CARTERA.map((rango) => [rango.id, 0])) };
+    cartera.forEach((fila) => {
+      RANGOS_CARTERA.forEach((rango) => { totales[rango.id] += fila[rango.id]; });
+      totales.total += fila.total;
+    });
+    const enPesos = (fila) => ({ ...fila, ...Object.fromEntries([...RANGOS_CARTERA.map((rango) => rango.id), 'total'].map((clave) => [clave, aPesos(fila[clave])])) });
+    buscar('#cartera', raiz).innerHTML = repetir(documento, 'fila-cartera', [...cartera.map((fila) => enPesos({ ...fila, clase: '' })), ...(cartera.length ? [enPesos(totales)] : [])]);
+    buscar('#sin-cartera', raiz).hidden = cartera.length > 0;
 
     const stockBajo = servicioReportes.productosConStockBajo();
     buscar('#stock-bajo', raiz).innerHTML = repetir(documento, 'fila-stock-bajo', stockBajo);

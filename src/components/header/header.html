@@ -6,6 +6,15 @@
     <a class="pestana-superior" href="reportes.html" data-vista="reportes">Reportes</a>
   </nav>
   <div class="espacio-flexible"></div>
+  <div class="contenedor-alertas">
+    <button type="button" class="boton icono" id="boton-alertas" aria-label="Alertas" aria-expanded="false" aria-controls="lista-alertas"></button>
+    <span class="contador-alertas" id="contador-alertas" hidden></span>
+    <div class="lista-alertas caja" id="lista-alertas" hidden></div>
+  </div>
   <button type="button" class="boton icono" id="alternar-tema" aria-label="Cambiar entre modo claro y oscuro"></button>
   <div class="avatar" id="usuario" role="img"></div>
 </header>
+
+<template id="alerta">
+  <a class="alerta" href="{{enlace}}"><strong>{{titulo}}</strong><span class="texto-suave">{{detalle}}</span></a>
+</template>
