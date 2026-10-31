@@ -6,6 +6,7 @@ import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import { clientesConDeuda, deudaDeCliente } from '../../services/clientes.service.js';
 import * as servicioPagos from '../../services/pagos.service.js';
 import { mostrarComprobanteDePago } from '../../components/recibo/comprobantes.js';
+import { enTiendaActiva } from '../../core/tienda.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 
 let documento;
@@ -44,7 +45,7 @@ export function montar(raiz, contexto) {
       { clave: 'valor', titulo: 'Valor', ancho: '104px', alinear: 'derecha' },
       { clave: 'acciones', titulo: 'Acciones', ancho: '130px', filtrable: false, html: (fila) => repetir(documento, 'accion-pago', [{ id: fila.id }]) },
     ],
-    filas: estado.pagos.slice().reverse().map((pago) => ({
+    filas: estado.pagos.filter(enTiendaActiva).reverse().map((pago) => ({
       id: pago.id,
       fecha: aFecha(pago.fecha),
       tipo: pago.tipo === 'abono' ? 'Abono de cliente' : 'Pago a proveedor',

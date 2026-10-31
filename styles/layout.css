@@ -43,20 +43,103 @@ main {
   color: var(--texto);
 }
 
-/* Encabezado */
-.pestanas-superiores {
+/* Encabezado: buscador de pantallas, tienda activa y botón Vender */
+.buscador-pantallas {
+  position: relative;
   display: flex;
-  gap: 4px;
+  align-items: center;
+  width: min(340px, 100%);
 }
 
-.pestana-superior {
-  padding: 8px 12px;
-  border-radius: 8px;
+.icono-buscador {
+  position: absolute;
+  left: 10px;
+  display: flex;
   color: var(--suave);
+  pointer-events: none;
+}
+
+.icono-buscador svg {
+  width: 16px;
+  height: 16px;
+}
+
+.buscador-pantallas input {
+  width: 100%;
+  height: 36px;
+  padding: 0 64px 0 34px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  background: var(--fondo);
+  color: var(--texto);
+  font: inherit;
+}
+
+.buscador-pantallas kbd {
+  position: absolute;
+  right: 8px;
+  padding: 2px 6px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  color: var(--suave);
+  font: 11px/1.4 inherit;
+  pointer-events: none;
+}
+
+.selector-tienda select {
+  height: 36px;
+  max-width: 190px;
+  padding: 0 10px;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+  font-weight: 600;
+}
+
+.selector-tienda select:disabled {
+  opacity: 1;
+  appearance: none;
+}
+
+.boton-vender {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   text-decoration: none;
 }
 
-.pestana-superior.activa {
+.boton-vender svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Pestañas con las secciones del grupo abierto, encima del contenido */
+.pestanas-grupo {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  padding-bottom: 8px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--borde);
+  scrollbar-width: none;
+}
+
+.pestana-grupo {
+  flex: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  color: var(--suave);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pestana-grupo:hover {
+  background: var(--pasar);
+}
+
+.pestana-grupo.activa {
   background: var(--activo);
   color: var(--texto);
   font-weight: 600;
@@ -132,6 +215,61 @@ aside.recogido .opcion-menu span {
   display: none;
 }
 
+.opcion-menu svg {
+  flex: none;
+}
+
+/* Cantidad de pantallas de un grupo cerrado */
+.cuenta-grupo {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--pista);
+  color: var(--suave);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.cuenta-grupo:empty,
+aside.recogido .cuenta-grupo {
+  display: none;
+}
+
+/* Secciones del grupo abierto */
+.secciones-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 2px 0 6px 23px;
+  padding-left: 12px;
+  border-left: 1px solid var(--borde);
+}
+
+.opcion-seccion {
+  padding: 7px 10px;
+  border-radius: 8px;
+  color: var(--suave);
+  font-size: 14px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.opcion-seccion:hover {
+  background: var(--pasar);
+}
+
+.opcion-seccion.activa {
+  color: var(--texto);
+  font-weight: 600;
+  background: var(--activo);
+}
+
+aside.recogido .secciones-grupo {
+  display: none;
+}
+
 .separador-flexible {
   flex: 1;
 }
@@ -161,12 +299,99 @@ aside.recogido .opcion-menu span {
   font-weight: 700;
 }
 
-@media (max-width: 800px) {
-  .pestanas-superiores {
+@media (max-width: 1100px) {
+  .buscador-pantallas kbd {
     display: none;
   }
 
+  .buscador-pantallas input {
+    padding-right: 10px;
+  }
+}
+
+/* Celular: el menú pasa a una barra inferior fija con los grupos; las secciones quedan como pestañas */
+@media (max-width: 800px) {
+  header {
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  #alternar-menu,
+  .marca,
+  .buscador-pantallas,
+  .boton-vender span:last-child {
+    display: none;
+  }
+
+  .selector-tienda select {
+    max-width: 150px;
+  }
+
   main {
-    padding: 16px;
+    padding: 16px 16px calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+
+  aside,
+  aside.recogido {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    width: auto;
+    flex-direction: row;
+    gap: 2px;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+    overflow-x: auto;
+    border-right: 0;
+    border-top: 1px solid var(--borde);
+    scrollbar-width: none;
+  }
+
+  aside .opcion-menu,
+  aside.recogido .opcion-menu {
+    flex: 1 1 0;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    padding: 6px 2px;
+    font-size: 0;
+    text-align: center;
+  }
+
+  /* En la barra se muestra la etiqueta corta (Admin, Salir) */
+  aside .opcion-menu span,
+  aside.recogido .opcion-menu span {
+    display: block;
+    overflow: hidden;
+    max-width: 100%;
+    text-overflow: ellipsis;
+  }
+
+  aside .opcion-menu span::after {
+    content: attr(data-corta);
+    font-size: 10.5px;
+  }
+
+  aside .secciones-grupo,
+  aside .cuenta-grupo,
+  aside .separador-flexible {
+    display: none;
+  }
+
+  #aviso {
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 380px) {
+  aside .opcion-menu,
+  aside.recogido .opcion-menu {
+    padding: 6px 0;
+  }
+
+  aside .opcion-menu span::after {
+    font-size: 9.5px;
   }
 }

@@ -24,6 +24,8 @@ const ACCIONES_POR_MODULO = {
   contabilidad: ['ver', 'crear', 'reabrir'],
   ajustes: ['ver', 'editar'],
   embudo: ['ver', 'editar'],
+  tiendas: ['ver', 'crear', 'editar'],
+  empleados: ['ver', 'crear', 'editar'],
 };
 
 export const MODULOS_PERMISOS = MENU.map((opcion) => ({

@@ -1,9 +1,13 @@
 <aside id="menu-lateral" aria-label="Menú de la tienda"></aside>
 
-<template id="opcion-enlace">
-  <a class="opcion-menu {{clase}}" href="{{id}}.html" aria-label="{{etiqueta}}" title="{{etiqueta}}">{{{icono}}}<span>{{etiqueta}}</span></a>
+<template id="grupo-enlace">
+  <a class="opcion-menu {{clase}}" href="{{enlace}}" aria-label="{{etiqueta}}" title="{{etiqueta}}" data-grupo="{{id}}">{{{icono}}}<span data-corta="{{corta}}">{{etiqueta}}</span><small class="cuenta-grupo" aria-hidden="true">{{cuenta}}</small></a>
+</template>
+
+<template id="seccion-enlace">
+  <a class="opcion-seccion {{clase}}" href="{{enlace}}">{{etiqueta}}</a>
 </template>
 
 <template id="opcion-salir">
-  <button type="button" class="opcion-menu" id="cerrar-sesion" aria-label="Cerrar sesión" title="Cerrar sesión">{{{icono}}}<span>Cerrar sesión</span></button>
+  <button type="button" class="opcion-menu" id="cerrar-sesion" aria-label="Cerrar sesión" title="Cerrar sesión">{{{icono}}}<span data-corta="Salir">Cerrar sesión</span></button>
 </template>

@@ -71,11 +71,12 @@ export function montarFactura(raiz, contexto, documento) {
         numero: buscar('#factura-numero', raiz).value,
         proveedorId: buscar('#factura-proveedor', raiz).value,
         fecha: buscar('#factura-fecha', raiz).value,
+        bodegaId: buscar('#factura-bodega', raiz).value,
         ordenId,
         lineas,
       });
       contexto.aviso(`Factura ${factura.numero} registrada correctamente: inventario actualizado${factura.ordenId ? ` y orden ${factura.ordenId} recibida` : ''}`);
-      history.replaceState(null, '', location.pathname);
+      history.replaceState(null, '', `${location.pathname}?seccion=compras`);
       contexto.redibujar();
       mostrarComprobanteDeFactura(factura);
     } catch (error) {

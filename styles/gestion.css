@@ -1,0 +1,228 @@
+/* Panel (accesos principales, pendientes, todas las funciones) y gestión de tiendas, bodegas y empleados */
+.accesos-principales {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.acceso-principal {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  background: var(--superficie);
+  color: var(--texto);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.acceso-principal:hover {
+  background: var(--pasar);
+  border-color: var(--contorno);
+}
+
+.acceso-principal small {
+  display: block;
+  margin-top: 2px;
+  color: var(--suave);
+  font-size: 12px;
+}
+
+.icono-acceso {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--activo);
+}
+
+.lista-pendientes {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lista-pendientes li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--borde);
+}
+
+.lista-pendientes li:last-child {
+  border-bottom: 0;
+}
+
+.lista-pendientes a {
+  color: var(--texto);
+}
+
+.dos-columnas > .columna-doble {
+  flex-grow: 2;
+}
+
+.todas-funciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.grupo-funciones {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.titulo-funciones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.titulo-funciones svg {
+  width: 16px;
+  height: 16px;
+}
+
+.grupo-funciones a {
+  padding: 3px 0 3px 24px;
+  color: var(--suave);
+  text-decoration: none;
+}
+
+.grupo-funciones a:hover {
+  color: var(--texto);
+  text-decoration: underline;
+}
+
+/* Tarjetas de tiendas y bodegas */
+.rejilla-fichas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.ficha-gestion {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ficha-gestion.inactiva {
+  opacity: 0.6;
+}
+
+.cabecera-ficha {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.datos-ficha {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.datos-ficha div {
+  display: flex;
+  flex-direction: column;
+}
+
+.datos-ficha span {
+  color: var(--suave);
+  font-size: 12px;
+}
+
+.acciones-ficha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.etiqueta-estado {
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--activo);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Formularios de gestión */
+.formulario-gestion {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.formulario-gestion .ancho-completo {
+  grid-column: 1 / -1;
+}
+
+.casillas-tiendas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.casillas-tiendas label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Matriz de stock por bodega y líneas del traslado */
+.matriz-stock td.numero,
+.matriz-stock th.numero {
+  text-align: right;
+}
+
+.lineas-traslado {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.linea-traslado {
+  display: grid;
+  grid-template-columns: 1fr 100px auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.barra-avance {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--pista);
+  overflow: hidden;
+}
+
+.barra-avance i {
+  display: block;
+  height: 100%;
+  background: var(--barra);
+}
+
+@media (max-width: 800px) {
+  .accesos-principales {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .acceso-principal {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

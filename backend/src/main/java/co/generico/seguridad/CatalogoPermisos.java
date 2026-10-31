@@ -23,6 +23,9 @@ public final class CatalogoPermisos {
         ACCIONES_POR_MODULO.put("embudo", List.of("ver", "editar"));
         ACCIONES_POR_MODULO.put("inventario", BASICAS);
         ACCIONES_POR_MODULO.put("proveedores", BASICAS);
+        ACCIONES_POR_MODULO.put("bodegas", BASICAS);
+        ACCIONES_POR_MODULO.put("tiendas", List.of("ver", "crear", "editar"));
+        ACCIONES_POR_MODULO.put("empleados", List.of("ver", "crear", "editar"));
         ACCIONES_POR_MODULO.put("caja", BASICAS);
         ACCIONES_POR_MODULO.put("contabilidad", List.of("ver", "crear", "reabrir"));
         ACCIONES_POR_MODULO.put("pagos", BASICAS);

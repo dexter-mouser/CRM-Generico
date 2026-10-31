@@ -1,12 +1,19 @@
 <div id="principal">
-  <h1>Caja</h1>
-  <div class="texto-suave separacion-inferior">Abre la caja con una base, registra ingresos y egresos y ciérrala contando el efectivo.</div>
+  <h1>Caja · {{tienda}}</h1>
+  <div class="texto-suave separacion-inferior">Cada tienda tiene su caja. Ábrela con una base, registra ingresos y egresos y ciérrala contando el efectivo.</div>
   {{{contenido}}}
   <section class="caja margen-superior-grande">
     <strong>Cierres anteriores</strong>
     <div id="cuadricula-cierres"></div>
   </section>
 </div>
+
+<template id="sin-tienda">
+  <section class="caja">
+    <strong>Elige una tienda</strong>
+    <div class="texto-suave">Con "Todas las tiendas" solo ves los cierres de todas. Elige una tienda en el menú superior para abrir, mover o cerrar su caja.</div>
+  </section>
+</template>
 
 <template id="caja-cerrada">
   <section class="caja" aria-labelledby="titulo-abrir">

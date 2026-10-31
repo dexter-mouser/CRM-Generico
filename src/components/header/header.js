@@ -1,9 +1,12 @@
 import { buscar, buscarTodos } from '../../core/dom.js';
 import { cargarHtml, repetir } from '../../core/template.js';
-import { icono, ICONO_HAMBURGUESA, ICONO_CAMPANA } from '../../core/iconos.js';
+import { icono, ICONO_HAMBURGUESA, ICONO_CAMPANA, ICONO_LUPA, ICONO_MAS } from '../../core/iconos.js';
 import { aFecha } from '../../core/format.js';
 import { estado } from '../../core/store.js';
 import { alertasDeCotizaciones } from '../../services/embudo.service.js';
+import { puede } from '../../core/autorizacion.js';
+import { GRUPOS, enlaceDeSeccion } from '../../config/nav.js';
+import { tiendasPermitidas, puedeVerTodas, tiendaActivaId, elegirTienda, nombreDeTienda, TODAS_LAS_TIENDAS } from '../../core/tienda.js';
 import { tareasPendientes, estaVencidaTarea } from '../../services/actividades.service.js';
 import { prepararBotonTema } from '../../core/tema.js';
 import { vistaActual } from '../../core/router.js';
@@ -25,10 +28,77 @@ export async function montarEncabezado(ranura, { alAlternarMenu, sesion }) {
   avatar.title = sesion.nombre;
   avatar.setAttribute('aria-label', `Usuario: ${sesion.nombre}`);
 
-  buscarTodos('.pestana-superior[data-vista]').forEach((enlace) =>
-    enlace.classList.toggle('activa', enlace.dataset.vista === vistaActual()));
+  montarBuscadorDePantallas(documento);
+  montarSelectorDeTienda(documento);
+  const vender = buscar('#boton-vender');
+  vender.hidden = !puede('nueva-venta', 'crear') || vistaActual() === 'nueva-venta';
+  buscar('#icono-vender').innerHTML = icono(ICONO_MAS);
 
   montarAlertas(documento);
+}
+
+// Buscador de pantallas: escribe "kardex" o "caja" y Enter abre esa pantalla. Ctrl+K lo enfoca desde cualquier página.
+function montarBuscadorDePantallas(documento) {
+  const pantallas = GRUPOS.flatMap((grupo) => grupo.secciones
+    .filter((seccion) => puede(seccion.modulo, 'ver'))
+    .map((seccion) => ({ texto: `${seccion.etiqueta} · ${grupo.etiqueta}`, enlace: enlaceDeSeccion(seccion) })));
+  const campo = buscar('#buscar-pantalla');
+  buscar('#icono-buscador').innerHTML = icono(ICONO_LUPA);
+  buscar('#lista-pantallas').innerHTML = repetir(documento, 'opcion-pantalla', pantallas);
+  const normalizar = (texto) => texto.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  const abrir = () => {
+    const escrito = normalizar(campo.value);
+    if (!escrito) return;
+    const elegida = pantallas.find((pantalla) => normalizar(pantalla.texto) === escrito)
+      ?? pantallas.find((pantalla) => normalizar(pantalla.texto).startsWith(escrito))
+      ?? pantallas.find((pantalla) => normalizar(pantalla.texto).includes(escrito));
+    if (elegida) location.href = elegida.enlace;
+    else mostrarAviso(`No hay una pantalla que se llame "${campo.value.trim()}"`, 'alerta');
+  };
+  buscar('#buscador-pantallas').onsubmit = (evento) => {
+    evento.preventDefault();
+    abrir();
+  };
+  // Elegir una opción de la lista la abre de inmediato
+  campo.addEventListener('change', () => { if (pantallas.some((pantalla) => pantalla.texto === campo.value)) abrir(); });
+  document.addEventListener('keydown', (evento) => {
+    if ((evento.ctrlKey || evento.metaKey) && evento.key.toLowerCase() === 'k') {
+      evento.preventDefault();
+      campo.focus();
+      campo.select();
+    }
+  });
+}
+
+// Selector de la tienda activa: ventas, caja y stock se registran en ella; los listados la filtran
+function montarSelectorDeTienda(documento) {
+  const selector = buscar('#tienda-activa');
+  const tiendas = tiendasPermitidas();
+  const activa = tiendaActivaId();
+  const opciones = [
+    ...tiendas.map((tienda) => ({ id: tienda.id, nombre: tienda.nombre })),
+    ...(puedeVerTodas() ? [{ id: TODAS_LAS_TIENDAS, nombre: 'Todas las tiendas' }] : []),
+  ];
+  selector.innerHTML = repetir(documento, 'opcion-tienda', opciones.map((opcion) => ({ ...opcion, seleccion: opcion.id === activa ? 'selected' : '' })));
+  selector.disabled = opciones.length < 2;
+  selector.onchange = () => {
+    try {
+      elegirTienda(selector.value);
+      const nombre = selector.value === TODAS_LAS_TIENDAS ? 'Todas las tiendas' : nombreDeTienda(selector.value);
+      try { sessionStorage.setItem('generico.aviso-pendiente', `${nombre}: vista aplicada correctamente`); } catch { /* sin almacenamiento */ }
+      location.reload();
+    } catch (error) {
+      mostrarAviso(error.message, 'alerta');
+    }
+  };
+  // Aviso que dejó el cambio de tienda antes de recargar
+  try {
+    const pendiente = sessionStorage.getItem('generico.aviso-pendiente');
+    if (pendiente) {
+      sessionStorage.removeItem('generico.aviso-pendiente');
+      mostrarAviso(pendiente);
+    }
+  } catch { /* sin almacenamiento */ }
 }
 
 // Alertas del perfil de la sesión: cotizaciones vencidas sin motivo (de ese vendedor) y tareas vencidas o de hoy.

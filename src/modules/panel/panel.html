@@ -1,6 +1,7 @@
 <div id="principal">
   <h1>{{saludo}}, {{nombre}}</h1>
-  <div class="texto-suave separacion-inferior-grande">Resumen del día de tu tienda. Arrastra las tarjetas para reordenarlas.</div>
+  <div class="texto-suave separacion-inferior-grande">Resumen del día en {{lugar}}. Arrastra las tarjetas para reordenarlas.</div>
+  <nav class="accesos-principales" aria-label="Accesos principales">{{{accesos}}}</nav>
   <div class="tarjetas" id="contenedor-tarjetas">{{{tarjetas}}}</div>
   <div class="dos-columnas">
     <div class="caja">
@@ -18,7 +19,40 @@
       </div>
     </div>
   </div>
+  <div class="dos-columnas">
+    <div class="caja">
+      <strong>Pendientes</strong>
+      <ul class="lista-pendientes">{{{pendientes}}}</ul>
+    </div>
+    <div class="caja columna-doble">
+      <strong>Todas las funciones</strong>
+      <div class="texto-suave margen-superior">Cada pantalla a la que tienes acceso, por grupo.</div>
+      <div class="todas-funciones">{{{funciones}}}</div>
+    </div>
+  </div>
 </div>
+
+<template id="acceso-principal">
+  <a class="acceso-principal" href="{{enlace}}">
+    <span class="icono-acceso" aria-hidden="true">{{{icono}}}</span>
+    <span><strong>{{etiqueta}}</strong><small>{{detalle}}</small></span>
+  </a>
+</template>
+
+<template id="pendiente">
+  <li><a href="{{enlace}}">{{texto}}</a></li>
+</template>
+
+<template id="grupo-funciones">
+  <div class="grupo-funciones">
+    <div class="titulo-funciones"><span aria-hidden="true">{{{icono}}}</span>{{etiqueta}}</div>
+    {{{enlaces}}}
+  </div>
+</template>
+
+<template id="enlace-funcion">
+  <a href="{{enlace}}">{{etiqueta}}</a>
+</template>
 
 <template id="tarjeta-resumen">
   <div class="caja resumen" data-indice="{{indice}}">

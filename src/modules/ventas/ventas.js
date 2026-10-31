@@ -6,6 +6,7 @@ import { buscar } from '../../core/dom.js';
 import { puede } from '../../core/autorizacion.js';
 import * as servicioVentas from '../../services/ventas.service.js';
 import { mostrarReciboDeVenta, mostrarComprobanteDeDevolucion } from '../../components/recibo/comprobantes.js';
+import { enTiendaActiva } from '../../core/tienda.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 
 let documento;
@@ -35,7 +36,7 @@ export function montar(raiz, contexto) {
   const zona = buscar('#zona-devolucion', raiz);
   const puedeAnular = puede('ventas', 'eliminar');
 
-  const filasFacturas = () => estado.ventas.slice().reverse().map((venta) => {
+  const filasFacturas = () => estado.ventas.filter(enTiendaActiva).reverse().map((venta) => {
     const situacion = estadoDeFactura(venta);
     const pendiente = servicioVentas.pendientesDeDevolver(venta).length > 0;
     const acciones = puedeAnular && pendiente && !servicioVentas.estaAnulada(venta) ? repetir(documento, 'acciones-venta', [{ id: venta.id }]) : '';
@@ -52,7 +53,7 @@ export function montar(raiz, contexto) {
     };
   });
 
-  const filasDocumentos = () => estado.documentos.slice().reverse().map((registro) => {
+  const filasDocumentos = () => estado.documentos.filter(enTiendaActiva).reverse().map((registro) => {
     const pasarARemision = servicioVentas.DESTINOS_POSIBLES[registro.tipo].includes('remision')
       ? repetir(documento, 'accion-pasar-remision', [{ id: registro.id }]) : '';
     const acciones = servicioVentas.documentoPendiente(registro) && puede('nueva-venta', 'crear')
@@ -69,7 +70,7 @@ export function montar(raiz, contexto) {
     };
   });
 
-  const filasNotas = () => estado.devoluciones.slice().reverse().map((nota) => ({
+  const filasNotas = () => estado.devoluciones.filter(enTiendaActiva).reverse().map((nota) => ({
     id: nota.id,
     fecha: aFecha(nota.fecha),
     ventaId: nota.ventaId,

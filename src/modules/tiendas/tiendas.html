@@ -1,0 +1,74 @@
+<div id="principal">
+  <div class="cabecera-vista">
+    <div>
+      <h1>Tiendas</h1>
+      <div class="texto-suave">Cada tienda vende desde su bodega y tiene su propia caja. La tienda activa se elige en el menú superior.</div>
+    </div>
+    <div class="acciones-fila">
+      <button type="button" class="boton primario" id="nueva-tienda">Nueva tienda</button>
+    </div>
+  </div>
+
+  <section class="caja formulario-en-linea" id="formulario-tienda" aria-labelledby="titulo-formulario-tienda" hidden>
+    <strong id="titulo-formulario-tienda">Nueva tienda</strong>
+    <div class="formulario-gestion margen-superior">
+      <div>
+        <label for="tienda-nombre">Nombre</label>
+        <input id="tienda-nombre" class="campo" maxlength="60" autocomplete="off" placeholder="Tienda Sur">
+      </div>
+      <div>
+        <label for="tienda-ciudad">Ciudad</label>
+        <input id="tienda-ciudad" class="campo" autocomplete="off">
+      </div>
+      <div>
+        <label for="tienda-telefono">Teléfono</label>
+        <input id="tienda-telefono" class="campo" inputmode="tel" autocomplete="off">
+      </div>
+      <div>
+        <label for="tienda-bodegaId">Bodega donde vende</label>
+        <select id="tienda-bodegaId" class="campo">{{{opcionesBodega}}}</select>
+      </div>
+      <div class="ancho-completo">
+        <label for="tienda-direccion">Dirección</label>
+        <input id="tienda-direccion" class="campo" maxlength="300" autocomplete="off">
+      </div>
+    </div>
+    <div class="acciones-fila margen-superior-grande">
+      <button type="button" class="boton primario" id="guardar-tienda">Guardar tienda</button>
+      <button type="button" class="boton" id="cancelar-tienda">Cancelar</button>
+    </div>
+  </section>
+
+  <div class="rejilla-fichas" id="fichas-tiendas">{{{fichas}}}</div>
+</div>
+
+<template id="ficha-tienda">
+  <article class="caja ficha-gestion {{clase}}">
+    <div class="cabecera-ficha">
+      <div>
+        <strong>{{nombre}}</strong>
+        <div class="texto-suave">{{id}} · {{ciudad}}</div>
+      </div>
+      <span class="etiqueta-estado">{{estadoTexto}}</span>
+    </div>
+    <div class="datos-ficha">
+      <div><span>Ventas del mes</span><strong>{{ventasMes}}</strong></div>
+      <div><span>N° de ventas</span><strong>{{cantidadMes}}</strong></div>
+      <div><span>Caja</span><strong>{{caja}}</strong></div>
+      <div><span>Empleados</span><strong>{{empleados}}</strong></div>
+      <div><span>Bodega</span><strong>{{bodega}}</strong></div>
+      <div><span>Teléfono</span><strong>{{telefono}}</strong></div>
+    </div>
+    <div class="texto-suave">{{direccion}}</div>
+    <div class="acciones-ficha">{{{acciones}}}</div>
+  </article>
+</template>
+
+<template id="acciones-tienda">
+  <button type="button" class="boton" data-editar="{{id}}">Editar</button>
+  <button type="button" class="boton" data-estado="{{id}}">{{textoEstado}}</button>
+</template>
+
+<template id="opcion">
+  <option value="{{valor}}">{{texto}}</option>
+</template>

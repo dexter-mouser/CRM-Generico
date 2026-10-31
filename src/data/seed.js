@@ -18,7 +18,7 @@ const dentroDe = (dias, hora = 9) => {
 };
 
 const semilla = {
-  version: 5,
+  version: 6,
   productos: [
     { id: '1', referencia: 'DC-AD-4', nombre: 'Dog Chow adulto razas medianas 4 kg', categoria: 'Alimento', costo: 52000, precio: 68000, iva: 5, stockMinimo: 5, existencias: 14 },
     { id: '2', referencia: 'PD-CA-2', nombre: 'Pedigree cachorro 2 kg', categoria: 'Alimento', costo: 24000, precio: 31500, iva: 5, stockMinimo: 5, existencias: 9 },
@@ -250,15 +250,42 @@ const semilla = {
     },
     {
       id: 'bodega', nombre: 'Bodega', descripcion: 'Administra el inventario.', protegido: false,
-      permisos: { panel: ['ver'], inventario: ['ver', 'crear', 'editar'], proveedores: ['ver', 'crear', 'editar'] },
+      permisos: { panel: ['ver'], inventario: ['ver', 'crear', 'editar'], bodegas: ['ver', 'crear', 'editar'], proveedores: ['ver', 'crear', 'editar'] },
     },
   ],
+  // tiendas: [] = acceso a todas las tiendas
   usuarios: [
-    { id: 'U-001', nombre: 'Administrador', correo: 'demo@generico.com', rolId: ID_ROL_PROPIETARIO, activo: true },
-    { id: 'U-002', nombre: 'Camila Duarte', correo: 'camila@generico.com', rolId: 'cajero', activo: true },
-    { id: 'U-003', nombre: 'Felipe Mora', correo: 'felipe@generico.com', rolId: 'bodega', activo: true },
+    { id: 'U-001', nombre: 'Administrador', correo: 'demo@generico.com', rolId: ID_ROL_PROPIETARIO, activo: true, tiendas: [] },
+    { id: 'U-002', nombre: 'Camila Duarte', correo: 'camila@generico.com', rolId: 'cajero', activo: true, tiendas: ['T-01'] },
+    { id: 'U-003', nombre: 'Felipe Mora', correo: 'felipe@generico.com', rolId: 'bodega', activo: true, tiendas: [] },
+  ],
+  tiendas: [
+    { id: 'T-01', nombre: 'Tienda Centro', direccion: 'Calle 50 # 42-18', telefono: '604 555 0100', ciudad: 'Medellín', bodegaId: 'B-01', activa: true },
+    { id: 'T-02', nombre: 'Tienda Norte', direccion: 'Cra 65 # 98-20', telefono: '604 555 0200', ciudad: 'Medellín', bodegaId: 'B-02', activa: true },
+  ],
+  bodegas: [
+    { id: 'B-01', nombre: 'Bodega Centro', tiendaId: 'T-01', direccion: 'Calle 50 # 42-18', activa: true },
+    { id: 'B-02', nombre: 'Bodega Norte', tiendaId: 'T-02', direccion: 'Cra 65 # 98-20', activa: true },
+    { id: 'B-03', nombre: 'Bodega principal', tiendaId: '', direccion: 'Zona industrial, bodega 4', activa: true },
+  ],
+  traslados: [],
+  empleados: [
+    { id: 'E-001', nombre: 'Administrador', tipoDocumento: 'CC', documento: '43111222', cargo: 'Gerente', tiendaId: 'T-01', telefono: '300 555 0101', correo: 'demo@generico.com',
+      fechaIngreso: '2024-02-01', activo: true, usuarioId: 'U-001', metaMensual: 0, comision: 0, turno: 'Lunes a sábado 8:00 a 17:00' },
+    { id: 'E-002', nombre: 'Camila Duarte', tipoDocumento: 'CC', documento: '1036998877', cargo: 'Cajera', tiendaId: 'T-01', telefono: '301 555 0102', correo: 'camila@generico.com',
+      fechaIngreso: '2025-03-15', activo: true, usuarioId: 'U-002', metaMensual: 3000000, comision: 2, turno: 'Lunes a viernes 9:00 a 18:00' },
+    { id: 'E-003', nombre: 'Felipe Mora', tipoDocumento: 'CC', documento: '1017445566', cargo: 'Auxiliar de bodega', tiendaId: 'T-01', telefono: '302 555 0103', correo: 'felipe@generico.com',
+      fechaIngreso: '2025-06-01', activo: true, usuarioId: 'U-003', metaMensual: 0, comision: 0, turno: 'Lunes a sábado 7:00 a 16:00' },
+    { id: 'E-004', nombre: 'Juliana Restrepo', tipoDocumento: 'CC', documento: '1152334455', cargo: 'Vendedora', tiendaId: 'T-02', telefono: '303 555 0104', correo: '',
+      fechaIngreso: '2026-01-10', activo: true, usuarioId: '', metaMensual: 2500000, comision: 2, turno: 'Martes a domingo 10:00 a 19:00' },
   ],
 };
+
+// Todo lo de la semilla ocurrió en la Tienda Centro (bodega B-01)
+semilla.ventas.forEach((venta) => Object.assign(venta, { tiendaId: 'T-01', bodegaId: 'B-01' }));
+semilla.documentos.forEach((documento) => Object.assign(documento, { tiendaId: 'T-01', bodegaId: 'B-01' }));
+semilla.facturas.forEach((factura) => Object.assign(factura, { bodegaId: 'B-01' }));
+semilla.pagos.forEach((pago) => Object.assign(pago, { tiendaId: 'T-01' }));
 
 // Inventario inicial de ejemplo: el stock con que arrancó cada producto antes de las compras y ventas de la semilla,
 // para que su kardex empiece en cero y termine en el stock actual
@@ -272,6 +299,27 @@ semilla.ajustesInventario = semilla.productos.map((producto, posicion) => ({
     + semilla.ventas.reduce((suma, venta) => suma + cantidadEn(venta.items, producto.id), 0),
   motivo: 'Inventario inicial',
   usuario: 'Administrador',
+  bodegaId: 'B-01',
 })).filter((ajuste) => ajuste.cantidad !== 0);
+
+// Stock por bodega: lo de arriba queda en la Bodega Centro; la Bodega Norte y la principal arrancan con algunos productos
+const STOCK_INICIAL_OTRAS = { 'B-02': { 1: 6, 3: 5, 4: 30, 8: 10, 9: 12, 17: 8 }, 'B-03': { 1: 20, 2: 15, 3: 20, 4: 120, 14: 25 } };
+semilla.productos.forEach((producto) => { producto.stock = { 'B-01': producto.existencias }; });
+Object.entries(STOCK_INICIAL_OTRAS).forEach(([bodegaId, cantidades]) => {
+  Object.entries(cantidades).forEach(([productoId, cantidad]) => {
+    const producto = semilla.productos.find((candidato) => candidato.id === productoId);
+    producto.stock[bodegaId] = cantidad;
+    producto.existencias += cantidad;
+    semilla.ajustesInventario.push({
+      id: `AJ-${String(semilla.ajustesInventario.length + 1).padStart(4, '0')}`,
+      fecha: hace(15, 9, semilla.ajustesInventario.length),
+      productoId,
+      cantidad,
+      motivo: 'Inventario inicial',
+      usuario: 'Administrador',
+      bodegaId,
+    });
+  });
+});
 
 export { semilla };

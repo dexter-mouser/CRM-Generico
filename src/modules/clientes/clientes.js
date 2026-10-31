@@ -301,4 +301,6 @@ export function montar(raiz, contexto) {
   // Abre la ficha si llega desde otra pantalla: clientes.html?ficha=C-003
   const pedido = new URLSearchParams(location.search).get('ficha');
   if (pedido) abrirFicha(pedido);
+  // Acceso "Nuevo cliente" del panel: clientes.html?nuevo=1
+  else if (new URLSearchParams(location.search).get('nuevo') === '1' && puede('clientes', 'crear')) abrirFormulario(null);
 }

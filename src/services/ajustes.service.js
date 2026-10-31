@@ -54,12 +54,13 @@ export function establecerPermitirSinExistencias(valor) {
 }
 
 // Vuelve el inventario, las ventas, las remisiones y cotizaciones, los clientes y su seguimiento, los proveedores,
-// los pagos, la caja y la contabilidad a los datos de ejemplo; los ajustes, roles, personas y la auditoría no cambian
+// los pagos, la caja, los traslados y la contabilidad a los datos de ejemplo; los ajustes, roles, personas, tiendas,
+// bodegas, empleados y la auditoría no cambian
 export function restablecerDatosDePrueba() {
   exigirPermiso('ajustes', 'editar', 'cambiar los ajustes');
   const datos = structuredClone(semilla);
   const claves = ['productos', 'ventas', 'documentos', 'facturas', 'orden', 'clientes', 'pagos', 'cajas', 'movimientosCaja', 'contabilidad',
-    'devoluciones', 'actividades', 'proveedores', 'ordenesCompra', 'ajustesInventario'];
+    'devoluciones', 'actividades', 'proveedores', 'ordenesCompra', 'ajustesInventario', 'traslados'];
   claves.forEach((clave) => { estado[clave] = datos[clave]; });
   borrarBusquedas();
   registrarAuditoria('ajustes', 'Datos de ejemplo restablecidos', '');

@@ -4,6 +4,7 @@ import { aPesos, aFecha } from '../../core/format.js';
 import { leerEntero } from '../../core/numeros.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import * as servicioCaja from '../../services/caja.service.js';
+import { tiendaActiva, nombreDeTienda } from '../../core/tienda.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 
 let documento;
@@ -33,8 +34,10 @@ export async function dibujar() {
   documento = await cargarHtml(new URL('./caja.html', import.meta.url));
   plantillasCuadricula = await cargarPlantillasCuadricula();
   const caja = servicioCaja.cajaAbierta();
+  const tienda = tiendaActiva();
   return seccion(documento, 'principal', {
-    contenido: caja ? contenidoCajaAbierta(caja) : seccion(documento, 'caja-cerrada'),
+    tienda: tienda?.nombre ?? 'Todas las tiendas',
+    contenido: !tienda ? seccion(documento, 'sin-tienda') : (caja ? contenidoCajaAbierta(caja) : seccion(documento, 'caja-cerrada')),
   });
 }
 
@@ -45,14 +48,16 @@ export function montar(raiz, contexto) {
     vacio: 'Aún no hay cierres de caja.',
     columnas: [
       { clave: 'id', titulo: 'Caja', ancho: '84px' },
+      { clave: 'tienda', titulo: 'Tienda', ancho: '130px' },
       { clave: 'apertura', titulo: 'Apertura', ancho: 'minmax(0, 1fr)' },
       { clave: 'cierre', titulo: 'Cierre', ancho: 'minmax(0, 1fr)' },
       { clave: 'esperado', titulo: 'Esperado', ancho: '112px', alinear: 'derecha' },
       { clave: 'contado', titulo: 'Contado', ancho: '112px', alinear: 'derecha' },
       { clave: 'diferencia', titulo: 'Diferencia', ancho: '112px', alinear: 'derecha' },
     ],
-    filas: estado.cajas.filter((existente) => existente.cierre).reverse().map((existente) => ({
+    filas: servicioCaja.cajasDeLaVista().filter((existente) => existente.cierre).reverse().map((existente) => ({
       id: existente.id,
+      tienda: nombreDeTienda(existente.tiendaId ?? estado.tiendas[0]?.id),
       apertura: aFecha(existente.apertura),
       cierre: aFecha(existente.cierre.fecha),
       esperado: aPesos(existente.cierre.esperado),

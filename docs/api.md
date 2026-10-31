@@ -60,7 +60,25 @@ Contrato que debe ofrecer el backend para reemplazar `core/store.js`. Todas las 
 | `GET /proveedores`, `POST /proveedores`, `PUT /proveedores/{id}`, `DELETE /proveedores/{id}` | `proveedores.service.js` | Incluye `saldo` por proveedor |
 | `GET /ordenes-compra`, `POST /ordenes-compra` | `registrarOrden` | `{ proveedorId, observaciones, items[] }` |
 | `POST /ordenes-compra/{id}/anulacion` | `anularOrden` | `{ motivo }` |
-| `GET /productos/{id}/kardex` | `kardexDeProducto` | Movimientos con saldo |
+| `GET /productos/{id}/kardex?bodegaId=` | `kardexDeProducto` | Movimientos con saldo, de una bodega o de todas |
+
+## Tiendas, bodegas y empleados (pendiente en el backend)
+Toda petición que registra ventas, caja, pagos o stock lleva la tienda activa (cabecera `X-Tienda` o campo `tiendaId`); el servidor valida que el usuario tenga acceso a ella (`usuario.tiendas`, vacío = todas).
+
+| Método y ruta | Función actual | Descripción |
+|---|---|---|
+| `GET /tiendas` | `tiendasPermitidas`, `resumenDeTienda` | Tiendas del usuario con ventas del mes, caja y empleados |
+| `POST /tiendas`, `PUT /tiendas/{id}` | `agregarTienda`, `actualizarTienda` | `{ nombre, ciudad, telefono, direccion, bodegaId? }`; sin bodega se crea una |
+| `PUT /tiendas/{id}/estado` | `cambiarEstadoTienda` | `{ activa }`; queda al menos una activa y no con caja abierta |
+| `GET /bodegas`, `POST /bodegas`, `PUT /bodegas/{id}` | `bodegas.service.js` | `{ nombre, tiendaId?, direccion }` con unidades y valor al costo |
+| `PUT /bodegas/{id}/estado` | `cambiarEstadoBodega` | `{ activa }`; no con stock, traslados por recibir ni siendo la de una tienda activa |
+| `GET /existencias?bodegaId=` | `existenciasEn` | Stock por producto y bodega |
+| `GET /traslados`, `POST /traslados` | `enviarTraslado` | `{ origenId, destinoId, observaciones, items[] }`; descuenta el origen |
+| `POST /traslados/{id}/recepcion` | `recibirTraslado` | Suma al destino |
+| `POST /traslados/{id}/anulacion` | `anularTraslado` | `{ motivo }`; devuelve al origen |
+| `GET /empleados`, `POST /empleados`, `PUT /empleados/{id}` | `empleados.service.js` | Ficha; `tiendasAcceso[]` actualiza el alcance del usuario |
+| `PUT /empleados/{id}/estado` | `cambiarEstadoEmpleado` | `{ activo }`; retirar desactiva su usuario |
+| `GET /empleados/{id}/desempeno` | `desempenoDelMes` | Ventas del mes, avance de la meta y comisión |
 
 ## Reportes
 | Método y ruta | Función actual | Descripción |

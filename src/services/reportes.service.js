@@ -5,21 +5,23 @@ import { clientesConDeuda, deudaDeCliente } from './clientes.service.js';
 import { estaAnulada } from './ventas.service.js';
 import { productosBajoMinimo } from './inventario.service.js';
 import { cotizaciones, resumenDelEmbudo } from './embudo.service.js';
+import { enTiendaActiva } from '../core/tienda.js';
 
 const DIAS_INACTIVIDAD = 60;
 
 // Ventas cuya fecha local está entre "desde" y "hasta" (ambas incluidas, formato AAAA-MM-DD)
+// Solo las de la tienda activa (o de todas si se ven todas las tiendas)
 export const ventasEntre = (desde, hasta) =>
   estado.ventas.filter((venta) => {
     const dia = aFechaLocal(venta.fecha);
-    return dia >= desde && dia <= hasta;
+    return dia >= desde && dia <= hasta && enTiendaActiva(venta);
   });
 
 // Devoluciones y anulaciones registradas entre dos fechas; restan de las ventas del día en que se hicieron
 const devolucionesEntre = (desde, hasta) =>
   estado.devoluciones.filter((devolucion) => {
     const dia = aFechaLocal(devolucion.fecha);
-    return dia >= desde && dia <= hasta;
+    return dia >= desde && dia <= hasta && enTiendaActiva(devolucion);
   });
 
 // Ventas del rango menos lo devuelto en el rango

@@ -157,6 +157,10 @@ export const ESQUEMA_DATOS = {
   proveedores: { id: 'texto', nombre: 'texto' },
   ordenesCompra: { id: 'texto', proveedorId: 'texto', fecha: 'fecha', estado: 'texto', items: ['lista', { productoId: 'texto', nombre: 'texto', cantidad: 'enteroNoNegativo', costoUnitario: 'enteroNoNegativo' }] },
   ajustesInventario: { id: 'texto', fecha: 'fecha', productoId: 'texto', cantidad: 'entero', motivo: 'texto' },
+  tiendas: { id: 'texto', nombre: 'texto', activa: 'booleano' },
+  bodegas: { id: 'texto', nombre: 'texto', activa: 'booleano' },
+  traslados: { id: 'texto', fecha: 'fecha', origenId: 'texto', destinoId: 'texto', estado: 'texto', items: ['lista', { productoId: 'texto', nombre: 'texto', cantidad: 'enteroNoNegativo' }] },
+  empleados: { id: 'texto', nombre: 'texto', documento: 'texto', cargo: 'texto', tiendaId: 'texto', activo: 'booleano' },
   roles: { id: 'texto', nombre: 'texto', protegido: 'booleano', permisos: 'objeto' },
   usuarios: { id: 'texto', nombre: 'texto', correo: 'texto', rolId: 'texto', activo: 'booleano' },
 };

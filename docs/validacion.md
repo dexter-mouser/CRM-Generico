@@ -54,6 +54,14 @@ Una venta a Crédito exige cliente registrado con cupo y no puede superar `cupo 
 - Proveedor: nombre obligatorio y único; NIT opcional y único; plazo de 0 a 365 días.
 - Orden de compra: proveedor existente y líneas con cantidad y costo enteros ≥ 1. Solo una orden abierta se recibe o se anula (con motivo de al menos 5 caracteres).
 
+## Tiendas, bodegas, traslados y empleados
+
+- Tienda: nombre obligatorio (hasta 60) y único; teléfono válido si se escribe; bodega activa (al editar es obligatoria). Siempre queda una tienda activa y no se desactiva una con caja abierta.
+- Bodega: nombre obligatorio y único; tienda opcional. No se desactiva con stock, con traslados por recibir ni si es la bodega de una tienda activa.
+- Traslado: origen y destino activos y distintos, al menos una línea, cantidades enteras ≥ 1 y no mayores que el stock del origen. Solo un traslado en tránsito se recibe o se anula (con motivo).
+- Empleado: nombre, documento (3 a 20 caracteres, único por tipo), cargo, tienda y fecha de ingreso obligatorios; meta entera ≥ 0; comisión de 0 a 50 %; un usuario no se asigna a dos empleados; con usuario, al menos una tienda de acceso. No se retira al único propietario activo.
+- Tienda activa: vender, cobrar en efectivo, mover caja o editar stock exige una tienda elegida (no "Todas las tiendas") a la que el usuario tenga acceso.
+
 ## Copia de seguridad (JSON)
 
 Formato `generico-copia-1` con `version`, `fecha`, `huella` (SHA-256 de `datos`) y `datos`. Antes de restaurar se comprueba: formato, versión, huella, que cada sección exista (las copias anteriores a las remisiones y cotizaciones se toman con `documentos` vacío) y que cada registro cumpla `ESQUEMA_DATOS`, que haya ajustes, métodos de pago, rol Propietario y al menos un propietario activo. Solo se copian las claves conocidas.

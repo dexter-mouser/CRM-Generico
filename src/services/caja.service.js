@@ -5,8 +5,13 @@ import { siguienteCodigo } from '../core/codigos.js';
 import { exigirPermiso } from '../core/autorizacion.js';
 import { exigirEntero, exigirTexto } from '../core/validacion.js';
 import { registrarAuditoria } from './auditoria.service.js';
+import { exigirTiendaActiva, tiendaActivaId, TODAS_LAS_TIENDAS } from '../core/tienda.js';
+import { nombreDeUsuario } from '../core/autorizacion.js';
 
-export const cajaAbierta = () => estado.cajas.find((caja) => !caja.cierre) ?? null;
+// Cada tienda tiene su propia caja. Sin tienda indicada se usa la tienda activa.
+const tiendaDe = (registro) => registro.tiendaId ?? 'T-01';
+export const cajaAbierta = (tiendaId = tiendaActivaId()) => estado.cajas.find((caja) => !caja.cierre && tiendaDe(caja) === tiendaId) ?? null;
+export const cajasDeLaVista = () => estado.cajas.filter((caja) => tiendaActivaId() === TODAS_LAS_TIENDAS || tiendaDe(caja) === tiendaActivaId());
 
 const sumar = (lista, campo = 'valor') => lista.reduce((acumulado, elemento) => acumulado + elemento[campo], 0);
 
@@ -14,16 +19,17 @@ const sumar = (lista, campo = 'valor') => lista.reduce((acumulado, elemento) => 
 export function resumenDeCaja(caja) {
   const desde = new Date(caja.apertura).getTime();
   const hasta = caja.cierre ? new Date(caja.cierre.fecha).getTime() : Infinity;
-  const dentro = (fecha) => {
+  // Solo cuenta lo de la tienda de la caja, ocurrido entre su apertura y su cierre
+  const dentro = (fecha, registro) => {
     const momento = new Date(fecha).getTime();
-    return momento >= desde && momento <= hasta;
+    return momento >= desde && momento <= hasta && tiendaDe(registro) === tiendaDe(caja);
   };
   const efectivo = (elemento) => elemento.metodo === 'Efectivo';
-  const ventasEfectivo = sumar(estado.ventas.filter((venta) => efectivo(venta) && dentro(venta.fecha)), 'total');
-  const abonosEfectivo = sumar(estado.pagos.filter((pago) => pago.tipo === 'abono' && efectivo(pago) && dentro(pago.fecha)));
-  const pagosProveedores = sumar(estado.pagos.filter((pago) => pago.tipo === 'proveedor' && efectivo(pago) && dentro(pago.fecha)));
+  const ventasEfectivo = sumar(estado.ventas.filter((venta) => efectivo(venta) && dentro(venta.fecha, venta)), 'total');
+  const abonosEfectivo = sumar(estado.pagos.filter((pago) => pago.tipo === 'abono' && efectivo(pago) && dentro(pago.fecha, pago)));
+  const pagosProveedores = sumar(estado.pagos.filter((pago) => pago.tipo === 'proveedor' && efectivo(pago) && dentro(pago.fecha, pago)));
   const movimientos = estado.movimientosCaja.filter((movimiento) => movimiento.cajaId === caja.id);
-  const reembolsos = sumar(estado.devoluciones.filter((devolucion) => efectivo(devolucion) && dentro(devolucion.fecha)), 'total');
+  const reembolsos = sumar(estado.devoluciones.filter((devolucion) => efectivo(devolucion) && dentro(devolucion.fecha, devolucion)), 'total');
   const ingresos = sumar(movimientos.filter((movimiento) => movimiento.tipo === 'ingreso'));
   const egresos = sumar(movimientos.filter((movimiento) => movimiento.tipo === 'egreso'));
   return {
@@ -39,31 +45,36 @@ export function resumenDeCaja(caja) {
   };
 }
 
+// Efectivo esperado en la caja abierta de la tienda activa, o la suma de todas si se ven todas las tiendas
 export function efectivoEnCaja() {
+  if (tiendaActivaId() === TODAS_LAS_TIENDAS) return estado.cajas.filter((caja) => !caja.cierre).reduce((suma, caja) => suma + resumenDeCaja(caja).esperado, 0);
   const caja = cajaAbierta();
   return caja ? resumenDeCaja(caja).esperado : 0;
 }
 
 export function abrirCaja(base) {
   exigirPermiso('caja', 'crear', 'abrir la caja');
-  if (cajaAbierta()) throw new Error('Ya hay una caja abierta');
+  const tienda = exigirTiendaActiva('abrir la caja');
+  if (cajaAbierta(tienda.id)) throw new Error(`La caja de ${tienda.nombre} ya está abierta`);
   if (!Number.isInteger(base)) throw new Error('Escribe la base con la que abres la caja (puede ser 0)');
   exigirEntero(base, 'la base');
   const caja = {
     id: siguienteCodigo(estado.cajas.map((existente) => existente.id), 'K', 3),
+    tiendaId: tienda.id,
+    usuario: nombreDeUsuario(),
     apertura: new Date().toISOString(),
     base,
     cierre: null,
   };
   estado.cajas.push(caja);
-  registrarAuditoria('caja', 'Caja abierta', `${caja.id} · base $ ${base}`);
+  registrarAuditoria('caja', 'Caja abierta', `${caja.id} · ${tienda.nombre} · base $ ${base}`);
   guardarEstado();
   return caja;
 }
 
 export function registrarMovimiento({ tipo, concepto, valor }) {
   exigirPermiso('caja', 'crear', 'registrar movimientos de caja');
-  const caja = cajaAbierta();
+  const caja = cajaAbierta(exigirTiendaActiva('registrar movimientos de caja').id);
   if (!caja) throw new Error('Abre la caja antes de registrar movimientos');
   if (!['ingreso', 'egreso'].includes(tipo)) throw new Error('Elige si es un ingreso o un egreso');
   const conceptoLimpio = exigirTexto(concepto, 'el concepto del movimiento');
@@ -86,8 +97,8 @@ export function registrarMovimiento({ tipo, concepto, valor }) {
 // Devuelve el cierre con la diferencia entre lo contado y lo esperado (negativa si falta efectivo)
 export function cerrarCaja(contado) {
   exigirPermiso('caja', 'crear', 'cerrar la caja');
-  const caja = cajaAbierta();
-  if (!caja) throw new Error('No hay una caja abierta');
+  const caja = cajaAbierta(exigirTiendaActiva('cerrar la caja').id);
+  if (!caja) throw new Error('No hay una caja abierta en esta tienda');
   if (!(contado >= 0)) throw new Error('Escribe el efectivo que contaste (puede ser 0)');
   const esperado = resumenDeCaja(caja).esperado;
   caja.cierre = { fecha: new Date().toISOString(), contado, esperado, diferencia: contado - esperado };

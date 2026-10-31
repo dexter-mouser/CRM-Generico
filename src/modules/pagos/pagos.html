@@ -3,7 +3,7 @@
   <div class="texto-suave separacion-inferior">Registra abonos de clientes que deben y pagos a proveedores con facturas pendientes. Los valores se escriben a mano.</div>
 
   <div class="dos-columnas arriba">
-    <section class="caja" aria-labelledby="titulo-abono">
+    <section class="caja" aria-labelledby="titulo-abono" data-seccion="abonos">
       <strong id="titulo-abono">Abono de un cliente</strong>
       <label for="abono-cliente">Cliente con deuda</label>
       <select id="abono-cliente" class="campo">{{{opcionesClientes}}}</select>
@@ -15,7 +15,7 @@
       <button type="button" class="boton primario ancho" id="registrar-abono">Registrar abono</button>
     </section>
 
-    <section class="caja" aria-labelledby="titulo-proveedor">
+    <section class="caja" aria-labelledby="titulo-proveedor" data-seccion="proveedores">
       <strong id="titulo-proveedor">Pago a un proveedor</strong>
       <label for="pago-proveedor">Proveedor con saldo pendiente</label>
       <select id="pago-proveedor" class="campo">{{{opcionesProveedores}}}</select>

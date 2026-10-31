@@ -1,15 +1,15 @@
 <div id="principal">
   <h1>Inventario</h1>
-  <div class="texto-suave separacion-inferior">Cada producto tiene ID, referencia, nombre, categoría, costo, precio de venta (con IVA incluido), tarifa de IVA, stock mínimo y stock (puede quedar en negativo). Los números se escriben a mano. "Kardex" muestra cada entrada y salida.</div>
-  <div class="acciones">
-    <button type="button" class="boton primario" id="abrir-factura" aria-expanded="false" aria-controls="panel-factura">Ingresar factura</button>
+  <div class="texto-suave separacion-inferior">{{{lugarStock}}}</div>
+  <div class="acciones" data-seccion="productos">
+    <a class="boton primario" href="inventario.html?seccion=compras">Ingresar compra</a>
     <button type="button" class="boton" id="descargar-csv">Descargar CSV</button>
     <label class="boton archivo">Cargar CSV<input type="file" id="cargar-csv" accept=".csv,text/csv" hidden></label>
   </div>
 
-  <section class="caja separacion-inferior" id="panel-factura" aria-label="Ingresar factura de compra" hidden>
+  <section class="caja separacion-inferior" id="panel-factura" aria-label="Ingresar factura de compra" data-seccion="compras">
     <strong>Ingresar factura de compra</strong>
-    <div class="texto-suave">Suma las cantidades al stock y deja el costo de la factura como costo de cada producto. Si el producto es nuevo, créalo antes en "Nuevo producto"; si el proveedor es nuevo, créalo en Proveedores.</div>
+    <div class="texto-suave">Suma las cantidades al stock de la bodega elegida y deja el costo de la factura como costo de cada producto. Si el producto es nuevo, créalo antes en Productos; si el proveedor es nuevo, créalo en Proveedores.</div>
     <div class="aviso-origen caja margen-superior" id="aviso-orden" hidden><strong id="texto-orden"></strong></div>
     <div class="dos-columnas arriba margen-superior">
       <div class="columna-angosta">
@@ -19,6 +19,8 @@
         <input id="factura-numero" class="campo" autocomplete="off">
         <label for="factura-fecha">Fecha</label>
         <input id="factura-fecha" class="campo" type="date" value="{{hoy}}">
+        <label for="factura-bodega">Entra a la bodega</label>
+        <select id="factura-bodega" class="campo">{{{opcionesBodegaFactura}}}</select>
         {{{selector}}}
       </div>
       <div class="columna-ancha">
@@ -36,11 +38,13 @@
         </div>
       </div>
     </div>
-    <strong>Facturas de compra</strong>
+  </section>
+
+  <section class="caja" aria-label="Facturas de compra" data-seccion="compras">
     <div id="cuadricula-facturas-compra"></div>
   </section>
 
-  <div class="dos-columnas arriba">
+  <div class="dos-columnas arriba" data-seccion="productos">
     <div class="caja columna-ancha">
       <div id="cuadricula-productos"></div>
     </div>
@@ -63,20 +67,26 @@
       <select id="nuevo-iva" class="campo">{{{opcionesIva}}}</select>
       <label for="nuevo-minimo">Stock mínimo</label>
       <input id="nuevo-minimo" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
-      <label for="nuevo-stock">Stock inicial</label>
+      <label for="nuevo-stock">Stock inicial (bodega de la tienda activa)</label>
       <input id="nuevo-stock" class="campo" data-numero="entero-negativo" autocomplete="off" placeholder="0">
       <button type="button" class="boton primario ancho" id="agregar-producto">Agregar producto</button>
     </div>
   </div>
 
-  <section class="caja margen-superior-grande" id="panel-kardex" aria-labelledby="titulo-kardex" hidden>
-    <div class="cabecera-vista">
+  <section class="caja" id="panel-kardex" aria-labelledby="titulo-kardex" data-seccion="kardex">
+    <h2 id="titulo-kardex">Kardex</h2>
+    <div class="texto-suave">Entradas (+) y salidas (−) del producto con el saldo después de cada movimiento: ventas, compras, devoluciones, ajustes y traslados.</div>
+    <div class="formulario-gestion margen-superior">
       <div>
-        <h2 id="titulo-kardex"></h2>
-        <div class="texto-suave">Entradas (+) y salidas (−) del producto con el saldo después de cada movimiento.</div>
+        <label for="kardex-producto">Producto</label>
+        <select id="kardex-producto" class="campo">{{{opcionesProducto}}}</select>
       </div>
-      <button type="button" class="boton" id="cerrar-kardex">Cerrar kardex</button>
+      <div>
+        <label for="kardex-bodega">Bodega</label>
+        <select id="kardex-bodega" class="campo">{{{opcionesBodegaKardex}}}</select>
+      </div>
     </div>
+    <div class="texto-suave margen-superior" id="resumen-kardex"></div>
     <div id="cuadricula-kardex"></div>
   </section>
 </div>
@@ -89,12 +99,16 @@
   <option value="{{valor}}" {{seleccion}}>{{valor}} %</option>
 </template>
 
+<template id="opcion-elegida">
+  <option value="{{valor}}" {{seleccion}}>{{texto}}</option>
+</template>
+
 <template id="opcion">
   <option value="{{valor}}">{{texto}}</option>
 </template>
 
 <template id="acciones-producto">
-  <button type="button" class="boton" data-kardex="{{id}}">Kardex</button>
+  <a class="boton" href="inventario.html?seccion=kardex&amp;producto={{id}}">Kardex</a>
 </template>
 
 <template id="campo-producto-texto">

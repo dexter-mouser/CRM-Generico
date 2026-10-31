@@ -6,6 +6,7 @@ import { exigirEntero, exigirTexto } from '../core/validacion.js';
 import { registrarAuditoria } from './auditoria.service.js';
 import { buscarCliente, deudaDeCliente } from './clientes.service.js';
 import { saldoConProveedor } from './proveedores.service.js';
+import { exigirTiendaActiva, tiendaActiva } from '../core/tienda.js';
 
 // Métodos con los que se puede pagar: los de ventas, sin "Crédito" (que es dejar la deuda pendiente)
 export const metodosDePago = () => estado.ajustes.ventas.metodosPago.filter((metodo) => metodo !== 'Crédito');
@@ -21,10 +22,13 @@ function validarComun(valor, metodo) {
   if (!metodosDePago().includes(metodo)) throw new Error('Elige un método de pago');
 }
 
+// El pago queda en la tienda activa; en efectivo hace falta una tienda concreta porque entra o sale de su caja
 function guardarPago(datos) {
+  const tienda = datos.metodo === 'Efectivo' ? exigirTiendaActiva('registrar pagos en efectivo') : tiendaActiva();
   const pago = {
     id: siguienteCodigo(estado.pagos.map((existente) => existente.id), 'PG', 4),
     fecha: new Date().toISOString(),
+    tiendaId: tienda?.id ?? estado.tiendas[0]?.id ?? '',
     ...datos,
   };
   estado.pagos.push(pago);

@@ -1,0 +1,123 @@
+<div id="principal">
+  <div class="cabecera-vista">
+    <div>
+      <h1>Bodegas</h1>
+      <div class="texto-suave">Stock de cada bodega y traslados entre ellas. Un traslado sale del origen al enviarlo y entra al destino cuando se recibe.</div>
+    </div>
+    <div class="acciones-fila">
+      <button type="button" class="boton" id="nueva-bodega">Nueva bodega</button>
+      <button type="button" class="boton primario" id="nuevo-traslado">Nuevo traslado</button>
+    </div>
+  </div>
+
+  <section class="caja formulario-en-linea" id="formulario-bodega" aria-labelledby="titulo-formulario-bodega" hidden>
+    <strong id="titulo-formulario-bodega">Nueva bodega</strong>
+    <div class="formulario-gestion margen-superior">
+      <div>
+        <label for="bodega-nombre">Nombre</label>
+        <input id="bodega-nombre" class="campo" maxlength="60" autocomplete="off" placeholder="Bodega principal">
+      </div>
+      <div>
+        <label for="bodega-tiendaId">Tienda</label>
+        <select id="bodega-tiendaId" class="campo">{{{opcionesTienda}}}</select>
+      </div>
+      <div class="ancho-completo">
+        <label for="bodega-direccion">Dirección</label>
+        <input id="bodega-direccion" class="campo" maxlength="300" autocomplete="off">
+      </div>
+    </div>
+    <div class="acciones-fila margen-superior-grande">
+      <button type="button" class="boton primario" id="guardar-bodega">Guardar bodega</button>
+      <button type="button" class="boton" id="cancelar-bodega">Cancelar</button>
+    </div>
+  </section>
+
+  <section class="caja separacion-inferior" id="panel-traslado" aria-labelledby="titulo-traslado" hidden>
+    <strong id="titulo-traslado">Nuevo traslado</strong>
+    <div class="dos-columnas arriba margen-superior">
+      <div class="columna-angosta">
+        <label for="traslado-origen">Sale de</label>
+        <select id="traslado-origen" class="campo">{{{opcionesBodega}}}</select>
+        <label for="traslado-destino">Llega a</label>
+        <select id="traslado-destino" class="campo">{{{opcionesBodega}}}</select>
+        <label for="traslado-observaciones">Observaciones</label>
+        <input id="traslado-observaciones" class="campo" maxlength="300" autocomplete="off" placeholder="Opcional: quién lo lleva, vehículo">
+        {{{selector}}}
+      </div>
+      <div class="columna-ancha">
+        <div class="desplazable">
+          <table>
+            <tr><th>ID</th><th>Producto</th><th>Disponible</th><th>Cantidad</th><th></th></tr>
+            <tbody id="lineas-traslado"></tbody>
+          </table>
+        </div>
+        <div class="texto-suave margen-superior" id="sin-lineas-traslado">Aún no agregaste productos. Elige uno del buscador.</div>
+        <div class="acciones-fila margen-superior-grande">
+          <button type="button" class="boton primario" id="enviar-traslado">Enviar traslado</button>
+          <button type="button" class="boton" id="cancelar-traslado">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="rejilla-fichas" id="fichas-bodegas">{{{fichas}}}</div>
+
+  <section class="caja separacion-inferior" aria-label="Stock por bodega">
+    <div id="cuadricula-stock"></div>
+  </section>
+
+  <section class="caja" id="traslados" aria-label="Traslados">
+    <div class="confirmacion" id="confirmar-anular-traslado" hidden>
+      <span id="texto-anular-traslado"></span>
+      <input id="motivo-anular-traslado" class="campo" maxlength="200" autocomplete="off" placeholder="Motivo">
+      <button type="button" class="boton peligro" id="anular-traslado-si">Anular traslado</button>
+      <button type="button" class="boton" id="anular-traslado-no">Cancelar</button>
+    </div>
+    <div id="cuadricula-traslados"></div>
+  </section>
+</div>
+
+<template id="ficha-bodega">
+  <article class="caja ficha-gestion {{clase}}">
+    <div class="cabecera-ficha">
+      <div>
+        <strong>{{nombre}}</strong>
+        <div class="texto-suave">{{id}} · {{tienda}}</div>
+      </div>
+      <span class="etiqueta-estado">{{estadoTexto}}</span>
+    </div>
+    <div class="datos-ficha">
+      <div><span>Unidades</span><strong>{{unidades}}</strong></div>
+      <div><span>Valor al costo</span><strong>{{valor}}</strong></div>
+      <div><span>Productos con stock</span><strong>{{productos}}</strong></div>
+      <div><span>Por recibir</span><strong>{{porRecibir}}</strong></div>
+    </div>
+    <div class="acciones-ficha">{{{acciones}}}</div>
+  </article>
+</template>
+
+<template id="acciones-bodega">
+  <button type="button" class="boton" data-editar="{{id}}">Editar</button>
+  <button type="button" class="boton" data-estado="{{id}}">{{textoEstado}}</button>
+</template>
+
+<template id="acciones-traslado">
+  <div class="acciones-fila">
+    <button type="button" class="boton primario" data-recibir="{{id}}">Recibir</button>
+    <button type="button" class="boton peligro" data-anular="{{id}}">Anular</button>
+  </div>
+</template>
+
+<template id="fila-linea-traslado">
+  <tr data-posicion="{{posicion}}">
+    <td>{{id}}</td>
+    <td class="celda-ancha">{{nombre}}</td>
+    <td>{{disponible}}</td>
+    <td><input class="campo campo-corto" data-campo="cantidad" data-numero="entero" inputmode="numeric" autocomplete="off" aria-label="Cantidad de {{nombre}}" value="{{cantidad}}"></td>
+    <td><button type="button" class="boton icono" data-quitar aria-label="Quitar {{nombre}}">{{{icono}}}</button></td>
+  </tr>
+</template>
+
+<template id="opcion">
+  <option value="{{valor}}">{{texto}}</option>
+</template>

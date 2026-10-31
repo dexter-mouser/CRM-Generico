@@ -15,5 +15,8 @@ export const rutas = {
   seguimiento: () => import('../modules/seguimiento/seguimiento.js'),
   embudo: () => import('../modules/embudo/embudo.js'),
   proveedores: () => import('../modules/proveedores/proveedores.js'),
+  tiendas: () => import('../modules/tiendas/tiendas.js'),
+  bodegas: () => import('../modules/bodegas/bodegas.js'),
+  empleados: () => import('../modules/empleados/empleados.js'),
   placeholder: () => import('../modules/placeholder/placeholder.js'),
 };

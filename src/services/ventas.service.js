@@ -13,6 +13,8 @@ import { exigirEntero, exigirMotivo, exigirTexto, validarLineas, LIMITES } from 
 import { registrarAuditoria } from './auditoria.service.js';
 import { ultimoDiaCerrado } from './contabilidad.service.js';
 import { cajaAbierta } from './caja.service.js';
+import { existenciasEn, moverExistencias } from './inventario.service.js';
+import { bodegaDeTienda, exigirTiendaActiva } from '../core/tienda.js';
 import { buscarCliente, deudaDeCliente, cupoDisponible } from './clientes.service.js';
 import { aPesos } from '../core/format.js';
 
@@ -87,13 +89,18 @@ export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo'
     throw new Error(`${TIPOS_DOCUMENTO[origen.tipo].etiqueta} ${origen.id} no se puede pasar a ${TIPOS_DOCUMENTO[tipo].etiqueta.toLowerCase()}`);
   }
   const entregadas = remitidas(origen);
+  // La venta queda en la tienda activa; un documento que viene de otro queda en la tienda del original
+  const tiendaId = origen?.tiendaId ?? exigirTiendaActiva('registrar ventas').id;
+  const bodegaId = origen?.bodegaId ?? bodegaDeTienda(tiendaId)?.id;
+  if (!bodegaId) throw new Error('La tienda no tiene bodega: asígnala en Tiendas');
 
   if (tipo !== 'cotizacion' && !estado.ajustes.ventas.permitirSinExistencias) {
     for (const linea of lineas) {
       const producto = buscarProducto(linea.productoId);
       const faltante = linea.cantidad - (entregadas[linea.productoId] ?? 0);
-      if (producto && faltante > producto.existencias) {
-        throw new Error(`No hay existencias suficientes de ${linea.nombre} (disponibles: ${producto.existencias})`);
+      const disponibles = producto ? existenciasEn(producto, bodegaId) : 0;
+      if (producto && faltante > disponibles) {
+        throw new Error(`No hay existencias suficientes de ${linea.nombre} en esta tienda (disponibles: ${disponibles})`);
       }
     }
   }
@@ -128,6 +135,8 @@ export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo'
     clienteId: registrado?.id ?? '',
     usuario: nombreDeUsuario(),
     usuarioCorreo: usuarioActual()?.correo ?? '',
+    tiendaId,
+    bodegaId,
     observaciones: exigirTexto(observaciones, 'las observaciones', { obligatorio: false, maximo: LIMITES.textoLargo }),
     items,
     total,
@@ -149,9 +158,10 @@ export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo'
   return documento;
 }
 
-const moverStock = (items, signo, entregadas = {}) => items.forEach((item) => {
+// Saca (signo 1) o devuelve (signo -1) las cantidades en la bodega del documento
+const moverStock = (items, signo, bodegaId, entregadas = {}) => items.forEach((item) => {
   const producto = buscarProducto(item.productoId);
-  if (producto) producto.existencias -= signo * (item.cantidad - (entregadas[item.productoId] ?? 0));
+  if (producto) moverExistencias(producto, -signo * (item.cantidad - (entregadas[item.productoId] ?? 0)), bodegaId);
 });
 
 // Lo remitido que no quedó en la factura vuelve al stock: no se entregó o el cliente lo devolvió
@@ -159,15 +169,15 @@ function devolverLoNoFacturado(origen, items) {
   if (origen?.tipo !== 'remision') return;
   const facturados = new Set(items.map((item) => item.productoId));
   const sobrantes = origen.items.filter((item) => !facturados.has(item.productoId));
-  moverStock(sobrantes, -1);
+  moverStock(sobrantes, -1, origen.bodegaId);
 }
 
 // Registra la factura, la remisión o la cotización según el tipo; devuelve el documento guardado
 export function registrarVenta(datos) {
   exigirPermiso('nueva-venta', 'crear', 'registrar ventas');
   const documento = armarVenta(datos);
-  if (documento.tipo === 'factura' && documento.metodo === 'Efectivo' && !cajaAbierta()) {
-    throw new Error('Abre la caja antes de registrar ventas en efectivo');
+  if (documento.tipo === 'factura' && documento.metodo === 'Efectivo' && !cajaAbierta(documento.tiendaId)) {
+    throw new Error('Abre la caja de esta tienda antes de registrar ventas en efectivo');
   }
   const etiqueta = TIPOS_DOCUMENTO[documento.tipo].etiqueta;
   const origen = datos.documentoOrigen ? buscarDocumento(datos.documentoOrigen) : null;
@@ -181,13 +191,13 @@ export function registrarVenta(datos) {
   if (documento.tipo === 'factura') {
     registro = { id, ...documento };
     estado.ventas.push(registro);
-    moverStock(registro.items, 1, remitidas(origen));
+    moverStock(registro.items, 1, registro.bodegaId, remitidas(origen));
     devolverLoNoFacturado(origen, registro.items);
     registrarAuditoria('ventas', 'Factura de venta registrada', `${id} · ${registro.cliente} · ${registro.metodo} · $ ${registro.total}${desde}`);
   } else {
     registro = { id, ...documento, convertidoEn: null, anulado: false };
     estado.documentos.push(registro);
-    if (registro.tipo === 'remision') moverStock(registro.items, 1);
+    if (registro.tipo === 'remision') moverStock(registro.items, 1, registro.bodegaId);
     registrarAuditoria('ventas', `${etiqueta} registrada`, `${id} · ${registro.cliente} · $ ${registro.total}${desde}`);
   }
   if (origen) {
@@ -214,7 +224,7 @@ export function anularDocumento(id, motivo) {
     documento.motivoPerdida = documento.motivoPerdida || 'Otro';
     documento.detallePerdida = motivoLimpio;
   }
-  if (documento.tipo === 'remision') moverStock(documento.items, -1);
+  if (documento.tipo === 'remision') moverStock(documento.items, -1, documento.bodegaId ?? 'B-01');
   registrarAuditoria('ventas', `${TIPOS_DOCUMENTO[documento.tipo].etiqueta} anulada`, `${id} · ${motivoLimpio}`);
   guardarEstado();
   return documento;
@@ -262,8 +272,8 @@ function crearNota(venta, tipo, cantidades, motivo) {
     if (cliente && total > deudaDeCliente(cliente)) {
       throw new Error(`${cliente.nombre} ya abonó parte de esta factura: la devolución supera su deuda actual. Registra el reembolso como egreso en Caja`);
     }
-  } else if (venta.metodo === 'Efectivo' && !cajaAbierta()) {
-    throw new Error('Abre la caja para devolver dinero en efectivo');
+  } else if (venta.metodo === 'Efectivo' && !cajaAbierta(venta.tiendaId)) {
+    throw new Error('Abre la caja de la tienda de la factura para devolver dinero en efectivo');
   }
 
   const nota = {
@@ -276,11 +286,13 @@ function crearNota(venta, tipo, cantidades, motivo) {
     cliente: venta.cliente,
     clienteId: venta.clienteId ?? '',
     metodo: venta.metodo,
+    tiendaId: venta.tiendaId ?? 'T-01',
+    bodegaId: venta.bodegaId ?? 'B-01',
     items: items.map(({ productoId, nombre, referencia, cantidad, valorUnitario }) => ({ productoId, nombre, referencia, cantidad, valorUnitario })),
     total,
   };
   estado.devoluciones.push(nota);
-  moverStock(nota.items, -1);
+  moverStock(nota.items, -1, nota.bodegaId);
   registrarAuditoria('ventas', tipo === 'anulacion' ? 'Factura anulada' : 'Devolución registrada', `${nota.id} sobre ${venta.id} · $ ${total} · ${motivoLimpio}`);
   guardarEstado();
   return nota;
