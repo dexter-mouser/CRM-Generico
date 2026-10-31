@@ -43,6 +43,17 @@ export function exigirCorreo(valor, { obligatorio = true } = {}) {
   return correo;
 }
 
+// Las personas de la tienda siempre usan correo del dominio de la tienda
+export const DOMINIO_CORREO = 'generico.com';
+
+export function exigirCorreoDeTienda(valor) {
+  const escrito = limpiarTexto(valor).toLowerCase();
+  const correo = escrito && !escrito.includes('@') ? `${escrito}@${DOMINIO_CORREO}` : escrito;
+  exigirCorreo(correo);
+  if (!correo.endsWith(`@${DOMINIO_CORREO}`)) throw new Error(`El correo debe terminar en @${DOMINIO_CORREO}`);
+  return correo;
+}
+
 export function exigirTelefono(valor) {
   const telefono = limpiarTexto(valor);
   if (telefono && !PATRONES.telefono.test(telefono)) throw new Error('El teléfono solo puede tener números, espacios, paréntesis, + y -');

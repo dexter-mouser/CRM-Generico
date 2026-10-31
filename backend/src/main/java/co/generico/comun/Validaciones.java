@@ -75,6 +75,17 @@ public final class Validaciones {
         return correo;
     }
 
+    /** Las personas de la tienda usan siempre correo del dominio de la tienda. */
+    public static String correoDeTienda(String valor) {
+        String escrito = limpiar(valor).toLowerCase();
+        String correo = !escrito.isEmpty() && !escrito.contains("@") ? escrito + "@generico.com" : escrito;
+        correo(correo, true);
+        if (!correo.endsWith("@generico.com")) {
+            throw new ReglaDeNegocioException("El correo debe terminar en @generico.com");
+        }
+        return correo;
+    }
+
     public static String telefono(String valor) {
         String telefono = limpiar(valor);
         if (!telefono.isEmpty() && !TELEFONO.matcher(telefono).matches()) {

@@ -218,7 +218,7 @@ export const semilla = {
   ],
   usuarios: [
     { id: 'U-001', nombre: 'Administrador', correo: 'demo@generico.com', rolId: ID_ROL_PROPIETARIO, activo: true },
-    { id: 'U-002', nombre: 'Camila Duarte', correo: 'camila@mundomascota.com', rolId: 'cajero', activo: true },
-    { id: 'U-003', nombre: 'Felipe Mora', correo: 'felipe@mundomascota.com', rolId: 'bodega', activo: true },
+    { id: 'U-002', nombre: 'Camila Duarte', correo: 'camila@generico.com', rolId: 'cajero', activo: true },
+    { id: 'U-003', nombre: 'Felipe Mora', correo: 'felipe@generico.com', rolId: 'bodega', activo: true },
   ],
 };

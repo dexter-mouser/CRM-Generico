@@ -1,11 +1,12 @@
 import { buscar, buscarTodos } from '../../core/dom.js';
-import { cargarHtml, seccion } from '../../core/template.js';
+import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import { logoCompleto } from '../../components/logo/logo.js';
 import { iniciarSesion } from '../../core/sesion.js';
 import { icono, ICONO_OJO, ICONO_OJO_TACHADO } from '../../core/iconos.js';
 import { USUARIOS } from '../../config/acceso.js';
 import { MENU } from '../../config/nav.js';
 import { estado, guardarEstado } from '../../core/store.js';
+import { DOMINIO_CORREO } from '../../core/validacion.js';
 import { registrarAuditoria } from '../../services/auditoria.service.js';
 
 // Bloqueo temporal tras varios intentos fallidos seguidos (en el servidor este control debe repetirse por usuario e IP)
@@ -27,7 +28,12 @@ const minutosDeBloqueo = () => Math.ceil((leerIntentos().hasta - Date.now()) / 6
 
 export async function dibujar() {
   const documento = await cargarHtml(new URL('./acceso.html', import.meta.url));
-  return seccion(documento, 'principal', { logo: logoCompleto(40) });
+  // Cuentas de prueba: cada persona activa con el rol con el que entra
+  const cuentas = estado.usuarios.filter((persona) => persona.activo).map((persona) => ({
+    correo: persona.correo,
+    rol: estado.roles.find((rol) => rol.id === persona.rolId)?.nombre ?? '',
+  }));
+  return seccion(documento, 'principal', { logo: logoCompleto(40), cuentas: repetir(documento, 'cuenta-prueba', cuentas) });
 }
 
 // Solo se vuelve a páginas propias del menú: evita redirecciones a sitios externos.
@@ -85,7 +91,9 @@ export function montar(raiz) {
   formularios.correo.onsubmit = (evento) => {
     evento.preventDefault();
     const campo = buscar('#correo', raiz);
-    const correo = campo.value.trim().toLowerCase();
+    const escrito = campo.value.trim().toLowerCase();
+    // Basta con escribir la parte anterior a la arroba: el dominio se completa solo
+    const correo = escrito && !escrito.includes('@') ? `${escrito}@${DOMINIO_CORREO}` : escrito;
     if (!correo) return fallar('Escribe tu correo.', campo);
     if (bloqueado(campo)) return;
     // Pueden entrar las personas activas de Roles y permisos y el acceso de prueba
@@ -107,6 +115,21 @@ export function montar(raiz) {
     registrarFallo(campoUsuario.value.trim());
     fallar('Usuario o clave incorrectos. Revisa los datos e inténtalo de nuevo.', campoClave);
   };
+
+  // Copiar el correo de una cuenta de prueba
+  const textoCopiado = buscar('#copiado', raiz);
+  buscar('#cuentas-prueba', raiz).addEventListener('click', async (evento) => {
+    const boton = evento.target.closest('[data-copiar]');
+    if (!boton) return;
+    const correo = boton.dataset.copiar;
+    try {
+      await navigator.clipboard.writeText(correo);
+      textoCopiado.textContent = `Correo ${correo} copiado correctamente`;
+    } catch {
+      buscar('#correo', raiz).value = correo;
+      textoCopiado.textContent = 'No se pudo copiar: el correo quedó escrito en el campo';
+    }
+  });
 
   // El botón de la clave es un icono: ojo para mostrar y ojo tachado para ocultar
   const botonVer = buscar('#ver', raiz);

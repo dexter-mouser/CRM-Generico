@@ -46,7 +46,7 @@ public class UsuarioServicio {
     @Transactional
     public UsuarioDto agregar(UsuarioSesion quien, String nombre, String correo, UUID rolId, String clave) {
         String nombreLimpio = Validaciones.texto(nombre, "el nombre de la persona");
-        String correoLimpio = Validaciones.correo(correo, true);
+        String correoLimpio = Validaciones.correoDeTienda(correo);
         exigirRolDeLaTienda(quien.tiendaId(), rolId);
         String hash = null;
         if (clave != null && !clave.isBlank()) {

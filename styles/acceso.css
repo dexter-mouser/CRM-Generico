@@ -104,6 +104,19 @@
   line-height: 1.7;
 }
 
+.cuentas-prueba {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.cuenta-prueba {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .demo code {
   font: inherit;
   font-weight: 600;

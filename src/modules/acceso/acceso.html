@@ -10,7 +10,7 @@
 
   <form id="f-correo" novalidate>
     <label for="correo">Correo</label>
-    <input id="correo" class="campo" type="email" autocomplete="email" inputmode="email" placeholder="nombre@tienda.com">
+    <input id="correo" class="campo" type="email" autocomplete="email" inputmode="email" placeholder="nombre@generico.com">
     <button class="boton primario ancho" type="submit">Ingresar con correo</button>
   </form>
 
@@ -29,8 +29,16 @@
   <div class="error" id="error" role="alert"></div>
 
   <div class="demo texto-suave">
-    Acceso de prueba<br>
-    Correo: <code>demo@generico.com</code><br>
+    <strong>Acceso de prueba</strong>
+    <div class="cuentas-prueba" id="cuentas-prueba">{{{cuentas}}}</div>
+    <div class="texto-suave" id="copiado" role="status"></div>
     Usuario: <code>admin</code> · Clave: <code>admin123</code>
   </div>
 </div>
+
+<template id="cuenta-prueba">
+  <div class="cuenta-prueba">
+    <span><code>{{correo}}</code> <small>{{rol}}</small></span>
+    <button type="button" class="boton" data-copiar="{{correo}}" aria-label="Copiar el correo {{correo}}">Copiar</button>
+  </div>
+</template>

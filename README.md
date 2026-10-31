@@ -40,10 +40,12 @@ Panel de gestión para tiendas pequeñas que reemplaza el cuaderno donde se anot
 ## Acceso de prueba
 | Forma | Datos |
 |---|---|
-| Correo | `demo@generico.com` |
+| Correo (propietario) | `demo@generico.com` |
+| Correo (cajero) | `camila@generico.com` |
+| Correo (bodega) | `felipe@generico.com` |
 | Usuario y clave | `admin` / `admin123` |
 
-Se definen en `src/config/acceso.js`. La verificación ocurre en el navegador, por lo que sirve para recorrer la interfaz pero **no protege datos reales**: cualquiera puede alterar el almacenamiento del navegador. La protección real la da el servidor (ver Seguridad).
+La pantalla de ingreso lista las cuentas de prueba con su rol y un botón para copiar el correo; basta escribir la parte anterior a la arroba, porque el dominio `@generico.com` se completa solo. Todas las personas de Roles y permisos usan correo `@generico.com`. El usuario y la clave se definen en `src/config/acceso.js`. La verificación ocurre en el navegador, por lo que sirve para recorrer la interfaz pero **no protege datos reales**: cualquiera puede alterar el almacenamiento del navegador. La protección real la da el servidor (ver Seguridad).
 
 ## Estructura
 ```

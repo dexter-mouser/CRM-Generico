@@ -3,7 +3,7 @@ import { estado, guardarEstado } from '../core/store.js';
 import { siguienteCodigo } from '../core/codigos.js';
 import { ID_ROL_PROPIETARIO, MODULOS_PERMISOS } from '../config/permisos.js';
 import { exigirPermiso } from '../core/autorizacion.js';
-import { exigirCorreo, exigirTexto, LIMITES } from '../core/validacion.js';
+import { exigirCorreoDeTienda, exigirTexto, LIMITES } from '../core/validacion.js';
 import { registrarAuditoria } from './auditoria.service.js';
 
 const normalizar = (texto) => String(texto).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
@@ -104,7 +104,7 @@ const quedaOtroPropietarioActivo = (usuarioId) =>
 export function agregarUsuario({ nombre, correo, rolId }) {
   exigirPermiso('roles', 'crear', 'administrar roles y personas');
   const nombreLimpio = exigirTexto(nombre, 'el nombre de la persona');
-  const correoLimpio = exigirCorreo(correo);
+  const correoLimpio = exigirCorreoDeTienda(correo);
   if (estado.usuarios.some((usuario) => usuario.correo === correoLimpio)) throw new Error('Ese correo ya está registrado');
   if (!buscarRol(rolId)) throw new Error('Elige el rol de la persona');
   const usuario = {
