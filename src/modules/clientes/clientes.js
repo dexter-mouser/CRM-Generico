@@ -94,7 +94,9 @@ export function montar(raiz, contexto) {
       campo('plazoDias').value = '30';
     }
     campo('autorizaDatos').checked = Boolean(cliente?.autorizaDatos);
-    buscar('#formulario-cliente', raiz).hidden = false;
+    const formulario = buscar('#formulario-cliente', raiz);
+    formulario.hidden = false;
+    formulario.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     campo('nombre').focus();
   };
   const cerrarFormulario = () => { buscar('#formulario-cliente', raiz).hidden = true; };
@@ -178,6 +180,7 @@ export function montar(raiz, contexto) {
       { etiqueta: `Cupo disponible (plazo ${cliente.plazoDias ?? 30} días)`, valor: cliente.limiteCredito ? aPesos(servicioClientes.cupoDisponible(cliente)) : 'Sin crédito', clase: '' },
     ]);
 
+    buscar('#editar-ficha', raiz).hidden = !puede('clientes', 'editar');
     buscar('#nueva-actividad', raiz).hidden = !puede('seguimiento', 'crear');
     pintarActividades(cliente);
 
@@ -241,6 +244,10 @@ export function montar(raiz, contexto) {
     ficha.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
 
+  buscar('#editar-ficha', raiz).onclick = () => {
+    const cliente = servicioClientes.buscarCliente(clienteEnFicha);
+    if (cliente) abrirFormulario(cliente);
+  };
   buscar('#cerrar-ficha', raiz).onclick = () => {
     buscar('#ficha', raiz).hidden = true;
     clienteEnFicha = null;

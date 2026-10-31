@@ -6,11 +6,14 @@ import { resumirItems, buscarDocumento } from '../../services/ventas.service.js'
 import * as servicioEmbudo from '../../services/embudo.service.js';
 import { mostrarReciboDeVenta } from '../../components/recibo/comprobantes.js';
 import { refrescarAlertas } from '../../components/header/header.js';
+import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
 
 let documento;
+let plantillasFicha;
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./embudo.html', import.meta.url));
+  plantillasFicha = await cargarPlantillasFicha();
   return seccion(documento, 'principal', {
     opcionesMotivo: repetir(documento, 'opcion', servicioEmbudo.MOTIVOS_PERDIDA.map((valor) => ({ valor }))),
   });
@@ -22,11 +25,11 @@ export function montar(raiz, contexto) {
   let enPerdida = null;
   buscar('#nueva-cotizacion', raiz).hidden = !puedeConvertir;
 
-  const tarjeta = (cotizacion) => {
+  // Botones de una oportunidad según su etapa (en la tarjeta y en la ficha)
+  const accionesDe = (cotizacion) => {
     const etapa = servicioEmbudo.etapaDe(cotizacion);
-    const vencida = servicioEmbudo.estaVencida(cotizacion);
     const abierta = etapa === 'enviada' || etapa === 'negociacion';
-    let acciones = repetir(documento, 'acciones-cerrada', [{ id: cotizacion.id }]);
+    let acciones = '';
     if (abierta && puedeEditar) {
       acciones = repetir(documento, 'acciones-abierta', [{
         id: cotizacion.id,
@@ -35,9 +38,21 @@ export function montar(raiz, contexto) {
       // Sin permiso para registrar ventas no se ofrece facturar ni remisionar
       if (!puedeConvertir) acciones = acciones.replace(/<a class="boton[^"]*" href="nueva-venta[^>]*>[^<]*<\/a>/g, '');
     }
+    return acciones;
+  };
+
+  const motivoDe = (cotizacion) => {
+    const etapa = servicioEmbudo.etapaDe(cotizacion);
     let motivo = '';
     if (etapa === 'perdida') motivo = `${cotizacion.motivoPerdida ?? 'Anulada'}${cotizacion.detallePerdida ? `: ${cotizacion.detallePerdida}` : ''}`;
     if (etapa === 'ganada') motivo = `Pasada a ${cotizacion.convertidoEn}`;
+    return motivo;
+  };
+
+  const tarjeta = (cotizacion) => {
+    const vencida = servicioEmbudo.estaVencida(cotizacion);
+    const motivo = motivoDe(cotizacion);
+    const acciones = repetir(documento, 'boton-ficha', [{ id: cotizacion.id }]) + accionesDe(cotizacion);
     return repetir(documento, 'tarjeta-oportunidad', [{
       id: cotizacion.id,
       total: aPesos(cotizacion.total),
@@ -84,6 +99,7 @@ export function montar(raiz, contexto) {
       accion();
       contexto.aviso(mensaje);
       pintar();
+      ficha.refrescar();
       refrescarAlertas();
       return true;
     } catch (error) {
@@ -102,13 +118,40 @@ export function montar(raiz, contexto) {
     buscar('#motivo-perdida', raiz).focus();
   };
 
-  buscar('#tablero', raiz).addEventListener('click', (evento) => {
+  // Ficha de la oportunidad: datos de la cotización y sus acciones del embudo
+  const ficha = crearFicha(buscar('#ficha-oportunidad', raiz), plantillasFicha);
+  const abrirFicha = (id) => ficha.abrir(id, () => {
+    const cotizacion = buscarDocumento(id);
+    if (!cotizacion) return null;
+    const enlace = cotizacion.clienteId ? `clientes.html?ficha=${cotizacion.clienteId}` : 'clientes.html';
+    return {
+      etiqueta: 'Ficha de la oportunidad',
+      titulo: `Cotización ${cotizacion.id} · ${cotizacion.cliente}`,
+      subtitulo: servicioEmbudo.etiquetaDeEtapa(servicioEmbudo.etapaDe(cotizacion)) + (servicioEmbudo.estaVencida(cotizacion) ? ' · vencida' : ''),
+      indicadores: [{ etiqueta: 'Valor', valor: aPesos(cotizacion.total) }],
+      datos: [
+        { etiqueta: 'Cliente', valor: repetir(documento, 'enlace-cliente', [{ enlace, nombre: cotizacion.cliente }]), html: true },
+        { etiqueta: 'Vendedor', valor: cotizacion.usuario ?? '' },
+        { etiqueta: 'Fecha', valor: aFecha(cotizacion.fecha) },
+        { etiqueta: 'Válida hasta', valor: aFecha(cotizacion.vigenciaHasta.slice(0, 10)) },
+        { etiqueta: 'Productos', valor: resumirItems(cotizacion), ancho: true },
+        { etiqueta: 'Resultado', valor: motivoDe(cotizacion), ancho: true },
+        { etiqueta: 'Observaciones', valor: cotizacion.observaciones ?? '', ancho: true },
+      ],
+      acciones: repetir(documento, 'acciones-ficha', [{ id: cotizacion.id, acciones: accionesDe(cotizacion) }]),
+    };
+  });
+
+  const alTocar = (evento) => {
     const boton = evento.target.closest('button');
     if (!boton) return;
-    if (boton.dataset.ver) mostrarReciboDeVenta(buscarDocumento(boton.dataset.ver));
+    if (boton.dataset.ficha) abrirFicha(boton.dataset.ficha);
+    else if (boton.dataset.ver) mostrarReciboDeVenta(buscarDocumento(boton.dataset.ver));
     else if (boton.dataset.negociar) ejecutar(() => servicioEmbudo.cambiarEtapa(boton.dataset.negociar, 'negociacion'), `Cotización ${boton.dataset.negociar} en negociación correctamente`);
     else if (boton.dataset.perder) abrirPerdida(boton.dataset.perder);
-  });
+  };
+  buscar('#tablero', raiz).addEventListener('click', alTocar);
+  buscar('#ficha-oportunidad', raiz).addEventListener('click', alTocar);
 
   buscar('#cancelar-perdida', raiz).onclick = () => { buscar('#panel-perdida', raiz).hidden = true; };
   buscar('#confirmar-perdida', raiz).onclick = () => {

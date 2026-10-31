@@ -1,11 +1,5 @@
 <div id="principal">
-  <div class="cabecera-vista">
-    <div>
-      <h1>Embudo de ventas</h1>
-      <div class="texto-suave">Cada cotización es una oportunidad: enviada, en negociación, ganada (al pasarla a remisión o factura) o perdida (con motivo).</div>
-    </div>
-    <a class="boton primario" href="nueva-venta.html?tipo=cotizacion" id="nueva-cotizacion">Nueva cotización</a>
-  </div>
+  <a class="boton primario" href="nueva-venta.html?tipo=cotizacion" id="nueva-cotizacion" data-accion-cabecera>Nueva cotización</a>
 
   <section class="caja alerta-perfil separacion-inferior" id="alertas-embudo" hidden>
     <strong id="titulo-alertas"></strong>
@@ -33,6 +27,8 @@
       <button type="button" class="boton" id="cancelar-perdida">Cancelar</button>
     </div>
   </section>
+
+  <div id="ficha-oportunidad"></div>
 </div>
 
 <template id="columna-embudo">
@@ -55,7 +51,6 @@
 </template>
 
 <template id="acciones-abierta">
-  <button type="button" class="boton" data-ver="{{id}}">Ver</button>
   {{{negociar}}}
   <a class="boton primario" href="nueva-venta.html?documento={{id}}&amp;tipo=factura">Facturar</a>
   <a class="boton" href="nueva-venta.html?documento={{id}}&amp;tipo=remision">Remisión</a>
@@ -66,8 +61,17 @@
   <button type="button" class="boton" data-negociar="{{id}}">En negociación</button>
 </template>
 
-<template id="acciones-cerrada">
-  <button type="button" class="boton" data-ver="{{id}}">Ver</button>
+<template id="boton-ficha">
+  <button type="button" class="boton" data-ficha="{{id}}">Ficha</button>
+</template>
+
+<template id="acciones-ficha">
+  <button type="button" class="boton" data-ver="{{id}}">Comprobante</button>
+  {{{acciones}}}
+</template>
+
+<template id="enlace-cliente">
+  <a href="{{enlace}}">{{nombre}}</a>
 </template>
 
 <template id="motivo-tarjeta">

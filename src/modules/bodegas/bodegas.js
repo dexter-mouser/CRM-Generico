@@ -10,34 +10,20 @@ import { bodegaActiva, buscarBodega, existenciasEn } from '../../services/invent
 import * as servicioBodegas from '../../services/bodegas.service.js';
 import { dibujarSelector, montarSelectorProductos } from '../../components/selector-productos/selector-productos.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
+import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
 
 const CAMPOS = ['nombre', 'tiendaId', 'direccion'];
 let documento;
 let plantillasCuadricula;
+let plantillasFicha;
 
 const porRecibirEn = (bodegaId) => estado.traslados.filter((traslado) => traslado.estado === 'enviado' && traslado.destinoId === bodegaId).length;
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./bodegas.html', import.meta.url));
-  plantillasCuadricula = await cargarPlantillasCuadricula();
-  const editar = puede('bodegas', 'editar');
-  const fichas = estado.bodegas.map((bodega) => {
-    const resumen = servicioBodegas.resumenDeBodega(bodega.id);
-    return {
-      ...bodega,
-      tienda: bodega.tiendaId ? nombreDeTienda(bodega.tiendaId) : 'Bodega central',
-      clase: bodega.activa ? '' : 'inactiva',
-      estadoTexto: bodega.activa ? 'Activa' : 'Inactiva',
-      unidades: resumen.unidades,
-      valor: aPesos(resumen.valor),
-      productos: resumen.productos,
-      porRecibir: porRecibirEn(bodega.id),
-      acciones: editar ? repetir(documento, 'acciones-bodega', [{ id: bodega.id, textoEstado: bodega.activa ? 'Desactivar' : 'Activar' }]) : '',
-    };
-  });
+  [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
   const activas = servicioBodegas.bodegasActivas();
   return seccion(documento, 'principal', {
-    fichas: repetir(documento, 'ficha-bodega', fichas),
     opcionesTienda: repetir(documento, 'opcion', [{ valor: '', texto: 'Ninguna (bodega central)' }, ...estado.tiendas.map((tienda) => ({ valor: tienda.id, texto: tienda.nombre }))]),
     opcionesBodega: repetir(documento, 'opcion', activas.map((bodega) => ({ valor: bodega.id, texto: `${bodega.nombre} · ${bodega.id}` }))),
     selector: await dibujarSelector(),
@@ -70,6 +56,7 @@ export function montar(raiz, contexto) {
     buscar('#titulo-formulario-bodega', raiz).textContent = bodega ? `Editar ${bodega.nombre}` : 'Nueva bodega';
     CAMPOS.forEach((nombre) => { campo(nombre).value = bodega?.[nombre] ?? ''; });
     formulario.hidden = false;
+    formulario.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     campo('nombre').focus();
   };
   buscar('#nueva-bodega', raiz).onclick = () => abrirFormulario(null);
@@ -81,11 +68,84 @@ export function montar(raiz, contexto) {
       : ejecutar(() => servicioBodegas.agregarBodega(datos), 'Bodega creada correctamente');
     if (aplicado) contexto.redibujar();
   };
-  buscar('#fichas-bodegas', raiz).addEventListener('click', (evento) => {
+  const nombreBodega = (id) => buscarBodega(id)?.nombre ?? id;
+  const editar = puede('bodegas', 'editar');
+  montarCuadricula(buscar('#cuadricula-bodegas', raiz), {
+    plantillas: plantillasCuadricula,
+    titulo: 'Bodegas',
+    vacio: 'Aún no hay bodegas. Crea una con "Nueva bodega".',
+    columnas: [
+      { clave: 'id', titulo: 'ID', ancho: '64px' },
+      { clave: 'nombre', titulo: 'Nombre', ancho: 'minmax(0, 1.2fr)' },
+      { clave: 'tienda', titulo: 'Tienda', ancho: 'minmax(0, 1fr)' },
+      { clave: 'unidades', titulo: 'Unidades', ancho: '90px', alinear: 'derecha' },
+      { clave: 'valor', titulo: 'Valor al costo', ancho: '120px', alinear: 'derecha' },
+      { clave: 'porRecibir', titulo: 'Por recibir', ancho: '96px', alinear: 'derecha' },
+      { clave: 'estado', titulo: 'Estado', ancho: '84px' },
+      { clave: 'acciones', titulo: 'Acciones', ancho: '290px', filtrable: false, html: (fila) => fila.acciones },
+    ],
+    filas: estado.bodegas.map((bodega) => {
+      const resumen = servicioBodegas.resumenDeBodega(bodega.id);
+      return {
+        id: bodega.id,
+        nombre: bodega.nombre,
+        tienda: bodega.tiendaId ? nombreDeTienda(bodega.tiendaId) : 'Bodega central',
+        unidades: String(resumen.unidades),
+        valor: aPesos(resumen.valor),
+        porRecibir: String(porRecibirEn(bodega.id)),
+        estado: bodega.activa ? 'Activa' : 'Inactiva',
+        acciones: repetir(documento, 'acciones-bodega', [{
+          id: bodega.id,
+          edicion: editar ? repetir(documento, 'botones-edicion-bodega', [{ id: bodega.id, textoEstado: bodega.activa ? 'Desactivar' : 'Activar', claseEstado: bodega.activa ? 'peligro' : '' }]) : '',
+        }]),
+      };
+    }),
+  });
+
+  const fichaBodega = crearFicha(buscar('#ficha-bodega', raiz), plantillasFicha);
+  const abrirFichaBodega = (id) => fichaBodega.abrir(id, () => {
+    const bodega = buscarBodega(id);
+    if (!bodega) return null;
+    const resumen = servicioBodegas.resumenDeBodega(bodega.id);
+    return {
+      etiqueta: 'Ficha de la bodega',
+      titulo: `${bodega.nombre} · ${bodega.id}`,
+      subtitulo: [bodega.tiendaId ? nombreDeTienda(bodega.tiendaId) : 'Bodega central', bodega.activa ? 'Activa' : 'Inactiva'].join(' · '),
+      indicadores: [
+        { etiqueta: 'Unidades', valor: String(resumen.unidades) },
+        { etiqueta: 'Valor al costo', valor: aPesos(resumen.valor) },
+        { etiqueta: 'Productos con stock', valor: String(resumen.productos) },
+        { etiqueta: 'Traslados por recibir', valor: String(porRecibirEn(bodega.id)) },
+      ],
+      datos: [{ etiqueta: 'Dirección', valor: bodega.direccion ?? '', ancho: true }],
+      contenido: repetir(documento, 'contenido-ficha-bodega', [{}]),
+      alEditar: editar ? () => abrirFormulario(buscarBodega(id)) : null,
+      alMontar: (seccionFicha) => montarCuadricula(seccionFicha.querySelector('[data-cuadricula-ficha]'), {
+        plantillas: plantillasCuadricula,
+        titulo: `Productos de ${bodega.nombre}`,
+        vacio: 'Esta bodega no tiene productos con stock.',
+        columnas: [
+          { clave: 'id', titulo: 'ID', ancho: '70px' },
+          { clave: 'nombre', titulo: 'Producto', ancho: 'minmax(0, 2fr)' },
+          { clave: 'cantidad', titulo: 'Cantidad', ancho: '96px', alinear: 'derecha' },
+          { clave: 'valor', titulo: 'Valor al costo', ancho: '120px', alinear: 'derecha' },
+        ],
+        filas: estado.productos.filter((producto) => existenciasEn(producto, bodega.id) !== 0).map((producto) => ({
+          id: producto.id,
+          nombre: producto.nombre,
+          cantidad: String(existenciasEn(producto, bodega.id)),
+          valor: aPesos(Math.max(0, existenciasEn(producto, bodega.id)) * producto.costo),
+        })),
+      }),
+    };
+  });
+
+  buscar('#cuadricula-bodegas', raiz).addEventListener('click', (evento) => {
     const boton = evento.target.closest('button');
     if (!boton) return;
-    const bodega = buscarBodega(boton.dataset.editar ?? boton.dataset.estado);
+    const bodega = buscarBodega(boton.dataset.ficha ?? boton.dataset.editar ?? boton.dataset.estado);
     if (!bodega) return;
+    if (boton.dataset.ficha) return abrirFichaBodega(bodega.id);
     if (boton.dataset.editar) return abrirFormulario(bodega);
     const mensaje = `${bodega.nombre} ${bodega.activa ? 'desactivada' : 'activada'} correctamente`;
     if (ejecutar(() => servicioBodegas.cambiarEstadoBodega(bodega.id, !bodega.activa), mensaje)) contexto.redibujar();
@@ -149,6 +209,7 @@ export function montar(raiz, contexto) {
     origen.value = bodegaActiva()?.id ?? activas[0].id;
     destino.value = activas.find((bodega) => bodega.id !== origen.value).id;
     panelTraslado.hidden = false;
+    panelTraslado.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     pintarLineas();
     origen.focus();
   };
@@ -164,7 +225,8 @@ export function montar(raiz, contexto) {
   };
 
   // --- Historial de traslados ------------------------------------------------------------------------------
-  const nombreBodega = (id) => buscarBodega(id)?.nombre ?? id;
+  const accionesPendientes = (traslado) => (traslado.estado === 'enviado' && puede('bodegas', 'editar')
+    ? repetir(documento, 'acciones-traslado-pendiente', [{ id: traslado.id }]) : '');
   montarCuadricula(buscar('#cuadricula-traslados', raiz), {
     plantillas: plantillasCuadricula,
     titulo: 'Traslados',
@@ -176,7 +238,7 @@ export function montar(raiz, contexto) {
       { clave: 'destino', titulo: 'Llega a', ancho: 'minmax(0, 1fr)' },
       { clave: 'productos', titulo: 'Productos', ancho: 'minmax(0, 1.6fr)' },
       { clave: 'estado', titulo: 'Estado', ancho: '120px' },
-      { clave: 'acciones', titulo: 'Acciones', ancho: '190px', filtrable: false, html: (fila) => fila.acciones },
+      { clave: 'acciones', titulo: 'Acciones', ancho: '270px', filtrable: false, html: (fila) => fila.acciones },
     ],
     filas: estado.traslados.slice().reverse().map((traslado) => ({
       id: traslado.id,
@@ -185,10 +247,34 @@ export function montar(raiz, contexto) {
       destino: nombreBodega(traslado.destinoId),
       productos: traslado.items.map((item) => `${item.nombre} ×${item.cantidad}`).join(', '),
       estado: servicioBodegas.ESTADOS_TRASLADO[traslado.estado],
-      acciones: traslado.estado === 'enviado' && puede('bodegas', 'editar') ? repetir(documento, 'acciones-traslado', [{ id: traslado.id }]) : '',
+      acciones: repetir(documento, 'acciones-traslado', [{ id: traslado.id, pendiente: accionesPendientes(traslado) }]),
     })),
   });
-  buscar('#cuadricula-traslados', raiz).addEventListener('click', (evento) => {
+  // Ficha del traslado: no se edita (mueve stock); se recibe o se anula
+  const fichaTraslado = crearFicha(buscar('#ficha-traslado', raiz), plantillasFicha);
+  const abrirFichaTraslado = (id) => fichaTraslado.abrir(id, () => {
+    const traslado = estado.traslados.find((candidato) => candidato.id === id);
+    if (!traslado) return null;
+    return {
+      etiqueta: 'Ficha del traslado',
+      titulo: `Traslado ${traslado.id}`,
+      subtitulo: `${nombreBodega(traslado.origenId)} → ${nombreBodega(traslado.destinoId)} · ${servicioBodegas.ESTADOS_TRASLADO[traslado.estado]}`,
+      datos: [
+        { etiqueta: 'Fecha de envío', valor: aFecha(traslado.fecha) },
+        { etiqueta: 'Enviado por', valor: traslado.usuario ?? '' },
+        { etiqueta: 'Recibido', valor: traslado.recibidoEn ? aFecha(traslado.recibidoEn) : '' },
+        { etiqueta: 'Unidades', valor: String(traslado.items.reduce((suma, item) => suma + item.cantidad, 0)) },
+        { etiqueta: 'Productos', valor: traslado.items.map((item) => `${item.nombre} ×${item.cantidad}`).join(', '), ancho: true },
+        { etiqueta: 'Observaciones', valor: traslado.observaciones ?? '', ancho: true },
+        { etiqueta: 'Motivo de anulación', valor: traslado.motivoAnulacion ?? traslado.motivo ?? '', ancho: true },
+      ],
+      acciones: accionesPendientes(traslado),
+    };
+  });
+
+  const alTocarTraslado = (evento) => {
+    const ficha = evento.target.closest('[data-ficha-traslado]');
+    if (ficha) return abrirFichaTraslado(ficha.dataset.fichaTraslado);
     const recibir = evento.target.closest('[data-recibir]');
     if (recibir) {
       if (ejecutar(() => servicioBodegas.recibirTraslado(recibir.dataset.recibir), `Traslado ${recibir.dataset.recibir} recibido correctamente`)) contexto.redibujar();
@@ -200,8 +286,11 @@ export function montar(raiz, contexto) {
     trasladoPorAnular = anular.dataset.anular;
     buscar('#texto-anular-traslado', raiz).textContent = `¿Anular el traslado ${trasladoPorAnular}? La mercancía vuelve al origen.`;
     buscar('#confirmar-anular-traslado', raiz).hidden = false;
+    buscar('#confirmar-anular-traslado', raiz).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     buscar('#motivo-anular-traslado', raiz).focus();
-  });
+  };
+  buscar('#cuadricula-traslados', raiz).addEventListener('click', alTocarTraslado);
+  buscar('#ficha-traslado', raiz).addEventListener('click', alTocarTraslado);
   buscar('#anular-traslado-no', raiz).onclick = () => { buscar('#confirmar-anular-traslado', raiz).hidden = true; };
   buscar('#anular-traslado-si', raiz).onclick = () => {
     if (ejecutar(() => servicioBodegas.anularTraslado(trasladoPorAnular, buscar('#motivo-anular-traslado', raiz).value), `Traslado ${trasladoPorAnular} anulado correctamente`)) contexto.redibujar();

@@ -8,17 +8,19 @@ import { TIPOS_DOCUMENTO } from '../../core/validacion.js';
 import { nombreDeTienda, enTiendaActiva } from '../../core/tienda.js';
 import * as servicioEmpleados from '../../services/empleados.service.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
+import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
 
 const CAMPOS = ['nombre', 'tipoDocumento', 'documento', 'cargo', 'tiendaId', 'fechaIngreso', 'telefono', 'correo', 'turno', 'metaMensual', 'comision', 'usuarioId'];
 let documento;
 let plantillasCuadricula;
+let plantillasFicha;
 
 // Los empleados de la tienda activa (o de todas)
 const empleadosDeLaVista = () => estado.empleados.filter(enTiendaActiva);
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./empleados.html', import.meta.url));
-  plantillasCuadricula = await cargarPlantillasCuadricula();
+  [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
   const activos = empleadosDeLaVista().filter((empleado) => empleado.activo);
   const desempeno = activos.map(servicioEmpleados.desempenoDelMes);
   const resumen = [
@@ -72,6 +74,7 @@ export function montar(raiz, contexto) {
     if (empleado && !empleado.metaMensual) campo('metaMensual').value = '';
     mostrarAcceso();
     formulario.hidden = false;
+    formulario.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     campo('nombre').focus();
   };
   buscar('#nuevo-empleado', raiz).onclick = () => abrirFormulario(null);
@@ -100,7 +103,7 @@ export function montar(raiz, contexto) {
       { clave: 'meta', titulo: 'Meta', ancho: '110px', filtrable: false, html: (fila) => fila.avance },
       { clave: 'comision', titulo: 'Comisión', ancho: '110px', alinear: 'derecha' },
       { clave: 'estado', titulo: 'Estado', ancho: '84px' },
-      { clave: 'acciones', titulo: 'Acciones', ancho: '190px', filtrable: false, html: (fila) => fila.acciones },
+      { clave: 'acciones', titulo: 'Acciones', ancho: '270px', filtrable: false, html: (fila) => fila.acciones },
     ],
     filas: empleadosDeLaVista().map((empleado) => {
       const resultado = servicioEmpleados.desempenoDelMes(empleado);
@@ -118,20 +121,57 @@ export function montar(raiz, contexto) {
           : repetir(documento, 'avance', [{ texto: `${resultado.avance} %`, ancho: Math.min(100, Math.max(0, resultado.avance)), titulo: `Meta: ${aPesos(empleado.metaMensual)}` }]),
         comision: `${aPesos(resultado.comision)} · ${String(empleado.comision ?? 0).replace('.', ',')} %`,
         estado: empleado.activo ? 'Activo' : 'Retirado',
-        acciones: editar ? repetir(documento, 'acciones-empleado', [{
+        acciones: repetir(documento, 'acciones-empleado', [{
           id: empleado.id,
-          textoEstado: empleado.activo ? 'Retirar' : 'Reintegrar',
-          claseEstado: empleado.activo ? 'peligro' : '',
-        }]) : '',
+          edicion: editar ? repetir(documento, 'botones-edicion', [{
+            id: empleado.id,
+            textoEstado: empleado.activo ? 'Retirar' : 'Reintegrar',
+            claseEstado: empleado.activo ? 'peligro' : '',
+          }]) : '',
+        }]),
       };
     }),
+  });
+
+  // --- Ficha del empleado -----------------------------------------------------------------------------------
+  const ficha = crearFicha(buscar('#ficha-empleado', raiz), plantillasFicha);
+  const abrirFicha = (id) => ficha.abrir(id, () => {
+    const empleado = servicioEmpleados.buscarEmpleado(id);
+    if (!empleado) return null;
+    const resultado = servicioEmpleados.desempenoDelMes(empleado);
+    const usuario = servicioEmpleados.usuarioDeEmpleado(empleado);
+    const tiendasUsuario = usuario ? (usuario.tiendas?.length ? usuario.tiendas.map(nombreDeTienda).join(', ') : 'Todas las tiendas') : '';
+    return {
+      etiqueta: 'Ficha del empleado',
+      titulo: `${empleado.nombre} · ${empleado.id}`,
+      subtitulo: [empleado.cargo, nombreDeTienda(empleado.tiendaId), empleado.activo ? 'Activo' : 'Retirado'].join(' · '),
+      indicadores: [
+        { etiqueta: 'Ventas del mes', valor: aPesos(resultado.total) },
+        { etiqueta: 'Avance de la meta', valor: resultado.avance === null ? 'Sin meta' : `${resultado.avance} %` },
+        { etiqueta: 'Comisión estimada', valor: aPesos(resultado.comision) },
+        { etiqueta: 'Cajas abiertas en el mes', valor: String(resultado.cajas) },
+      ],
+      datos: [
+        { etiqueta: 'Documento', valor: `${empleado.tipoDocumento} ${empleado.documento}` },
+        { etiqueta: 'Fecha de ingreso', valor: empleado.fechaIngreso ?? '' },
+        { etiqueta: 'Teléfono', valor: empleado.telefono ?? '' },
+        { etiqueta: 'Correo', valor: empleado.correo ?? '' },
+        { etiqueta: 'Turno', valor: empleado.turno ?? '' },
+        { etiqueta: 'Meta mensual', valor: empleado.metaMensual ? aPesos(empleado.metaMensual) : 'Sin meta' },
+        { etiqueta: 'Comisión', valor: `${String(empleado.comision ?? 0).replace('.', ',')} %` },
+        { etiqueta: 'Usuario del sistema', valor: usuario ? `${usuario.correo} · ${usuario.activo ? 'activo' : 'inactivo'}` : 'Sin usuario' },
+        { etiqueta: 'Tiendas a las que entra', valor: tiendasUsuario, ancho: true },
+      ],
+      alEditar: editar ? () => abrirFormulario(servicioEmpleados.buscarEmpleado(id)) : null,
+    };
   });
 
   buscar('#cuadricula-empleados', raiz).addEventListener('click', (evento) => {
     const boton = evento.target.closest('button');
     if (!boton) return;
-    const empleado = servicioEmpleados.buscarEmpleado(boton.dataset.editar ?? boton.dataset.estado);
+    const empleado = servicioEmpleados.buscarEmpleado(boton.dataset.ficha ?? boton.dataset.editar ?? boton.dataset.estado);
     if (!empleado) return;
+    if (boton.dataset.ficha) return abrirFicha(empleado.id);
     if (boton.dataset.editar) return abrirFormulario(empleado);
     if (!empleado.activo) return ejecutar(() => servicioEmpleados.cambiarEstadoEmpleado(empleado.id, true), `${empleado.nombre} reintegrado correctamente`);
     porRetirar = empleado.id;

@@ -131,6 +131,22 @@ export function agregarProducto(datos) {
   return producto;
 }
 
+// Solo se elimina un producto que nunca se ha usado en documentos ni traslados y que no tiene stock;
+// si ya tiene historia, se deja (el kardex y los comprobantes lo necesitan).
+export function eliminarProducto(id) {
+  exigirPermiso('inventario', 'eliminar', 'eliminar productos');
+  const producto = buscarProductoPorId(id);
+  if (!producto) throw new Error('El producto no existe');
+  const usaProducto = (lista = []) => lista.some((registro) => (registro.items ?? []).some((item) => item.productoId === id));
+  const usado = [estado.ventas, estado.documentos, estado.devoluciones, estado.facturas, estado.ordenesCompra, estado.traslados].some(usaProducto);
+  if (usado) throw new Error(`${producto.nombre} ya tiene ventas, compras o traslados: no se puede eliminar`);
+  if (Object.values(producto.stock ?? {}).some((cantidad) => cantidad !== 0)) throw new Error(`${producto.nombre} tiene stock: déjalo en 0 antes de eliminarlo`);
+  estado.productos = estado.productos.filter((candidato) => candidato.id !== id);
+  estado.ajustesInventario = estado.ajustesInventario.filter((ajuste) => ajuste.productoId !== id);
+  registrarAuditoria('inventario', 'Producto eliminado', `${producto.id} · ${producto.nombre}`);
+  guardarEstado();
+}
+
 // Importación validada: se revisan todas las filas antes de cambiar nada; si alguna falla no se importa ninguna.
 // Las columnas que no trae el archivo conservan el valor actual del producto. El stock del archivo es el de la
 // bodega de la tienda activa.

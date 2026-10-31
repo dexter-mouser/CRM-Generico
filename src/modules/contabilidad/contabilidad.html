@@ -1,15 +1,13 @@
 <div id="principal">
-  <h1>Contabilidad</h1>
-  <div class="texto-suave separacion-inferior">Cierra la contabilidad de cada día para dejar guardado su resumen. Los días se cierran en orden, y el de hoy se cierra mañana.</div>
+  {{{reabrir}}}
 
   {{{contenido}}}
 
-  {{{reabrir}}}
-
-  <section class="caja margen-superior-grande">
-    <strong>Días cerrados</strong>
+  <section class="caja margen-superior-grande" aria-labelledby="titulo-dias-cerrados">
+    <strong id="titulo-dias-cerrados">Días cerrados</strong>
     <div id="cuadricula-cierres"></div>
   </section>
+  <div id="ficha-cierre"></div>
 </div>
 
 <template id="al-dia">
@@ -45,14 +43,20 @@
 </template>
 
 <template id="reabrir-dia">
-  <section class="caja margen-superior-grande" aria-labelledby="titulo-reabrir">
+  <button type="button" class="boton" id="abrir-reabrir" data-accion-cabecera>Reabrir último día</button>
+  <section class="caja panel-proceso" id="panel-reabrir" aria-labelledby="titulo-reabrir" hidden>
     <strong id="titulo-reabrir">Reabrir el último día cerrado ({{dia}})</strong>
     <div class="texto-suave">Permiso especial. Solo se reabre el último día cerrado, el motivo es obligatorio y la acción queda en la auditoría.</div>
     <label for="motivo-reabrir">Motivo</label>
     <input id="motivo-reabrir" class="campo" maxlength="200" autocomplete="off" placeholder="Por qué se reabre">
     <div class="acciones-fila margen-superior-grande">
       <button type="button" class="boton peligro" id="reabrir-dia-boton">Reabrir {{dia}}</button>
+      <button type="button" class="boton" id="cancelar-reabrir">Cancelar</button>
     </div>
   </section>
 </template>
 
+
+<template id="accion-cierre">
+  <button type="button" class="boton" data-ficha="{{dia}}">Ficha</button>
+</template>

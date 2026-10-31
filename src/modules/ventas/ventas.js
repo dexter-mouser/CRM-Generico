@@ -8,9 +8,12 @@ import * as servicioVentas from '../../services/ventas.service.js';
 import { mostrarReciboDeVenta, mostrarComprobanteDeDevolucion } from '../../components/recibo/comprobantes.js';
 import { enTiendaActiva } from '../../core/tienda.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
+import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
+import { nombreDeTienda } from '../../core/tienda.js';
 
 let documento;
 let plantillasCuadricula;
+let plantillasFicha;
 
 function estadoDeFactura(venta) {
   if (servicioVentas.estaAnulada(venta)) return { texto: 'Anulada', clase: '' };
@@ -23,23 +26,42 @@ function estadoDeDocumento(registro) {
   return registro.convertidoEn ? `Pasado a ${registro.convertidoEn}` : 'Pendiente';
 }
 
-const insignia = (texto, clase) => `<span class="insignia ${clase}">${texto}</span>`;
+const insignia = (texto, clase) => repetir(documento, 'insignia', [{ texto, clase }]);
 const etiquetaDe = (tipo) => servicioVentas.TIPOS_DOCUMENTO[tipo].etiqueta;
+
+// Facturas de la tienda activa a las que aún se les puede hacer una nota
+const facturasConPendientes = () => estado.ventas.filter(enTiendaActiva).reverse()
+  .filter((venta) => !servicioVentas.estaAnulada(venta) && servicioVentas.pendientesDeDevolver(venta).length > 0);
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./ventas.html', import.meta.url));
-  plantillasCuadricula = await cargarPlantillasCuadricula();
-  return seccion(documento, 'principal');
+  [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
+  const facturas = facturasConPendientes();
+  return seccion(documento, 'principal', {
+    opcionesFactura: repetir(documento, 'opcion', facturas.length
+      ? facturas.map((venta) => ({ valor: venta.id, texto: `${venta.id} · ${venta.cliente} · ${aPesos(venta.total)}` }))
+      : [{ valor: '', texto: 'No hay facturas con productos por devolver' }]),
+  });
 }
 
 export function montar(raiz, contexto) {
   const zona = buscar('#zona-devolucion', raiz);
   const puedeAnular = puede('ventas', 'eliminar');
 
+  const accionesFactura = (venta) => (puedeAnular && servicioVentas.pendientesDeDevolver(venta).length > 0 && !servicioVentas.estaAnulada(venta)
+    ? repetir(documento, 'acciones-venta', [{ id: venta.id }]) : '');
+  const accionesDocumento = (registro) => {
+    const pasarARemision = servicioVentas.DESTINOS_POSIBLES[registro.tipo].includes('remision')
+      ? repetir(documento, 'accion-pasar-remision', [{ id: registro.id }]) : '';
+    return servicioVentas.documentoPendiente(registro) && puede('nueva-venta', 'crear')
+      ? repetir(documento, 'acciones-documento-pendiente', [{ id: registro.id, pasarARemision }]) : '';
+  };
+  if (!puede('nueva-venta', 'crear')) ['#nueva-factura', '#nueva-remision', '#nueva-cotizacion'].forEach((selector) => { buscar(selector, raiz).hidden = true; });
+  if (!puedeAnular) buscar('#nueva-nota', raiz).hidden = true;
+
   const filasFacturas = () => estado.ventas.filter(enTiendaActiva).reverse().map((venta) => {
     const situacion = estadoDeFactura(venta);
-    const pendiente = servicioVentas.pendientesDeDevolver(venta).length > 0;
-    const acciones = puedeAnular && pendiente && !servicioVentas.estaAnulada(venta) ? repetir(documento, 'acciones-venta', [{ id: venta.id }]) : '';
+    const acciones = accionesFactura(venta);
     return {
       id: venta.id,
       fecha: aFecha(venta.fecha),
@@ -54,10 +76,7 @@ export function montar(raiz, contexto) {
   });
 
   const filasDocumentos = () => estado.documentos.filter(enTiendaActiva).reverse().map((registro) => {
-    const pasarARemision = servicioVentas.DESTINOS_POSIBLES[registro.tipo].includes('remision')
-      ? repetir(documento, 'accion-pasar-remision', [{ id: registro.id }]) : '';
-    const acciones = servicioVentas.documentoPendiente(registro) && puede('nueva-venta', 'crear')
-      ? repetir(documento, 'acciones-documento-pendiente', [{ id: registro.id, pasarARemision }]) : '';
+    const acciones = accionesDocumento(registro);
     return {
       id: registro.id,
       tipo: etiquetaDe(registro.tipo),
@@ -94,7 +113,7 @@ export function montar(raiz, contexto) {
       { clave: 'metodo', titulo: 'Pago', ancho: '104px' },
       { clave: 'total', titulo: 'Total', ancho: '104px', alinear: 'derecha' },
       { clave: 'estado', titulo: 'Estado', ancho: '124px', html: (fila) => fila.insignia },
-      { clave: 'acciones', titulo: 'Acciones', ancho: '300px', filtrable: false, html: (fila) => fila.acciones },
+      { clave: 'acciones', titulo: 'Acciones', ancho: '330px', filtrable: false, html: (fila) => fila.acciones },
     ],
     filas: filasFacturas(),
   });
@@ -111,7 +130,7 @@ export function montar(raiz, contexto) {
       { clave: 'productos', titulo: 'Productos', ancho: 'minmax(0, 1.6fr)' },
       { clave: 'total', titulo: 'Total', ancho: '104px', alinear: 'derecha' },
       { clave: 'estado', titulo: 'Estado', ancho: '140px' },
-      { clave: 'acciones', titulo: 'Acciones', ancho: '310px', filtrable: false, html: (fila) => fila.acciones },
+      { clave: 'acciones', titulo: 'Acciones', ancho: '360px', filtrable: false, html: (fila) => fila.acciones },
     ],
     filas: filasDocumentos(),
   });
@@ -129,10 +148,127 @@ export function montar(raiz, contexto) {
       { clave: 'motivo', titulo: 'Motivo', ancho: 'minmax(0, 1fr)' },
       { clave: 'usuario', titulo: 'Registró', ancho: '110px' },
       { clave: 'total', titulo: 'Total', ancho: '104px', alinear: 'derecha' },
-      { clave: 'acciones', titulo: 'Acciones', ancho: '230px', filtrable: false, html: (fila) => fila.acciones },
+      { clave: 'acciones', titulo: 'Acciones', ancho: '280px', filtrable: false, html: (fila) => fila.acciones },
     ],
     filas: filasNotas(),
   });
+
+  // --- Fichas: facturas, remisiones y cotizaciones, y notas (no se editan: son documentos contables) ---------
+  const cuadriculaItems = (contenedor, registro) => montarCuadricula(contenedor, {
+    plantillas: plantillasCuadricula,
+    titulo: 'Productos',
+    columnas: [
+      { clave: 'productoId', titulo: 'ID', ancho: '70px' },
+      { clave: 'nombre', titulo: 'Producto', ancho: 'minmax(0, 2fr)' },
+      { clave: 'cantidad', titulo: 'Cantidad', ancho: '90px', alinear: 'derecha' },
+      { clave: 'valor', titulo: 'Valor unitario', ancho: '120px', alinear: 'derecha' },
+      { clave: 'subtotal', titulo: 'Subtotal', ancho: '120px', alinear: 'derecha' },
+    ],
+    filas: registro.items.map((item) => ({ ...item, cantidad: String(item.cantidad), valor: aPesos(item.valorUnitario), subtotal: aPesos(item.cantidad * item.valorUnitario) })),
+  });
+  const datosComunes = (registro) => [
+    { etiqueta: 'Cliente', valor: registro.cliente },
+    { etiqueta: 'Fecha', valor: aFecha(registro.fecha) },
+    { etiqueta: 'Tienda', valor: registro.tiendaId ? nombreDeTienda(registro.tiendaId) : '' },
+    { etiqueta: 'Registró', valor: registro.usuario ?? '' },
+  ];
+
+  const fichaFactura = crearFicha(buscar('#ficha-factura', raiz), plantillasFicha);
+  const abrirFichaFactura = (id) => fichaFactura.abrir(id, () => {
+    const venta = estado.ventas.find((candidata) => candidata.id === id);
+    if (!venta) return null;
+    const notas = servicioVentas.devolucionesDeVenta(venta.id);
+    return {
+      etiqueta: 'Ficha de la factura',
+      titulo: `Factura ${venta.id} · ${venta.cliente}`,
+      subtitulo: `${venta.metodo} · ${estadoDeFactura(venta).texto}`,
+      indicadores: [
+        { etiqueta: 'Total', valor: aPesos(venta.total) },
+        { etiqueta: 'Devuelto', valor: aPesos(servicioVentas.totalDevuelto(venta.id)) },
+        { etiqueta: 'Neto', valor: aPesos(venta.total - servicioVentas.totalDevuelto(venta.id)) },
+      ],
+      datos: [
+        ...datosComunes(venta),
+        { etiqueta: 'Método de pago', valor: venta.metodo },
+        { etiqueta: 'Recibido', valor: venta.metodo === 'Efectivo' && venta.recibido ? aPesos(venta.recibido) : '' },
+        { etiqueta: 'Devuelta', valor: venta.metodo === 'Efectivo' && venta.recibido ? aPesos(venta.devuelta ?? 0) : '' },
+        { etiqueta: 'Plazo', valor: venta.plazoDias ? `${venta.plazoDias} días` : '' },
+        { etiqueta: 'Documento de origen', valor: venta.documentoOrigen ?? '' },
+        { etiqueta: 'Observaciones', valor: venta.observaciones ?? '', ancho: true },
+      ],
+      contenido: repetir(documento, 'contenido-ficha-venta', [{ extra: notas.length ? repetir(documento, 'extra-notas-factura', [{}]) : '' }]),
+      acciones: repetir(documento, 'acciones-ficha-factura', [{ id: venta.id, acciones: accionesFactura(venta) }]),
+      alMontar: (seccionFicha) => {
+        cuadriculaItems(seccionFicha.querySelector('[data-items]'), venta);
+        const contenedorNotas = seccionFicha.querySelector('[data-notas]');
+        if (contenedorNotas) {
+          montarCuadricula(contenedorNotas, {
+            plantillas: plantillasCuadricula,
+            titulo: 'Notas de la factura',
+            columnas: [
+              { clave: 'id', titulo: 'N°', ancho: '90px' }, { clave: 'tipo', titulo: 'Tipo', ancho: '150px' },
+              { clave: 'motivo', titulo: 'Motivo', ancho: 'minmax(0, 1.5fr)' }, { clave: 'total', titulo: 'Total', ancho: '112px', alinear: 'derecha' },
+            ],
+            filas: notas.map((nota) => ({ id: nota.id, tipo: servicioVentas.ETIQUETA_NOTA[nota.tipo], motivo: nota.motivo, total: aPesos(nota.total) })),
+          });
+        }
+      },
+    };
+  });
+
+  const fichaDocumento = crearFicha(buscar('#ficha-documento', raiz), plantillasFicha);
+  const abrirFichaDocumento = (id) => fichaDocumento.abrir(id, () => {
+    const registro = servicioVentas.buscarDocumento(id);
+    if (!registro) return null;
+    return {
+      etiqueta: `Ficha de la ${etiquetaDe(registro.tipo).toLowerCase()}`,
+      titulo: `${etiquetaDe(registro.tipo)} ${registro.id} · ${registro.cliente}`,
+      subtitulo: estadoDeDocumento(registro),
+      indicadores: [{ etiqueta: 'Total', valor: aPesos(registro.total) }],
+      datos: [
+        ...datosComunes(registro),
+        { etiqueta: 'Vigente hasta', valor: registro.vigenciaHasta ? aFecha(registro.vigenciaHasta) : '' },
+        { etiqueta: 'Pasado a', valor: registro.convertidoEn ?? '' },
+        { etiqueta: 'Motivo de anulación', valor: registro.motivoAnulacion ?? '' },
+        { etiqueta: 'Observaciones', valor: registro.observaciones ?? '', ancho: true },
+      ],
+      contenido: repetir(documento, 'contenido-ficha-venta', [{ extra: '' }]),
+      acciones: repetir(documento, 'acciones-ficha-documento', [{ id: registro.id, acciones: accionesDocumento(registro) }]),
+      alMontar: (seccionFicha) => cuadriculaItems(seccionFicha.querySelector('[data-items]'), registro),
+    };
+  });
+
+  const fichaNota = crearFicha(buscar('#ficha-nota', raiz), plantillasFicha);
+  const abrirFichaNota = (id) => fichaNota.abrir(id, () => {
+    const nota = estado.devoluciones.find((candidata) => candidata.id === id);
+    if (!nota) return null;
+    return {
+      etiqueta: `Ficha de la ${servicioVentas.ETIQUETA_NOTA[nota.tipo].toLowerCase()}`,
+      titulo: `${nota.id} · factura ${nota.ventaId}`,
+      subtitulo: servicioVentas.ETIQUETA_NOTA[nota.tipo],
+      indicadores: [{ etiqueta: 'Total', valor: aPesos(nota.total) }],
+      datos: [...datosComunes(nota), { etiqueta: 'Motivo', valor: nota.motivo, ancho: true }],
+      contenido: repetir(documento, 'contenido-ficha-venta', [{ extra: '' }]),
+      acciones: repetir(documento, 'acciones-ficha-nota', [{ id: nota.id, ventaId: nota.ventaId }]),
+      alMontar: (seccionFicha) => cuadriculaItems(seccionFicha.querySelector('[data-items]'), nota),
+    };
+  });
+
+  // --- Nueva nota: se elige la factura y el tipo; luego se abre el panel de cantidades y motivo -----------
+  const panelNota = buscar('#panel-nueva-nota', raiz);
+  panelNota.hidden = true;
+  buscar('#nueva-nota', raiz).onclick = () => {
+    panelNota.hidden = false;
+    panelNota.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    buscar('#nota-factura', raiz).focus();
+  };
+  buscar('#cancelar-nota', raiz).onclick = () => { panelNota.hidden = true; };
+  buscar('#continuar-nota', raiz).onclick = () => {
+    const ventaId = buscar('#nota-factura', raiz).value;
+    if (!ventaId) return contexto.alerta('No hay facturas con productos por devolver');
+    panelNota.hidden = true;
+    panelDeFactura(ventaId, buscar('#nota-tipo', raiz).value === 'anulacion');
+  };
 
   // Panel con motivo para devolver, anular una factura o anular una remisión o cotización
   function abrirPanel({ titulo, descripcion, columnaCantidad, filas, esAnulacion, plantillaFilas, alConfirmar, textoBoton }) {
@@ -145,7 +281,7 @@ export function montar(raiz, contexto) {
       textoBoton,
     });
     activarCamposNumericos(zona);
-    zona.scrollIntoView({ block: 'nearest' });
+    zona.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     (buscar('[data-cantidad-producto]', zona) ?? buscar('#motivo-devolucion', zona)).focus();
 
     buscar('#cancelar-devolucion', zona).onclick = () => { zona.innerHTML = ''; };
@@ -207,6 +343,10 @@ export function montar(raiz, contexto) {
   }
 
   buscar('.vista', raiz).addEventListener('click', (evento) => {
+    const ficha = evento.target.closest('[data-ficha-factura], [data-ficha-documento], [data-ficha-nota]');
+    if (ficha?.dataset.fichaFactura) return abrirFichaFactura(ficha.dataset.fichaFactura);
+    if (ficha?.dataset.fichaDocumento) return abrirFichaDocumento(ficha.dataset.fichaDocumento);
+    if (ficha?.dataset.fichaNota) return abrirFichaNota(ficha.dataset.fichaNota);
     const recibo = evento.target.closest('[data-recibo]');
     if (recibo) return mostrarReciboDeVenta(estado.ventas.find((venta) => venta.id === recibo.dataset.recibo));
     const devolver = evento.target.closest('[data-devolver]');

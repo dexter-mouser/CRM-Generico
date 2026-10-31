@@ -1,14 +1,6 @@
 <div id="principal">
-  <div class="cabecera-vista">
-    <div>
-      <h1>Bodegas</h1>
-      <div class="texto-suave">Stock de cada bodega y traslados entre ellas. Un traslado sale del origen al enviarlo y entra al destino cuando se recibe.</div>
-    </div>
-    <div class="acciones-fila">
-      <button type="button" class="boton" id="nueva-bodega">Nueva bodega</button>
-      <button type="button" class="boton primario" id="nuevo-traslado">Nuevo traslado</button>
-    </div>
-  </div>
+  <button type="button" class="boton" id="nueva-bodega" data-accion-cabecera>Nueva bodega</button>
+  <button type="button" class="boton primario" id="nuevo-traslado" data-accion-cabecera>Nuevo traslado</button>
 
   <section class="caja formulario-en-linea" id="formulario-bodega" aria-labelledby="titulo-formulario-bodega" hidden>
     <strong id="titulo-formulario-bodega">Nueva bodega</strong>
@@ -60,13 +52,19 @@
     </div>
   </section>
 
-  <div class="rejilla-fichas" id="fichas-bodegas">{{{fichas}}}</div>
+  <section class="caja separacion-inferior" aria-labelledby="titulo-lista-bodegas">
+    <strong id="titulo-lista-bodegas">Lista de bodegas</strong>
+    <div id="cuadricula-bodegas"></div>
+  </section>
+  <div id="ficha-bodega" class="separacion-inferior"></div>
 
-  <section class="caja separacion-inferior" aria-label="Stock por bodega">
+  <section class="caja separacion-inferior" aria-labelledby="titulo-stock">
+    <strong id="titulo-stock">Stock por bodega</strong>
     <div id="cuadricula-stock"></div>
   </section>
 
-  <section class="caja" id="traslados" aria-label="Traslados">
+  <section class="caja" id="traslados" aria-labelledby="titulo-traslados">
+    <strong id="titulo-traslados">Traslados</strong>
     <div class="confirmacion" id="confirmar-anular-traslado" hidden>
       <span id="texto-anular-traslado"></span>
       <input id="motivo-anular-traslado" class="campo" maxlength="200" autocomplete="off" placeholder="Motivo">
@@ -75,37 +73,36 @@
     </div>
     <div id="cuadricula-traslados"></div>
   </section>
+  <div id="ficha-traslado"></div>
 </div>
 
-<template id="ficha-bodega">
-  <article class="caja ficha-gestion {{clase}}">
-    <div class="cabecera-ficha">
-      <div>
-        <strong>{{nombre}}</strong>
-        <div class="texto-suave">{{id}} · {{tienda}}</div>
-      </div>
-      <span class="etiqueta-estado">{{estadoTexto}}</span>
-    </div>
-    <div class="datos-ficha">
-      <div><span>Unidades</span><strong>{{unidades}}</strong></div>
-      <div><span>Valor al costo</span><strong>{{valor}}</strong></div>
-      <div><span>Productos con stock</span><strong>{{productos}}</strong></div>
-      <div><span>Por recibir</span><strong>{{porRecibir}}</strong></div>
-    </div>
-    <div class="acciones-ficha">{{{acciones}}}</div>
-  </article>
+<template id="acciones-bodega">
+  <div class="acciones-fila">
+    <button type="button" class="boton" data-ficha="{{id}}">Ficha</button>
+    {{{edicion}}}
+  </div>
 </template>
 
-<template id="acciones-bodega">
+<template id="botones-edicion-bodega">
   <button type="button" class="boton" data-editar="{{id}}">Editar</button>
-  <button type="button" class="boton" data-estado="{{id}}">{{textoEstado}}</button>
+  <button type="button" class="boton {{claseEstado}}" data-estado="{{id}}">{{textoEstado}}</button>
 </template>
 
 <template id="acciones-traslado">
   <div class="acciones-fila">
-    <button type="button" class="boton primario" data-recibir="{{id}}">Recibir</button>
-    <button type="button" class="boton peligro" data-anular="{{id}}">Anular</button>
+    <button type="button" class="boton" data-ficha-traslado="{{id}}">Ficha</button>
+    {{{pendiente}}}
   </div>
+</template>
+
+<template id="acciones-traslado-pendiente">
+  <button type="button" class="boton primario" data-recibir="{{id}}">Recibir</button>
+  <button type="button" class="boton peligro" data-anular="{{id}}">Anular</button>
+</template>
+
+<template id="contenido-ficha-bodega">
+  <strong class="subtitulo-ficha">Productos con stock</strong>
+  <div data-cuadricula-ficha></div>
 </template>
 
 <template id="fila-linea-traslado">

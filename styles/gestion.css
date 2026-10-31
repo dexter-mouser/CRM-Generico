@@ -1,4 +1,4 @@
-/* Panel (accesos principales, pendientes, todas las funciones) y gestión de tiendas, bodegas y empleados */
+/* Panel (accesos principales, pendientes, todas las funciones) y formularios de tiendas, bodegas y empleados */
 .accesos-principales {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
@@ -100,62 +100,6 @@
 .grupo-funciones a:hover {
   color: var(--texto);
   text-decoration: underline;
-}
-
-/* Tarjetas de tiendas y bodegas */
-.rejilla-fichas {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.ficha-gestion {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.ficha-gestion.inactiva {
-  opacity: 0.6;
-}
-
-.cabecera-ficha {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.datos-ficha {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.datos-ficha div {
-  display: flex;
-  flex-direction: column;
-}
-
-.datos-ficha span {
-  color: var(--suave);
-  font-size: 12px;
-}
-
-.acciones-ficha {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: auto;
-}
-
-.etiqueta-estado {
-  padding: 2px 8px;
-  border-radius: 10px;
-  background: var(--activo);
-  font-size: 12px;
-  white-space: nowrap;
 }
 
 /* Formularios de gestión */

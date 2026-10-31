@@ -1,0 +1,244 @@
+/* Estructura común de cada sección: cabecera destacada, formulario de nuevo proceso y ficha del registro */
+
+/* Cabecera destacada */
+.cabecera-seccion {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin-bottom: 18px;
+  padding: 22px 24px 22px 28px;
+  overflow: hidden;
+  border: 1px solid var(--borde);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 100% 0%, var(--pasar) 0, transparent 55%),
+    linear-gradient(120deg, var(--superficie) 55%, var(--activo));
+}
+
+.cabecera-seccion::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 6px;
+  background: var(--acento);
+}
+
+.marca-agua-cabecera {
+  position: absolute;
+  right: -18px;
+  bottom: -34px;
+  color: var(--texto);
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+.marca-agua-cabecera svg {
+  width: 150px;
+  height: 150px;
+  stroke-width: 1.2;
+}
+
+.texto-cabecera {
+  position: relative;
+  flex: 1 1 360px;
+  min-width: 0;
+}
+
+.grupo-cabecera {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: var(--suave);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.icono-cabecera {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--acento);
+  color: var(--acento-texto);
+}
+
+.icono-cabecera svg {
+  width: 15px;
+  height: 15px;
+}
+
+.cabecera-seccion h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.6px;
+}
+
+.complemento-titulo {
+  margin-left: 10px;
+  color: var(--suave);
+  font-weight: 600;
+  font-size: 0.7em;
+  letter-spacing: 0;
+}
+
+.complemento-titulo::before {
+  content: '· ';
+}
+
+.descripcion-cabecera {
+  max-width: 72ch;
+  margin: 8px 0 0;
+  color: var(--suave);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.acciones-cabecera {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.acciones-cabecera[hidden] {
+  display: none;
+}
+
+/* Formulario de nuevo proceso (se abre con el botón de la cabecera) */
+.formulario-en-linea,
+.panel-proceso {
+  position: relative;
+  margin-bottom: 16px;
+  border-left: 4px solid var(--acento);
+  animation: aparecer-proceso 0.2s ease-out;
+}
+
+.panel-proceso[hidden] {
+  display: none;
+}
+
+.formulario-en-linea > strong:first-child,
+.panel-proceso > strong:first-child {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 17px;
+}
+
+@keyframes aparecer-proceso {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Ficha del registro */
+.ficha-registro,
+.ficha-cliente-completa {
+  margin-top: 16px;
+  border-top: 4px solid var(--acento);
+  animation: aparecer-proceso 0.2s ease-out;
+}
+
+.cabecera-ficha-registro {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.cabecera-ficha-registro h2 {
+  margin: 2px 0 4px;
+  font-size: 22px;
+}
+
+.etiqueta-ficha {
+  color: var(--suave);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.acciones-ficha-registro {
+  flex-wrap: wrap;
+}
+
+.ficha-registro .indicadores {
+  margin: 4px 0 14px;
+}
+
+.datos-registro {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px 18px;
+  margin: 0 0 14px;
+  padding: 14px;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  background: var(--pasar);
+}
+
+.datos-registro div {
+  min-width: 0;
+}
+
+.datos-registro .dato-ancho {
+  grid-column: 1 / -1;
+}
+
+.datos-registro dt {
+  color: var(--suave);
+  font-size: 12px;
+}
+
+.datos-registro dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.contenido-ficha:empty {
+  display: none;
+}
+
+.subtitulo-ficha {
+  display: block;
+  margin: 14px 0 6px;
+}
+
+@media (max-width: 800px) {
+  .cabecera-seccion {
+    padding: 18px 16px 18px 20px;
+  }
+
+  .cabecera-seccion h1 {
+    font-size: 24px;
+  }
+
+  .descripcion-cabecera {
+    font-size: 14px;
+  }
+
+  .acciones-cabecera {
+    width: 100%;
+  }
+
+  .acciones-cabecera > * {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}
+
+.datos-registro a {
+  color: var(--texto);
+}

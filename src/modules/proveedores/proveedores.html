@@ -1,14 +1,6 @@
 <div id="principal">
-  <div class="cabecera-vista">
-    <div>
-      <h1>Proveedores</h1>
-      <div class="texto-suave">Datos de cada proveedor, lo que se le debe y sus órdenes de compra. Una orden se recibe ingresando su factura de compra en Inventario.</div>
-    </div>
-    <div class="acciones-fila">
-      <button type="button" class="boton" id="nuevo-proveedor">Nuevo proveedor</button>
-      <button type="button" class="boton primario" id="nueva-orden">Nueva orden de compra</button>
-    </div>
-  </div>
+  <button type="button" class="boton" id="nuevo-proveedor" data-accion-cabecera>Nuevo proveedor</button>
+  <button type="button" class="boton primario" id="nueva-orden" data-accion-cabecera>Nueva orden de compra</button>
 
   <section class="caja formulario-en-linea" id="formulario-proveedor" aria-labelledby="titulo-formulario-proveedor" hidden>
     <strong id="titulo-formulario-proveedor">Nuevo proveedor</strong>
@@ -73,7 +65,8 @@
     </div>
   </section>
 
-  <section class="caja" aria-label="Lista de proveedores">
+  <section class="caja" aria-labelledby="titulo-lista-proveedores">
+    <strong id="titulo-lista-proveedores">Lista de proveedores</strong>
     <div class="confirmacion" id="confirmar-eliminar" hidden>
       <span id="texto-eliminar"></span>
       <button type="button" class="boton peligro" id="eliminar-si">Sí, eliminar</button>
@@ -81,8 +74,10 @@
     </div>
     <div id="cuadricula-proveedores"></div>
   </section>
+  <div id="ficha-proveedor"></div>
 
-  <section class="caja margen-superior-grande" aria-label="Órdenes de compra">
+  <section class="caja margen-superior-grande" aria-labelledby="titulo-ordenes">
+    <strong id="titulo-ordenes">Órdenes de compra</strong>
     <div class="confirmacion" id="confirmar-anular-orden" hidden>
       <span id="texto-anular-orden"></span>
       <input id="motivo-anular-orden" class="campo" maxlength="200" autocomplete="off" placeholder="Motivo">
@@ -91,20 +86,41 @@
     </div>
     <div id="cuadricula-ordenes"></div>
   </section>
+  <div id="ficha-orden"></div>
 </div>
 
 <template id="acciones-proveedor">
   <div class="acciones-fila">
-    <button type="button" class="boton" data-editar="{{id}}">Editar</button>
-    <button type="button" class="boton peligro" data-eliminar="{{id}}">Eliminar</button>
+    <button type="button" class="boton" data-ficha="{{id}}">Ficha</button>
+    {{{edicion}}}
   </div>
+</template>
+
+<template id="botones-edicion-proveedor">
+  <button type="button" class="boton" data-editar="{{id}}">Editar</button>
+  <button type="button" class="boton peligro" data-eliminar="{{id}}">Eliminar</button>
+</template>
+
+<template id="contenido-ficha-proveedor">
+  <strong class="subtitulo-ficha">Facturas de compra</strong>
+  <div data-facturas></div>
+  <strong class="subtitulo-ficha">Pagos</strong>
+  <div data-pagos></div>
+  <strong class="subtitulo-ficha">Órdenes de compra</strong>
+  <div data-ordenes></div>
 </template>
 
 <template id="acciones-orden">
   <div class="acciones-fila">
+    <button type="button" class="boton" data-ficha-orden="{{id}}">Ficha</button>
     <button type="button" class="boton" data-comprobante-orden="{{id}}">Comprobante</button>
     {{{abierta}}}
   </div>
+</template>
+
+<template id="acciones-ficha-orden">
+  <button type="button" class="boton" data-comprobante-orden="{{id}}">Comprobante</button>
+  {{{abierta}}}
 </template>
 
 <template id="acciones-orden-abierta">

@@ -1,13 +1,14 @@
 <div id="principal">
-  <div class="cabecera-vista">
-    <div>
-      <h1>Auditoría</h1>
-      <div class="texto-suave">Registro de lo que hace cada persona: ventas, devoluciones, cierres, cambios de roles y permisos y más. Solo se puede consultar. Escribe debajo de cada columna para filtrar.</div>
-    </div>
-    <button type="button" class="boton" id="descargar-auditoria">Exportar CSV</button>
-  </div>
+  <button type="button" class="boton" id="descargar-auditoria" data-accion-cabecera>Exportar CSV</button>
 
-  <section class="caja">
+  <section class="caja" aria-labelledby="titulo-registro-auditoria">
+    <strong id="titulo-registro-auditoria">Registro</strong>
+    <div class="texto-suave">Escribe debajo de cada columna para filtrar.</div>
     <div id="cuadricula-auditoria"></div>
   </section>
+  <div id="ficha-auditoria"></div>
 </div>
+
+<template id="accion-registro">
+  <button type="button" class="boton" data-ficha="{{id}}">Ficha</button>
+</template>

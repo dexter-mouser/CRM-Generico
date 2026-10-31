@@ -1,13 +1,5 @@
 <div id="principal">
-  <div class="cabecera-vista">
-    <div>
-      <h1>Empleados</h1>
-      <div class="texto-suave">Ficha, tienda, turno, meta y comisión de cada persona. Si tiene usuario, aquí se eligen las tiendas a las que puede entrar.</div>
-    </div>
-    <div class="acciones-fila">
-      <button type="button" class="boton primario" id="nuevo-empleado">Nuevo empleado</button>
-    </div>
-  </div>
+  <button type="button" class="boton primario" id="nuevo-empleado" data-accion-cabecera>Nuevo empleado</button>
 
   <div class="tarjetas">{{{resumen}}}</div>
 
@@ -74,7 +66,8 @@
     </div>
   </section>
 
-  <section class="caja" aria-label="Lista de empleados">
+  <section class="caja" aria-labelledby="titulo-lista-empleados">
+    <strong id="titulo-lista-empleados">Lista de empleados</strong>
     <div class="confirmacion" id="confirmar-retiro" hidden>
       <span id="texto-retiro"></span>
       <button type="button" class="boton peligro" id="retiro-si">Sí, retirar</button>
@@ -82,6 +75,8 @@
     </div>
     <div id="cuadricula-empleados"></div>
   </section>
+
+  <div id="ficha-empleado"></div>
 </div>
 
 <template id="tarjeta">
@@ -101,9 +96,14 @@
 
 <template id="acciones-empleado">
   <div class="acciones-fila">
-    <button type="button" class="boton" data-editar="{{id}}">Editar</button>
-    <button type="button" class="boton {{claseEstado}}" data-estado="{{id}}">{{textoEstado}}</button>
+    <button type="button" class="boton" data-ficha="{{id}}">Ficha</button>
+    {{{edicion}}}
   </div>
+</template>
+
+<template id="botones-edicion">
+  <button type="button" class="boton" data-editar="{{id}}">Editar</button>
+  <button type="button" class="boton {{claseEstado}}" data-estado="{{id}}">{{textoEstado}}</button>
 </template>
 
 <template id="casilla-tienda">

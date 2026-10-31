@@ -26,14 +26,17 @@ export const MENU = [
 ];
 
 // Grupos del menú. Cada sección abre un módulo; "seccion" muestra solo esa parte de la página (?seccion=...).
+// "descripcion" es el texto de la cabecera destacada de la sección.
 export const GRUPOS = [
   {
     id: 'inicio',
     etiqueta: 'Inicio',
     icono: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
     secciones: [
-      { etiqueta: 'Panel', modulo: 'panel' },
-      { etiqueta: 'Reportes', modulo: 'reportes' },
+      { etiqueta: 'Panel', modulo: 'panel',
+        descripcion: 'Resumen del día, accesos principales y pendientes. Arrastra las tarjetas para reordenarlas.' },
+      { etiqueta: 'Reportes', modulo: 'reportes',
+        descripcion: 'Ventas, clientes, embudo y vendedores por rango de fechas; cartera por antigüedad, clientes inactivos y stock bajo.' },
     ],
   },
   {
@@ -41,11 +44,16 @@ export const GRUPOS = [
     etiqueta: 'Ventas',
     icono: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
     secciones: [
-      { etiqueta: 'Registrar venta', modulo: 'nueva-venta' },
-      { etiqueta: 'Facturas', modulo: 'ventas', seccion: 'facturas' },
-      { etiqueta: 'Remisiones y cotizaciones', modulo: 'ventas', seccion: 'documentos' },
-      { etiqueta: 'Notas', modulo: 'ventas', seccion: 'notas' },
-      { etiqueta: 'Caja', modulo: 'caja' },
+      { etiqueta: 'Registrar venta', modulo: 'nueva-venta',
+        descripcion: 'Factura, remisión o cotización: primero el cliente, luego los productos (busca escribiendo debajo de cada columna) y al final el pago.' },
+      { etiqueta: 'Facturas', modulo: 'ventas', seccion: 'facturas',
+        descripcion: 'Facturas de venta con su ficha. Las devoluciones y anulaciones generan una nota anclada a la factura, devuelven el stock y ajustan la caja o la deuda.' },
+      { etiqueta: 'Remisiones y cotizaciones', modulo: 'ventas', seccion: 'documentos',
+        descripcion: 'Una remisión descuenta el stock sin cobrar y se pasa a factura; una cotización es solo una oferta. Al pasarse conservan su número (C5 → R5 → F5).' },
+      { etiqueta: 'Notas', modulo: 'ventas', seccion: 'notas',
+        descripcion: 'Notas de devolución (ND) y de anulación (NA), cada una con su consecutivo y anclada a su factura original.' },
+      { etiqueta: 'Caja', modulo: 'caja',
+        descripcion: 'Cada tienda tiene su caja: ábrela con una base, registra ingresos y egresos y ciérrala contando el efectivo.' },
     ],
   },
   {
@@ -53,9 +61,12 @@ export const GRUPOS = [
     etiqueta: 'Clientes',
     icono: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
     secciones: [
-      { etiqueta: 'Clientes', modulo: 'clientes' },
-      { etiqueta: 'Seguimiento', modulo: 'seguimiento' },
-      { etiqueta: 'Embudo', modulo: 'embudo' },
+      { etiqueta: 'Clientes', modulo: 'clientes',
+        descripcion: 'Ficha de cada cliente con su documento, contacto, etiquetas, cupo de crédito e historial. La deuda sale de las ventas a Crédito menos devoluciones y abonos.' },
+      { etiqueta: 'Seguimiento', modulo: 'seguimiento',
+        descripcion: 'Llamadas, WhatsApp, visitas, correos y notas con cada cliente, y tareas con fecha y responsable.' },
+      { etiqueta: 'Embudo', modulo: 'embudo',
+        descripcion: 'Cada cotización es una oportunidad: enviada, en negociación, ganada (al pasarla a remisión o factura) o perdida (con motivo).' },
     ],
   },
   {
@@ -63,11 +74,16 @@ export const GRUPOS = [
     etiqueta: 'Inventario',
     icono: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
     secciones: [
-      { etiqueta: 'Productos', modulo: 'inventario', seccion: 'productos' },
-      { etiqueta: 'Kardex', modulo: 'inventario', seccion: 'kardex' },
-      { etiqueta: 'Compras', modulo: 'inventario', seccion: 'compras' },
-      { etiqueta: 'Bodegas', modulo: 'bodegas' },
-      { etiqueta: 'Proveedores', modulo: 'proveedores' },
+      { etiqueta: 'Productos', modulo: 'inventario', seccion: 'productos',
+        descripcion: 'Catálogo con costo, precio con IVA, categoría, stock mínimo y existencias por bodega.' },
+      { etiqueta: 'Kardex', modulo: 'inventario', seccion: 'kardex',
+        descripcion: 'Entradas (+) y salidas (−) de cada producto con el saldo después de cada movimiento: ventas, compras, devoluciones, ajustes y traslados.' },
+      { etiqueta: 'Compras', modulo: 'inventario', seccion: 'compras',
+        descripcion: 'Facturas de compra de los proveedores: suman al stock de la bodega elegida y actualizan el costo de cada producto.' },
+      { etiqueta: 'Bodegas', modulo: 'bodegas',
+        descripcion: 'Stock de cada bodega y traslados entre ellas. Un traslado sale del origen al enviarlo y entra al destino cuando se recibe.' },
+      { etiqueta: 'Proveedores', modulo: 'proveedores',
+        descripcion: 'Datos de cada proveedor, lo que se le debe y sus órdenes de compra. Una orden se recibe ingresando su factura en Compras.' },
     ],
   },
   {
@@ -75,9 +91,12 @@ export const GRUPOS = [
     etiqueta: 'Finanzas',
     icono: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h2M12 12h2M8 16h2M12 16h2M16 12v4"/>',
     secciones: [
-      { etiqueta: 'Contabilidad', modulo: 'contabilidad' },
-      { etiqueta: 'Abonos de clientes', modulo: 'pagos', seccion: 'abonos' },
-      { etiqueta: 'Pagos a proveedores', modulo: 'pagos', seccion: 'proveedores' },
+      { etiqueta: 'Contabilidad', modulo: 'contabilidad',
+        descripcion: 'Cierra la contabilidad de cada día para guardar su resumen. Los días se cierran en orden y el de hoy se cierra mañana.' },
+      { etiqueta: 'Abonos de clientes', modulo: 'pagos', seccion: 'abonos',
+        descripcion: 'Abonos de los clientes que deben. Se aplican primero a la factura a crédito más antigua.' },
+      { etiqueta: 'Pagos a proveedores', modulo: 'pagos', seccion: 'proveedores',
+        descripcion: 'Pagos a proveedores con facturas de compra pendientes.' },
     ],
   },
   {
@@ -87,11 +106,16 @@ export const GRUPOS = [
     abajo: true,
     icono: '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
     secciones: [
-      { etiqueta: 'Tiendas', modulo: 'tiendas' },
-      { etiqueta: 'Empleados', modulo: 'empleados' },
-      { etiqueta: 'Roles y permisos', modulo: 'roles' },
-      { etiqueta: 'Auditoría', modulo: 'auditoria' },
-      { etiqueta: 'Ajustes', modulo: 'ajustes' },
+      { etiqueta: 'Tiendas', modulo: 'tiendas',
+        descripcion: 'Cada tienda vende desde su bodega y tiene su propia caja. La tienda activa se elige en el menú superior.' },
+      { etiqueta: 'Empleados', modulo: 'empleados',
+        descripcion: 'Ficha, tienda, turno, meta y comisión de cada persona. Si tiene usuario, aquí se eligen las tiendas a las que puede entrar.' },
+      { etiqueta: 'Roles y permisos', modulo: 'roles',
+        descripcion: 'Roles con sus permisos por módulo y las personas que entran al sistema. Cada cambio queda registrado en Auditoría.' },
+      { etiqueta: 'Auditoría', modulo: 'auditoria',
+        descripcion: 'Registro de lo que hace cada persona: ventas, devoluciones, cierres, cambios de roles y más. Solo se puede consultar.' },
+      { etiqueta: 'Ajustes', modulo: 'ajustes',
+        descripcion: 'Datos de la tienda, apariencia, ventas, recibo y copias de seguridad.' },
     ],
   },
 ];
@@ -113,6 +137,10 @@ export const ACCESOS_PRINCIPALES = [
 ];
 
 export const enlaceDeSeccion = (seccion) => `${seccion.modulo}.html${seccion.seccion ? `?seccion=${seccion.seccion}` : ''}`;
+
+// Sección del menú que corresponde a un módulo y, si la página se divide, a una de sus partes
+export const seccionDeMenu = (modulo, parte = '') => GRUPOS.flatMap((grupo) => grupo.secciones)
+  .find((seccion) => seccion.modulo === modulo && (!parte || !seccion.seccion || seccion.seccion === parte));
 
 // Grupo al que pertenece un módulo
 export const grupoDeModulo = (modulo) => GRUPOS.find((grupo) => grupo.secciones.some((seccion) => seccion.modulo === modulo));

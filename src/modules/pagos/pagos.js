@@ -1,4 +1,5 @@
-import { buscar } from '../../core/dom.js';
+import { buscar, buscarTodos } from '../../core/dom.js';
+import { puede } from '../../core/autorizacion.js';
 import { estado } from '../../core/store.js';
 import { aPesos, aFecha } from '../../core/format.js';
 import { leerEntero } from '../../core/numeros.js';
@@ -6,20 +7,25 @@ import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import { clientesConDeuda, deudaDeCliente } from '../../services/clientes.service.js';
 import * as servicioPagos from '../../services/pagos.service.js';
 import { mostrarComprobanteDePago } from '../../components/recibo/comprobantes.js';
-import { enTiendaActiva } from '../../core/tienda.js';
+import { enTiendaActiva, nombreDeTienda } from '../../core/tienda.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
+import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
 
 let documento;
 let plantillasCuadricula;
+let plantillasFicha;
 
 // Lista de opciones; si no hay nadie con saldo se muestra un texto que lo explica
 const opciones = (plantilla, elementos, textoVacio) => (elementos.length
   ? repetir(documento, plantilla, elementos)
   : repetir(documento, 'opcion-vacia', [{ texto: textoVacio }]));
 
-export async function dibujar() {
+// Cada parte de la página muestra sus pagos: abonos de clientes o pagos a proveedores
+const TIPO_POR_SECCION = { abonos: 'abono', proveedores: 'proveedor' };
+
+export async function dibujar(contexto) {
   documento = await cargarHtml(new URL('./pagos.html', import.meta.url));
-  plantillasCuadricula = await cargarPlantillasCuadricula();
+  [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
   const metodos = servicioPagos.metodosDePago().map((metodo) => ({ metodo }));
   const clientes = clientesConDeuda().map((cliente) => ({ id: cliente.id, nombre: cliente.nombre, pendiente: deudaDeCliente(cliente) }));
   const proveedores = servicioPagos.proveedoresConSaldo();
@@ -27,10 +33,12 @@ export async function dibujar() {
     opcionesClientes: opciones('opcion-cliente', clientes, 'Ningún cliente tiene deuda'),
     opcionesProveedores: opciones('opcion-proveedor', proveedores, 'Ningún proveedor tiene saldo'),
     opcionesMetodo: repetir(documento, 'opcion-metodo', metodos),
+    tituloHistorial: contexto.seccion === 'proveedores' ? 'Pagos a proveedores' : 'Abonos de clientes',
   });
 }
 
 export function montar(raiz, contexto) {
+  const tipo = TIPO_POR_SECCION[contexto.seccion] ?? 'abono';
   montarCuadricula(buscar('#cuadricula-pagos', raiz), {
     plantillas: plantillasCuadricula,
     titulo: 'Historial de pagos',
@@ -38,17 +46,15 @@ export function montar(raiz, contexto) {
     columnas: [
       { clave: 'id', titulo: 'N°', ancho: '84px' },
       { clave: 'fecha', titulo: 'Fecha', ancho: '130px' },
-      { clave: 'tipo', titulo: 'Tipo', ancho: '140px' },
-      { clave: 'tercero', titulo: 'Cliente o proveedor', ancho: 'minmax(0, 1fr)' },
+      { clave: 'tercero', titulo: tipo === 'abono' ? 'Cliente' : 'Proveedor', ancho: 'minmax(0, 1fr)' },
       { clave: 'concepto', titulo: 'Concepto', ancho: 'minmax(0, 1fr)' },
       { clave: 'metodo', titulo: 'Método', ancho: '110px' },
       { clave: 'valor', titulo: 'Valor', ancho: '104px', alinear: 'derecha' },
-      { clave: 'acciones', titulo: 'Acciones', ancho: '130px', filtrable: false, html: (fila) => repetir(documento, 'accion-pago', [{ id: fila.id }]) },
+      { clave: 'acciones', titulo: 'Acciones', ancho: '200px', filtrable: false, html: (fila) => repetir(documento, 'accion-pago', [{ id: fila.id }]) },
     ],
-    filas: estado.pagos.filter(enTiendaActiva).reverse().map((pago) => ({
+    filas: estado.pagos.filter((pago) => enTiendaActiva(pago) && pago.tipo === tipo).reverse().map((pago) => ({
       id: pago.id,
       fecha: aFecha(pago.fecha),
-      tipo: pago.tipo === 'abono' ? 'Abono de cliente' : 'Pago a proveedor',
       tercero: pago.tercero,
       concepto: pago.concepto,
       metodo: pago.metodo,
@@ -56,10 +62,48 @@ export function montar(raiz, contexto) {
     })),
   });
 
+  // Ficha del pago (no se edita: mueve caja y deuda)
+  const ficha = crearFicha(buscar('#ficha-pago', raiz), plantillasFicha);
+  const abrirFicha = (id) => ficha.abrir(id, () => {
+    const pago = estado.pagos.find((candidato) => candidato.id === id);
+    if (!pago) return null;
+    const esAbono = pago.tipo === 'abono';
+    return {
+      etiqueta: esAbono ? 'Ficha del abono' : 'Ficha del pago a proveedor',
+      titulo: `${pago.id} · ${pago.tercero}`,
+      subtitulo: `${esAbono ? 'Abono de cliente' : 'Pago a proveedor'} · ${pago.metodo}`,
+      indicadores: [{ etiqueta: 'Valor', valor: aPesos(pago.valor) }],
+      datos: [
+        { etiqueta: esAbono ? 'Cliente' : 'Proveedor', valor: `${pago.tercero} · ${pago.terceroId}` },
+        { etiqueta: 'Fecha', valor: aFecha(pago.fecha) },
+        { etiqueta: 'Método', valor: pago.metodo },
+        { etiqueta: 'Tienda', valor: pago.tiendaId ? nombreDeTienda(pago.tiendaId) : '' },
+        { etiqueta: 'Registró', valor: pago.usuario ?? '' },
+        { etiqueta: 'Concepto', valor: pago.concepto ?? '', ancho: true },
+      ],
+      acciones: repetir(documento, 'comprobante-pago', [{ id: pago.id }]),
+    };
+  });
+
   buscar('.vista', raiz).addEventListener('click', (evento) => {
+    const fichaBoton = evento.target.closest('[data-ficha]');
+    if (fichaBoton) return abrirFicha(fichaBoton.dataset.ficha);
     const boton = evento.target.closest('[data-comprobante]');
     if (boton) mostrarComprobanteDePago(estado.pagos.find((pago) => pago.id === boton.dataset.comprobante));
   });
+
+  // Paneles de proceso: se abren con el botón de la cabecera
+  ['#panel-abono', '#panel-pago'].forEach((selector) => { buscar(selector, raiz).hidden = true; });
+  const abrirPanel = (selector) => {
+    const panel = buscar(selector, raiz);
+    panel.hidden = false;
+    panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    panel.querySelector('select')?.focus();
+  };
+  if (!puede('pagos', 'crear')) ['#nuevo-abono', '#nuevo-pago'].forEach((selector) => { buscar(selector, raiz).hidden = true; });
+  buscar('#nuevo-abono', raiz).onclick = () => abrirPanel('#panel-abono');
+  buscar('#nuevo-pago', raiz).onclick = () => abrirPanel('#panel-pago');
+  buscarTodos('[data-cancelar]', raiz).forEach((boton) => { boton.onclick = () => { buscar(boton.dataset.cancelar, raiz).hidden = true; }; });
 
   const valorDe = (selector) => buscar(selector, raiz).value;
 

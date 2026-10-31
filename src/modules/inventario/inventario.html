@@ -1,14 +1,11 @@
 <div id="principal">
-  <h1>Inventario</h1>
-  <div class="texto-suave separacion-inferior">{{{lugarStock}}}</div>
-  <div class="acciones" data-seccion="productos">
-    <a class="boton primario" href="inventario.html?seccion=compras">Ingresar compra</a>
-    <button type="button" class="boton" id="descargar-csv">Descargar CSV</button>
-    <label class="boton archivo">Cargar CSV<input type="file" id="cargar-csv" accept=".csv,text/csv" hidden></label>
-  </div>
+  <button type="button" class="boton" id="descargar-csv" data-accion-cabecera data-seccion="productos">Descargar CSV</button>
+  <label class="boton archivo" data-accion-cabecera data-seccion="productos">Cargar CSV<input type="file" id="cargar-csv" accept=".csv,text/csv" hidden></label>
+  <button type="button" class="boton primario" id="nuevo-producto" data-accion-cabecera data-seccion="productos">Nuevo producto</button>
+  <button type="button" class="boton primario" id="ingresar-compra" data-accion-cabecera data-seccion="compras">Ingresar compra</button>
 
-  <section class="caja separacion-inferior" id="panel-factura" aria-label="Ingresar factura de compra" data-seccion="compras">
-    <strong>Ingresar factura de compra</strong>
+  <section class="caja panel-proceso" id="panel-factura" aria-labelledby="titulo-panel-factura" data-seccion="compras">
+    <strong id="titulo-panel-factura">Ingresar factura de compra</strong>
     <div class="texto-suave">Suma las cantidades al stock de la bodega elegida y deja el costo de la factura como costo de cada producto. Si el producto es nuevo, créalo antes en Productos; si el proveedor es nuevo, créalo en Proveedores.</div>
     <div class="aviso-origen caja margen-superior" id="aviso-orden" hidden><strong id="texto-orden"></strong></div>
     <div class="dos-columnas arriba margen-superior">
@@ -40,42 +37,77 @@
     </div>
   </section>
 
-  <section class="caja" aria-label="Facturas de compra" data-seccion="compras">
+  <section class="caja" aria-labelledby="titulo-facturas-compra" data-seccion="compras">
+    <strong id="titulo-facturas-compra">Facturas de compra</strong>
     <div id="cuadricula-facturas-compra"></div>
   </section>
+  <div id="ficha-factura-compra" data-seccion="compras"></div>
 
-  <div class="dos-columnas arriba" data-seccion="productos">
-    <div class="caja columna-ancha">
-      <div id="cuadricula-productos"></div>
+  <section class="caja formulario-en-linea" id="formulario-producto" aria-labelledby="titulo-formulario-producto" data-seccion="productos">
+    <strong id="titulo-formulario-producto">Nuevo producto</strong>
+    <div class="tres-campos">
+      <div>
+        <label for="producto-id">ID</label>
+        <input id="producto-id" class="campo" data-numero="entero" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="Solo números · automático si lo dejas vacío">
+      </div>
+      <div>
+        <label for="producto-referencia">Referencia</label>
+        <input id="producto-referencia" class="campo" autocomplete="off">
+      </div>
+      <div>
+        <label for="producto-nombre">Nombre</label>
+        <input id="producto-nombre" class="campo" autocomplete="off">
+      </div>
     </div>
-    <div class="caja columna-angosta">
-      <strong>Nuevo producto</strong>
-      <label for="nuevo-id">ID</label>
-      <input id="nuevo-id" class="campo" data-numero="entero" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="Solo números · automático si lo dejas vacío">
-      <label for="nuevo-referencia">Referencia</label>
-      <input id="nuevo-referencia" class="campo" autocomplete="off">
-      <label for="nuevo-nombre">Nombre</label>
-      <input id="nuevo-nombre" class="campo" autocomplete="off">
-      <label for="nuevo-categoria">Categoría</label>
-      <input id="nuevo-categoria" class="campo" list="lista-categorias" autocomplete="off">
-      <datalist id="lista-categorias">{{{opcionesCategoria}}}</datalist>
-      <label for="nuevo-costo">Costo (COP)</label>
-      <input id="nuevo-costo" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
-      <label for="nuevo-precio">Precio de venta con IVA (COP)</label>
-      <input id="nuevo-precio" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
-      <label for="nuevo-iva">IVA</label>
-      <select id="nuevo-iva" class="campo">{{{opcionesIva}}}</select>
-      <label for="nuevo-minimo">Stock mínimo</label>
-      <input id="nuevo-minimo" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
-      <label for="nuevo-stock">Stock inicial (bodega de la tienda activa)</label>
-      <input id="nuevo-stock" class="campo" data-numero="entero-negativo" autocomplete="off" placeholder="0">
-      <button type="button" class="boton primario ancho" id="agregar-producto">Agregar producto</button>
+    <div class="tres-campos">
+      <div>
+        <label for="producto-categoria">Categoría</label>
+        <input id="producto-categoria" class="campo" list="lista-categorias" autocomplete="off">
+        <datalist id="lista-categorias">{{{opcionesCategoria}}}</datalist>
+      </div>
+      <div>
+        <label for="producto-costo">Costo (COP)</label>
+        <input id="producto-costo" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
+      </div>
+      <div>
+        <label for="producto-precio">Precio de venta con IVA (COP)</label>
+        <input id="producto-precio" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
+      </div>
     </div>
-  </div>
+    <div class="tres-campos">
+      <div>
+        <label for="producto-iva">IVA</label>
+        <select id="producto-iva" class="campo">{{{opcionesIva}}}</select>
+      </div>
+      <div>
+        <label for="producto-stockMinimo">Stock mínimo</label>
+        <input id="producto-stockMinimo" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
+      </div>
+      <div>
+        <label for="producto-existencias" id="etiqueta-existencias">Stock inicial (bodega de la tienda activa)</label>
+        <input id="producto-existencias" class="campo" data-numero="entero-negativo" autocomplete="off" placeholder="0">
+      </div>
+    </div>
+    <div class="acciones-fila margen-superior-grande">
+      <button type="button" class="boton primario" id="guardar-producto">Guardar producto</button>
+      <button type="button" class="boton" id="cancelar-producto">Cancelar</button>
+    </div>
+  </section>
+
+  <section class="caja" aria-labelledby="titulo-lista-productos" data-seccion="productos">
+    <strong id="titulo-lista-productos">Lista de productos</strong>
+    <div class="texto-suave">{{{lugarStock}}}</div>
+    <div class="confirmacion" id="confirmar-eliminar-producto" hidden>
+      <span id="texto-eliminar-producto"></span>
+      <button type="button" class="boton peligro" id="eliminar-producto-si">Sí, eliminar</button>
+      <button type="button" class="boton" id="eliminar-producto-no">Cancelar</button>
+    </div>
+    <div id="cuadricula-productos"></div>
+  </section>
+  <div id="ficha-producto" data-seccion="productos"></div>
 
   <section class="caja" id="panel-kardex" aria-labelledby="titulo-kardex" data-seccion="kardex">
-    <h2 id="titulo-kardex">Kardex</h2>
-    <div class="texto-suave">Entradas (+) y salidas (−) del producto con el saldo después de cada movimiento: ventas, compras, devoluciones, ajustes y traslados.</div>
+    <strong id="titulo-kardex">Consultar kardex</strong>
     <div class="formulario-gestion margen-superior">
       <div>
         <label for="kardex-producto">Producto</label>
@@ -91,10 +123,6 @@
   </section>
 </div>
 
-<template id="campo-producto-iva">
-  <select class="campo" data-campo="iva" data-posicion="{{posicion}}" aria-label="IVA de {{nombre}}">{{{opciones}}}</select>
-</template>
-
 <template id="opcion-iva">
   <option value="{{valor}}" {{seleccion}}>{{valor}} %</option>
 </template>
@@ -108,18 +136,47 @@
 </template>
 
 <template id="acciones-producto">
-  <a class="boton" href="inventario.html?seccion=kardex&amp;producto={{id}}">Kardex</a>
+  <div class="acciones-fila">
+    <button type="button" class="boton" data-ficha="{{id}}">Ficha</button>
+    {{{editar}}}
+    {{{eliminar}}}
+  </div>
 </template>
 
-<template id="campo-producto-texto">
-  <input class="campo" data-campo="{{campo}}" data-posicion="{{posicion}}" aria-label="{{etiqueta}} de {{nombre}}" value="{{valor}}">
+<template id="boton-editar-producto">
+  <button type="button" class="boton" data-editar="{{id}}">Editar</button>
 </template>
 
-<template id="campo-producto-numero">
-  <input class="campo" data-campo="{{campo}}" data-numero="{{tipo}}" inputmode="numeric" autocomplete="off" data-posicion="{{posicion}}" aria-label="{{etiqueta}} de {{nombre}}" value="{{valor}}">
+<template id="boton-eliminar-producto">
+  <button type="button" class="boton peligro" data-eliminar="{{id}}">Eliminar</button>
+</template>
+
+<template id="enlace-kardex">
+  <a class="boton" href="inventario.html?seccion=kardex&amp;producto={{id}}">Ver kardex</a>
+</template>
+
+<template id="estado-producto">
+  <span class="insignia">{{texto}}</span>
+</template>
+
+<template id="contenido-ficha-producto">
+  <strong class="subtitulo-ficha">Stock por bodega</strong>
+  <div data-stock></div>
+</template>
+
+<template id="contenido-ficha-factura">
+  <strong class="subtitulo-ficha">Productos</strong>
+  <div data-items></div>
 </template>
 
 <template id="accion-factura-compra">
+  <div class="acciones-fila">
+    <button type="button" class="boton" data-ficha-factura="{{indice}}">Ficha</button>
+    <button type="button" class="boton" data-factura="{{indice}}">Comprobante</button>
+  </div>
+</template>
+
+<template id="comprobante-factura-compra">
   <button type="button" class="boton" data-factura="{{indice}}">Comprobante</button>
 </template>
 

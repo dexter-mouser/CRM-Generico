@@ -9,13 +9,15 @@ import * as servicioProveedores from '../../services/proveedores.service.js';
 import { dibujarSelector, montarSelectorProductos } from '../../components/selector-productos/selector-productos.js';
 import { mostrarComprobanteDeOrden } from '../../components/recibo/comprobantes.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
+import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
 
 let documento;
 let plantillasCuadricula;
+let plantillasFicha;
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./proveedores.html', import.meta.url));
-  plantillasCuadricula = await cargarPlantillasCuadricula();
+  [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
   return seccion(documento, 'principal', {
     opcionesProveedor: repetir(documento, 'opcion', estado.proveedores.map((proveedor) => ({ valor: proveedor.id, texto: `${proveedor.nombre} · ${proveedor.id}` }))),
     selector: await dibujarSelector(),
@@ -43,6 +45,8 @@ export function montar(raiz, contexto) {
   };
 
   // --- Proveedores -----------------------------------------------------------------------------------------
+  const puedeEditar = puede('proveedores', 'editar');
+  const botonesEdicion = (id) => (puedeEditar || puede('proveedores', 'eliminar') ? repetir(documento, 'botones-edicion-proveedor', [{ id }]) : '');
   const filasProveedores = () => estado.proveedores.map((proveedor) => ({
     ...proveedor,
     plazo: `${proveedor.plazoDias} días`,
@@ -60,7 +64,7 @@ export function montar(raiz, contexto) {
       { clave: 'telefono', titulo: 'Teléfono', ancho: '120px' },
       { clave: 'plazo', titulo: 'Plazo', ancho: '84px' },
       { clave: 'saldo', titulo: 'Por pagar', ancho: '112px', alinear: 'derecha' },
-      { clave: 'acciones', titulo: 'Acciones', ancho: '190px', filtrable: false, html: (fila) => repetir(documento, 'acciones-proveedor', [{ id: fila.id }]) },
+      { clave: 'acciones', titulo: 'Acciones', ancho: '270px', filtrable: false, html: (fila) => repetir(documento, 'acciones-proveedor', [{ id: fila.id, edicion: botonesEdicion(fila.id) }]) },
     ],
     filas: filasProveedores(),
   });
@@ -70,6 +74,7 @@ export function montar(raiz, contexto) {
     buscar('#titulo-formulario-proveedor', raiz).textContent = proveedor ? `Editar a ${proveedor.nombre}` : 'Nuevo proveedor';
     campos.forEach((nombre) => { campo(nombre).value = proveedor?.[nombre] ?? (nombre === 'plazoDias' ? '30' : ''); });
     buscar('#formulario-proveedor', raiz).hidden = false;
+    buscar('#formulario-proveedor', raiz).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     campo('nombre').focus();
   };
   buscar('#nuevo-proveedor', raiz).onclick = () => abrirFormulario(null);
@@ -85,20 +90,69 @@ export function montar(raiz, contexto) {
     if (aplicado) contexto.redibujar();
   };
 
+  // Ficha del proveedor: datos, saldo, facturas de compra, pagos y órdenes
+  const fichaProveedor = crearFicha(buscar('#ficha-proveedor', raiz), plantillasFicha);
+  const subcuadricula = (contenedor, titulo, vacio, columnas, filas) => montarCuadricula(contenedor, { plantillas: plantillasCuadricula, titulo, vacio, columnas, filas });
+  const abrirFichaProveedor = (id) => fichaProveedor.abrir(id, () => {
+    const proveedor = servicioProveedores.buscarProveedor(id);
+    if (!proveedor) return null;
+    const facturas = estado.facturas.filter((factura) => factura.proveedorId === id);
+    const pagos = estado.pagos.filter((pago) => pago.tipo === 'proveedor' && pago.terceroId === id);
+    const ordenes = estado.ordenesCompra.filter((orden) => orden.proveedorId === id);
+    return {
+      etiqueta: 'Ficha del proveedor',
+      titulo: `${proveedor.nombre} · ${proveedor.id}`,
+      subtitulo: [proveedor.nit ? `NIT ${proveedor.nit}` : 'Sin NIT', `Plazo ${proveedor.plazoDias} días`].join(' · '),
+      indicadores: [
+        { etiqueta: 'Por pagar', valor: aPesos(servicioProveedores.saldoConProveedor(id)), clase: servicioProveedores.saldoConProveedor(id) > 0 ? 'texto-negativo' : '' },
+        { etiqueta: 'Total comprado', valor: aPesos(facturas.reduce((suma, factura) => suma + factura.total, 0)) },
+        { etiqueta: 'Total pagado', valor: aPesos(pagos.reduce((suma, pago) => suma + pago.valor, 0)) },
+        { etiqueta: 'Órdenes abiertas', valor: String(ordenes.filter((orden) => orden.estado === 'abierta').length) },
+      ],
+      datos: [
+        { etiqueta: 'Persona de contacto', valor: proveedor.contacto ?? '' },
+        { etiqueta: 'Teléfono', valor: proveedor.telefono ?? '' },
+        { etiqueta: 'Correo', valor: proveedor.correo ?? '' },
+      ],
+      contenido: repetir(documento, 'contenido-ficha-proveedor', [{}]),
+      alEditar: puedeEditar ? () => abrirFormulario(servicioProveedores.buscarProveedor(id)) : null,
+      alMontar: (seccionFicha) => {
+        subcuadricula(seccionFicha.querySelector('[data-facturas]'), 'Facturas de compra', 'Sin facturas de compra.', [
+          { clave: 'numero', titulo: 'N°', ancho: '110px' }, { clave: 'fecha', titulo: 'Fecha', ancho: '110px' },
+          { clave: 'productos', titulo: 'Productos', ancho: 'minmax(0, 2fr)' }, { clave: 'total', titulo: 'Total', ancho: '112px', alinear: 'derecha' },
+        ], facturas.slice().reverse().map((factura) => ({ numero: factura.numero, fecha: factura.fecha, productos: factura.items.map((item) => `${item.nombre} ×${item.cantidad}`).join(', '), total: aPesos(factura.total) })));
+        subcuadricula(seccionFicha.querySelector('[data-pagos]'), 'Pagos', 'Sin pagos.', [
+          { clave: 'id', titulo: 'N°', ancho: '90px' }, { clave: 'fecha', titulo: 'Fecha', ancho: '130px' },
+          { clave: 'concepto', titulo: 'Concepto', ancho: 'minmax(0, 1.5fr)' }, { clave: 'metodo', titulo: 'Método', ancho: '110px' },
+          { clave: 'valor', titulo: 'Valor', ancho: '112px', alinear: 'derecha' },
+        ], pagos.slice().reverse().map((pago) => ({ id: pago.id, fecha: aFecha(pago.fecha), concepto: pago.concepto ?? '', metodo: pago.metodo, valor: aPesos(pago.valor) })));
+        subcuadricula(seccionFicha.querySelector('[data-ordenes]'), 'Órdenes de compra', 'Sin órdenes de compra.', [
+          { clave: 'id', titulo: 'N°', ancho: '90px' }, { clave: 'fecha', titulo: 'Fecha', ancho: '130px' },
+          { clave: 'estado', titulo: 'Estado', ancho: 'minmax(0, 1fr)' }, { clave: 'total', titulo: 'Total', ancho: '112px', alinear: 'derecha' },
+        ], ordenes.slice().reverse().map((orden) => ({ id: orden.id, fecha: aFecha(orden.fecha), estado: servicioProveedores.ESTADOS_ORDEN[orden.estado], total: aPesos(orden.total) })));
+      },
+    };
+  });
+
   buscar('#cuadricula-proveedores', raiz).addEventListener('click', (evento) => {
     const boton = evento.target.closest('button');
     if (!boton) return;
-    const proveedor = servicioProveedores.buscarProveedor(boton.dataset.editar ?? boton.dataset.eliminar);
+    const proveedor = servicioProveedores.buscarProveedor(boton.dataset.ficha ?? boton.dataset.editar ?? boton.dataset.eliminar);
     if (!proveedor) return;
+    if (boton.dataset.ficha) return abrirFichaProveedor(proveedor.id);
     if (boton.dataset.editar) return abrirFormulario(proveedor);
     porEliminar = proveedor.id;
     buscar('#texto-eliminar', raiz).textContent = `¿Eliminar a ${proveedor.nombre}?`;
     buscar('#confirmar-eliminar', raiz).hidden = false;
+    buscar('#confirmar-eliminar', raiz).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   });
   buscar('#eliminar-no', raiz).onclick = () => { buscar('#confirmar-eliminar', raiz).hidden = true; };
   buscar('#eliminar-si', raiz).onclick = () => {
     buscar('#confirmar-eliminar', raiz).hidden = true;
-    if (ejecutar(() => servicioProveedores.eliminarProveedor(porEliminar), 'Proveedor eliminado correctamente')) cuadriculaProveedores.actualizar(filasProveedores());
+    if (ejecutar(() => servicioProveedores.eliminarProveedor(porEliminar), 'Proveedor eliminado correctamente')) {
+      if (fichaProveedor.idAbierto() === porEliminar) fichaProveedor.cerrar();
+      cuadriculaProveedores.actualizar(filasProveedores());
+    }
   };
 
   // --- Órdenes de compra -----------------------------------------------------------------------------------
@@ -141,6 +195,7 @@ export function montar(raiz, contexto) {
   buscar('#nueva-orden', raiz).onclick = () => {
     if (!estado.proveedores.length) return contexto.alerta('Crea primero un proveedor');
     panelOrden.hidden = false;
+    panelOrden.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     buscar('#orden-proveedor', raiz).focus();
   };
   buscar('#cancelar-orden', raiz).onclick = () => { panelOrden.hidden = true; };
@@ -155,6 +210,7 @@ export function montar(raiz, contexto) {
     mostrarComprobanteDeOrden(orden);
   };
 
+  const accionesOrdenAbierta = (orden) => (orden.estado === 'abierta' && puede('inventario', 'crear') ? repetir(documento, 'acciones-orden-abierta', [{ id: orden.id }]) : '');
   montarCuadricula(buscar('#cuadricula-ordenes', raiz), {
     plantillas: plantillasCuadricula,
     titulo: 'Órdenes de compra',
@@ -166,7 +222,7 @@ export function montar(raiz, contexto) {
       { clave: 'productos', titulo: 'Productos', ancho: 'minmax(0, 1.6fr)' },
       { clave: 'total', titulo: 'Total', ancho: '112px', alinear: 'derecha' },
       { clave: 'estado', titulo: 'Estado', ancho: '150px' },
-      { clave: 'acciones', titulo: 'Acciones', ancho: '290px', filtrable: false, html: (fila) => fila.acciones },
+      { clave: 'acciones', titulo: 'Acciones', ancho: '370px', filtrable: false, html: (fila) => fila.acciones },
     ],
     filas: estado.ordenesCompra.slice().reverse().map((orden) => ({
       id: orden.id,
@@ -177,12 +233,35 @@ export function montar(raiz, contexto) {
       estado: servicioProveedores.ESTADOS_ORDEN[orden.estado] + (orden.facturaNumero ? ` · factura ${orden.facturaNumero}` : ''),
       acciones: repetir(documento, 'acciones-orden', [{
         id: orden.id,
-        abierta: orden.estado === 'abierta' && puede('inventario', 'crear') ? repetir(documento, 'acciones-orden-abierta', [{ id: orden.id }]) : '',
+        abierta: accionesOrdenAbierta(orden),
       }]),
     })),
   });
 
-  buscar('#cuadricula-ordenes', raiz).addEventListener('click', (evento) => {
+  // Ficha de la orden: no se edita; se recibe con su factura de compra o se anula
+  const fichaOrden = crearFicha(buscar('#ficha-orden', raiz), plantillasFicha);
+  const abrirFichaOrden = (id) => fichaOrden.abrir(id, () => {
+    const orden = servicioProveedores.buscarOrden(id);
+    if (!orden) return null;
+    return {
+      etiqueta: 'Ficha de la orden de compra',
+      titulo: `Orden ${orden.id} · ${orden.proveedor}`,
+      subtitulo: servicioProveedores.ESTADOS_ORDEN[orden.estado] + (orden.facturaNumero ? ` · factura ${orden.facturaNumero}` : ''),
+      indicadores: [{ etiqueta: 'Total', valor: aPesos(orden.total) }, { etiqueta: 'Unidades', valor: String(orden.items.reduce((suma, item) => suma + item.cantidad, 0)) }],
+      datos: [
+        { etiqueta: 'Fecha', valor: aFecha(orden.fecha) },
+        { etiqueta: 'Registrada por', valor: orden.usuario ?? '' },
+        { etiqueta: 'Productos', valor: orden.items.map((item) => `${item.nombre} ×${item.cantidad} a ${aPesos(item.costoUnitario)}`).join(', '), ancho: true },
+        { etiqueta: 'Observaciones', valor: orden.observaciones ?? '', ancho: true },
+        { etiqueta: 'Motivo de anulación', valor: orden.motivoAnulacion ?? '', ancho: true },
+      ],
+      acciones: repetir(documento, 'acciones-ficha-orden', [{ id: orden.id, abierta: accionesOrdenAbierta(orden) }]),
+    };
+  });
+
+  const alTocarOrden = (evento) => {
+    const ficha = evento.target.closest('[data-ficha-orden]');
+    if (ficha) return abrirFichaOrden(ficha.dataset.fichaOrden);
     const comprobante = evento.target.closest('[data-comprobante-orden]');
     if (comprobante) return mostrarComprobanteDeOrden(servicioProveedores.buscarOrden(comprobante.dataset.comprobanteOrden));
     const anular = evento.target.closest('[data-anular-orden]');
@@ -190,8 +269,11 @@ export function montar(raiz, contexto) {
     ordenPorAnular = anular.dataset.anularOrden;
     buscar('#texto-anular-orden', raiz).textContent = `¿Anular la orden ${ordenPorAnular}?`;
     buscar('#confirmar-anular-orden', raiz).hidden = false;
+    buscar('#confirmar-anular-orden', raiz).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     buscar('#motivo-anular-orden', raiz).focus();
-  });
+  };
+  buscar('#cuadricula-ordenes', raiz).addEventListener('click', alTocarOrden);
+  buscar('#ficha-orden', raiz).addEventListener('click', alTocarOrden);
   buscar('#anular-orden-no', raiz).onclick = () => { buscar('#confirmar-anular-orden', raiz).hidden = true; };
   buscar('#anular-orden-si', raiz).onclick = () => {
     if (ejecutar(() => servicioProveedores.anularOrden(ordenPorAnular, buscar('#motivo-anular-orden', raiz).value), `Orden ${ordenPorAnular} anulada correctamente`)) contexto.redibujar();

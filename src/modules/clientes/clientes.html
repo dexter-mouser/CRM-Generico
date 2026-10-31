@@ -1,11 +1,5 @@
 <div id="principal">
-  <div class="cabecera-vista">
-    <div>
-      <h1>Clientes</h1>
-      <div class="texto-suave">Ficha de cada cliente con su documento, contacto, etiquetas, cupo de crédito e historial. La deuda sale de las ventas a Crédito menos las devoluciones y los abonos.</div>
-    </div>
-    <button type="button" class="boton primario" id="nuevo-cliente">Nuevo cliente</button>
-  </div>
+  <button type="button" class="boton primario" id="nuevo-cliente" data-accion-cabecera>Nuevo cliente</button>
 
   <section class="caja formulario-en-linea" id="formulario-cliente" aria-labelledby="titulo-formulario-cliente" hidden>
     <strong id="titulo-formulario-cliente">Nuevo cliente</strong>
@@ -75,14 +69,18 @@
     <div id="cuadricula-clientes"></div>
   </section>
 
-  <section class="caja margen-superior-grande ficha-cliente-completa" id="ficha" aria-labelledby="titulo-ficha" hidden>
-    <div class="cabecera-vista">
+  <section class="caja ficha-registro ficha-cliente-completa" id="ficha" aria-labelledby="titulo-ficha" hidden>
+    <div class="cabecera-ficha-registro">
       <div>
+        <span class="etiqueta-ficha">Ficha del cliente</span>
         <h2 id="titulo-ficha"></h2>
         <div class="texto-suave" id="subtitulo-ficha"></div>
         <div class="etiquetas-cliente" id="etiquetas-ficha"></div>
       </div>
-      <button type="button" class="boton" id="cerrar-ficha">Cerrar ficha</button>
+      <div class="acciones-fila acciones-ficha-registro">
+        <button type="button" class="boton primario" id="editar-ficha">Editar</button>
+        <button type="button" class="boton" id="cerrar-ficha">Cerrar ficha</button>
+      </div>
     </div>
     <div class="indicadores" id="indicadores-ficha"></div>
 

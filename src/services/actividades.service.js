@@ -71,6 +71,30 @@ export function completarTarea(id, resultado = '') {
   return tarea;
 }
 
+// Cambia una actividad registrada: descripción, resultado y, si es una tarea pendiente, su fecha y responsable
+export function actualizarActividad(id, datos) {
+  exigirPermiso('seguimiento', 'editar', 'editar actividades');
+  const actividad = estado.actividades.find((candidata) => candidata.id === id);
+  if (!actividad) throw new Error('La actividad no existe');
+  const descripcion = exigirTexto(datos.descripcion, 'la descripción', { maximo: LIMITES.textoLargo });
+  const resultado = exigirTexto(datos.resultado ?? actividad.resultado ?? '', 'el resultado', { obligatorio: false, maximo: LIMITES.textoLargo });
+  if (esPendiente(actividad)) {
+    const vence = `${exigirFecha(datos.vence, 'la fecha de la tarea')}T18:00:00`;
+    if (vence !== actividad.vence && new Date(vence).getTime() < Date.now() - DIA_MS) throw new Error('La fecha de la tarea no puede ser anterior a hoy');
+    const responsable = estado.usuarios.find((usuario) => usuario.correo === datos.responsableCorreo && usuario.activo);
+    actividad.vence = vence;
+    if (responsable) {
+      actividad.responsable = responsable.nombre;
+      actividad.responsableCorreo = responsable.correo;
+    }
+  }
+  actividad.descripcion = descripcion;
+  actividad.resultado = resultado;
+  registrarAuditoria('seguimiento', 'Actividad editada', `${actividad.id} · ${actividad.descripcion}`);
+  guardarEstado();
+  return actividad;
+}
+
 export function eliminarActividad(id) {
   exigirPermiso('seguimiento', 'eliminar', 'eliminar actividades');
   const actividad = estado.actividades.find((candidata) => candidata.id === id);

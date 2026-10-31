@@ -1,14 +1,6 @@
 <div id="principal">
-  <div class="cabecera-vista">
-    <div>
-      <h1>Roles y permisos</h1>
-      <div class="texto-suave">Elige un rol de la lista, marca sus permisos en la tabla y mira abajo cómo lo vería esa persona. Cada cambio queda registrado en Auditoría.</div>
-    </div>
-    <div class="acciones-fila">
-      <a class="boton" id="ver-auditoria-roles" href="auditoria.html?modulo=roles" hidden>Ver cambios en Auditoría</a>
-      <button type="button" class="boton primario" id="nuevo-rol">Nuevo rol</button>
-    </div>
-  </div>
+  <a class="boton" id="ver-auditoria-roles" href="auditoria.html?modulo=roles" data-accion-cabecera>Ver cambios en Auditoría</a>
+  <button type="button" class="boton primario" id="nuevo-rol" data-accion-cabecera>Nuevo rol</button>
 
   <section class="caja formulario-en-linea" id="formulario-rol" aria-labelledby="titulo-formulario-rol" hidden>
     <strong id="titulo-formulario-rol">Nuevo rol</strong>
@@ -90,6 +82,7 @@
           </div>
         </div>
         <div id="cuadricula-personas"></div>
+        <div id="ficha-persona"></div>
       </section>
     </div>
   </div>
@@ -135,6 +128,10 @@
     <input type="checkbox" role="switch" data-activo="{{id}}" aria-label="Activo: {{nombre}}" {{{marcado}}}>
     <span class="interruptor-pista"></span>
   </label>
+</template>
+
+<template id="accion-persona">
+  <button type="button" class="boton" data-ficha="{{id}}">Ficha</button>
 </template>
 
 <template id="vista-previa-modulo">

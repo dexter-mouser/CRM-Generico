@@ -28,7 +28,7 @@ function saludoSegunHora() {
   return hora < 19 ? 'Buenas tardes' : 'Buenas noches';
 }
 
-export async function dibujar() {
+export async function dibujar(contexto) {
   const documento = await cargarHtml(new URL('./panel.html', import.meta.url));
   const hoy = fechaDeHoy();
   const ventasDeHoy = ventasEntre(hoy, hoy).filter((venta) => !estaAnulada(venta));
@@ -85,8 +85,12 @@ export async function dibujar() {
     total: aPesos(venta.total),
   }));
 
+  // La cabecera saluda a la persona y dice de qué tienda es el resumen
+  contexto.cabecera = {
+    titulo: `${saludoSegunHora()}, ${(sesionActual()?.nombre ?? '').split(' ')[0]}`,
+    descripcion: `Resumen del día en ${tiendaActiva()?.nombre ?? 'todas tus tiendas'}. Arrastra las tarjetas para reordenarlas.`,
+  };
   return seccion(documento, 'principal', {
-    lugar: tiendaActiva()?.nombre ?? 'todas tus tiendas',
     accesos: repetir(documento, 'acceso-principal', accesosPrincipales()),
     pendientes: pendientes(documento),
     funciones: repetir(documento, 'grupo-funciones', gruposVisibles().map((grupo) => ({
@@ -94,8 +98,6 @@ export async function dibujar() {
       icono: icono(grupo.icono),
       enlaces: repetir(documento, 'enlace-funcion', grupo.secciones.map((parte) => ({ etiqueta: parte.etiqueta, enlace: enlaceDeSeccion(parte) }))),
     }))),
-    saludo: saludoSegunHora(),
-    nombre: (sesionActual()?.nombre ?? '').split(' ')[0],
     tarjetas: repetir(documento, 'tarjeta-resumen', tarjetas),
     barras: repetir(documento, 'barra', barras),
     etiquetas: repetir(documento, 'etiqueta-barra', etiquetas),

@@ -1,11 +1,10 @@
 <div id="principal">
-  <h1>Caja · {{tienda}}</h1>
-  <div class="texto-suave separacion-inferior">Cada tienda tiene su caja. Ábrela con una base, registra ingresos y egresos y ciérrala contando el efectivo.</div>
   {{{contenido}}}
-  <section class="caja margen-superior-grande">
-    <strong>Cierres anteriores</strong>
+  <section class="caja margen-superior-grande" aria-labelledby="titulo-cierres">
+    <strong id="titulo-cierres">Cierres anteriores</strong>
     <div id="cuadricula-cierres"></div>
   </section>
+  <div id="ficha-cierre"></div>
 </div>
 
 <template id="sin-tienda">
@@ -28,43 +27,67 @@
 </template>
 
 <template id="caja-abierta">
+  <button type="button" class="boton" id="abrir-cierre" data-accion-cabecera>Cerrar caja</button>
+  <button type="button" class="boton primario" id="nuevo-movimiento" data-accion-cabecera>Registrar movimiento</button>
+
+  <section class="caja panel-proceso" id="panel-movimiento" aria-labelledby="titulo-movimiento" hidden>
+    <strong id="titulo-movimiento">Registrar movimiento</strong>
+    <div class="tres-campos">
+      <div>
+        <label for="movimiento-tipo">Tipo</label>
+        <select id="movimiento-tipo" class="campo">
+          <option value="ingreso">Ingreso</option>
+          <option value="egreso">Egreso</option>
+        </select>
+      </div>
+      <div>
+        <label for="movimiento-concepto">Concepto</label>
+        <input id="movimiento-concepto" class="campo" autocomplete="off">
+      </div>
+      <div>
+        <label for="movimiento-valor">Valor (COP)</label>
+        <input id="movimiento-valor" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
+      </div>
+    </div>
+    <div class="acciones-fila margen-superior-grande">
+      <button type="button" class="boton primario" id="registrar-movimiento">Registrar movimiento</button>
+      <button type="button" class="boton" id="cancelar-movimiento">Cancelar</button>
+    </div>
+  </section>
+
+  <section class="caja panel-proceso" id="panel-cierre" aria-labelledby="titulo-cierre" hidden>
+    <strong id="titulo-cierre">Cerrar caja</strong>
+    <div class="texto-suave">Cuenta el efectivo que hay y escríbelo. Se guarda la diferencia con lo esperado ({{esperado}}).</div>
+    <label for="efectivo-contado">Efectivo contado (COP)</label>
+    <input id="efectivo-contado" class="campo campo-base" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
+    <div class="acciones-fila margen-superior-grande">
+      <button type="button" class="boton primario" id="cerrar-caja">Cerrar caja</button>
+      <button type="button" class="boton" id="cancelar-cierre">Cancelar</button>
+    </div>
+  </section>
+
   <section class="caja" aria-labelledby="titulo-resumen">
     <strong id="titulo-resumen">Caja abierta desde {{apertura}}</strong>
     <dl class="resumen-caja">{{{lineas}}}</dl>
     <div class="total-venta"><span>Efectivo esperado en caja</span><strong>{{esperado}}</strong></div>
   </section>
 
-  <div class="dos-columnas arriba margen-superior-grande">
-    <section class="caja" aria-labelledby="titulo-movimiento">
-      <strong id="titulo-movimiento">Registrar movimiento</strong>
-      <label for="movimiento-tipo">Tipo</label>
-      <select id="movimiento-tipo" class="campo">
-        <option value="ingreso">Ingreso</option>
-        <option value="egreso">Egreso</option>
-      </select>
-      <label for="movimiento-concepto">Concepto</label>
-      <input id="movimiento-concepto" class="campo" autocomplete="off">
-      <label for="movimiento-valor">Valor (COP)</label>
-      <input id="movimiento-valor" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
-      <button type="button" class="boton primario ancho" id="registrar-movimiento">Registrar movimiento</button>
-    </section>
-
-    <section class="caja" aria-labelledby="titulo-cierre">
-      <strong id="titulo-cierre">Cerrar caja</strong>
-      <div class="texto-suave">Cuenta el efectivo que hay y escríbelo. Se guarda la diferencia con lo esperado.</div>
-      <label for="efectivo-contado">Efectivo contado (COP)</label>
-      <input id="efectivo-contado" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
-      <button type="button" class="boton primario ancho" id="cerrar-caja">Cerrar caja</button>
-    </section>
-  </div>
-
-  <section class="caja margen-superior-grande">
-    <strong>Movimientos de esta caja</strong>
+  <section class="caja margen-superior-grande" aria-labelledby="titulo-movimientos">
+    <strong id="titulo-movimientos">Movimientos de esta caja</strong>
     <div id="cuadricula-movimientos"></div>
   </section>
 </template>
 
 
+
+<template id="accion-cierre">
+  <button type="button" class="boton" data-ficha="{{id}}">Ficha</button>
+</template>
+
+<template id="contenido-ficha-cierre">
+  <strong class="subtitulo-ficha">Ingresos y egresos manuales</strong>
+  <div data-movimientos></div>
+</template>
 
 <template id="linea-resumen">
   <div><dt>{{etiqueta}}</dt><dd>{{valor}}</dd></div>

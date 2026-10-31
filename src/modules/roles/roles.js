@@ -5,9 +5,12 @@ import { ACCIONES, MODULOS_PERMISOS } from '../../config/permisos.js';
 import { puede } from '../../core/autorizacion.js';
 import * as servicioRoles from '../../services/roles.service.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
+import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
+import { nombreDeTienda } from '../../core/tienda.js';
 
 let documento;
 let plantillasCuadricula;
+let plantillasFicha;
 let rolSeleccionadoId = null;
 
 const contarPersonas = (rolId) => {
@@ -17,7 +20,7 @@ const contarPersonas = (rolId) => {
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./roles.html', import.meta.url));
-  plantillasCuadricula = await cargarPlantillasCuadricula();
+  [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
   if (!servicioRoles.buscarRol(rolSeleccionadoId)) rolSeleccionadoId = estado.roles[0].id;
   return seccion(documento, 'principal', {
     roles: '',
@@ -112,12 +115,37 @@ export function montar(raiz, contexto) {
       { clave: 'correo', titulo: 'Correo', ancho: 'minmax(0, 1.2fr)' },
       { clave: 'rolNombre', titulo: 'Rol', ancho: '170px', html: (fila) => repetir(documento, 'celda-rol-persona', [{ id: fila.id, nombre: fila.nombre, opciones: opcionesDeRoles(fila.rolId) }]) },
       { clave: 'estadoTexto', titulo: 'Activo', ancho: '90px', html: (fila) => repetir(documento, 'celda-activo-persona', [{ id: fila.id, nombre: fila.nombre, marcado: fila.activo ? 'checked' : '' }]) },
+      { clave: 'acciones', titulo: 'Acciones', ancho: '90px', filtrable: false, html: (fila) => repetir(documento, 'accion-persona', [{ id: fila.id }]) },
     ],
     filas: filasPersonas(),
   });
 
+  // Ficha de la persona: el rol y el estado se cambian en la misma fila
+  const fichaPersona = crearFicha(buscar('#ficha-persona', raiz), plantillasFicha);
+  const abrirFichaPersona = (id) => fichaPersona.abrir(id, () => {
+    const usuario = estado.usuarios.find((candidato) => candidato.id === id);
+    if (!usuario) return null;
+    const empleado = estado.empleados.find((candidato) => candidato.usuarioId === usuario.id);
+    return {
+      etiqueta: 'Ficha de la persona',
+      titulo: `${usuario.nombre} · ${usuario.id}`,
+      subtitulo: `${servicioRoles.buscarRol(usuario.rolId)?.nombre ?? 'Sin rol'} · ${usuario.activo ? 'Activa' : 'Inactiva'}`,
+      datos: [
+        { etiqueta: 'Correo', valor: usuario.correo },
+        { etiqueta: 'Rol', valor: servicioRoles.buscarRol(usuario.rolId)?.nombre ?? '' },
+        { etiqueta: 'Empleado', valor: empleado ? `${empleado.nombre} · ${empleado.id}` : 'Sin ficha de empleado' },
+        { etiqueta: 'Tiendas a las que entra', valor: usuario.tiendas?.length ? usuario.tiendas.map(nombreDeTienda).join(', ') : 'Todas las tiendas', ancho: true },
+      ],
+    };
+  });
+  buscar('#cuadricula-personas', raiz).addEventListener('click', (evento) => {
+    const boton = evento.target.closest('[data-ficha]');
+    if (boton) abrirFichaPersona(boton.dataset.ficha);
+  });
+
   const pintarPersonas = () => {
     cuadriculaPersonas.actualizar(filasPersonas());
+    fichaPersona.refrescar();
     buscar('#persona-rol', raiz).innerHTML = opcionesDeRoles(rolSeleccionadoId);
   };
 
@@ -136,6 +164,7 @@ export function montar(raiz, contexto) {
     buscar('#rol-nombre', raiz).value = modo === 'crear' ? '' : rol.nombre;
     buscar('#rol-descripcion', raiz).value = modo === 'crear' ? '' : rol.descripcion;
     buscar('#formulario-rol', raiz).hidden = false;
+    buscar('#formulario-rol', raiz).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     buscar('#rol-nombre', raiz).focus();
   };
   const cerrarFormularioRol = () => {
@@ -227,6 +256,6 @@ export function montar(raiz, contexto) {
     pintarTodo();
   };
 
-  buscar('#ver-auditoria-roles', raiz).hidden = !puede('auditoria', 'ver');
+  if (!puede('auditoria', 'ver')) buscar('#ver-auditoria-roles', raiz).hidden = true;
   pintarTodo();
 }

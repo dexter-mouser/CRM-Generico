@@ -15,7 +15,7 @@ import { buscar, buscarTodos } from '../../core/dom.js';
 import { cargarHtml, rellenar, repetir } from '../../core/template.js';
 
 const POR_PAGINA = 50;
-const ANCHO_POR_FRACCION = 150;
+const ANCHO_POR_FRACCION = 120;
 
 export const cargarPlantillasCuadricula = () => cargarHtml(new URL('./cuadricula-datos.html', import.meta.url));
 
@@ -42,7 +42,7 @@ export function montarCuadricula(contenedor, { plantillas, titulo, columnas, fil
   let visibles = porPagina;
 
   cuadricula.style.setProperty('--columnas', columnas.map((columna) => columna.ancho ?? 'minmax(0, 1fr)').join(' '));
-  // Ancho mínimo: columnas fijas más 150 px por cada fracción; si no cabe, la cuadrícula se desplaza en horizontal
+  // Ancho mínimo: columnas fijas más 120 px por cada fracción; si no cabe, la cuadrícula se desplaza en horizontal
   const anchoMinimo = columnas.reduce((suma, columna) => {
     const ancho = columna.ancho ?? 'minmax(0, 1fr)';
     const fijo = /^(\d+)px$/.exec(ancho);

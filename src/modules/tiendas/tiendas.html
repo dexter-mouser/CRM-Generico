@@ -1,13 +1,5 @@
 <div id="principal">
-  <div class="cabecera-vista">
-    <div>
-      <h1>Tiendas</h1>
-      <div class="texto-suave">Cada tienda vende desde su bodega y tiene su propia caja. La tienda activa se elige en el menú superior.</div>
-    </div>
-    <div class="acciones-fila">
-      <button type="button" class="boton primario" id="nueva-tienda">Nueva tienda</button>
-    </div>
-  </div>
+  <button type="button" class="boton primario" id="nueva-tienda" data-accion-cabecera>Nueva tienda</button>
 
   <section class="caja formulario-en-linea" id="formulario-tienda" aria-labelledby="titulo-formulario-tienda" hidden>
     <strong id="titulo-formulario-tienda">Nueva tienda</strong>
@@ -39,34 +31,28 @@
     </div>
   </section>
 
-  <div class="rejilla-fichas" id="fichas-tiendas">{{{fichas}}}</div>
+  <section class="caja" aria-labelledby="titulo-lista-tiendas">
+    <strong id="titulo-lista-tiendas">Lista de tiendas</strong>
+    <div id="cuadricula-tiendas"></div>
+  </section>
+
+  <div id="ficha-tienda"></div>
 </div>
 
-<template id="ficha-tienda">
-  <article class="caja ficha-gestion {{clase}}">
-    <div class="cabecera-ficha">
-      <div>
-        <strong>{{nombre}}</strong>
-        <div class="texto-suave">{{id}} · {{ciudad}}</div>
-      </div>
-      <span class="etiqueta-estado">{{estadoTexto}}</span>
-    </div>
-    <div class="datos-ficha">
-      <div><span>Ventas del mes</span><strong>{{ventasMes}}</strong></div>
-      <div><span>N° de ventas</span><strong>{{cantidadMes}}</strong></div>
-      <div><span>Caja</span><strong>{{caja}}</strong></div>
-      <div><span>Empleados</span><strong>{{empleados}}</strong></div>
-      <div><span>Bodega</span><strong>{{bodega}}</strong></div>
-      <div><span>Teléfono</span><strong>{{telefono}}</strong></div>
-    </div>
-    <div class="texto-suave">{{direccion}}</div>
-    <div class="acciones-ficha">{{{acciones}}}</div>
-  </article>
+<template id="acciones-tienda">
+  <div class="acciones-fila">
+    <button type="button" class="boton" data-ficha="{{id}}">Ficha</button>
+    {{{editar}}}
+  </div>
 </template>
 
-<template id="acciones-tienda">
+<template id="botones-edicion">
   <button type="button" class="boton" data-editar="{{id}}">Editar</button>
-  <button type="button" class="boton" data-estado="{{id}}">{{textoEstado}}</button>
+  <button type="button" class="boton {{claseEstado}}" data-estado="{{id}}">{{textoEstado}}</button>
+</template>
+
+<template id="estado-registro">
+  <span class="insignia {{clase}}">{{texto}}</span>
 </template>
 
 <template id="opcion">

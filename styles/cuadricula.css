@@ -151,3 +151,14 @@
   justify-content: space-between;
   align-items: center;
 }
+
+/* Botones de acción de cada fila (Ficha, Editar, Eliminar…): compactos para que quepan en la columna */
+.cuadricula-datos .acciones-fila {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cuadricula-datos .acciones-fila .boton {
+  padding: 6px 10px;
+  font-size: 13px;
+}
