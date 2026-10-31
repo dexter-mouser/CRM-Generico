@@ -13,7 +13,7 @@ import { exigirEntero, exigirMotivo, exigirTexto, validarLineas, LIMITES } from 
 import { registrarAuditoria } from './auditoria.service.js';
 import { ultimoDiaCerrado } from './contabilidad.service.js';
 import { cajaAbierta } from './caja.service.js';
-import { existenciasEn, moverExistencias } from './inventario.service.js';
+import { existenciasEn, moverExistencias, manejaStock, precioDeLista, esListaPrecio, LISTA_POR_DEFECTO } from './inventario.service.js';
 import { bodegaDeTienda, exigirTiendaActiva } from '../core/tienda.js';
 import { buscarCliente, deudaDeCliente, cupoDisponible } from './clientes.service.js';
 import { aPesos } from '../core/format.js';
@@ -41,9 +41,12 @@ const mismoNombre = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
 const buscarProducto = (id) => estado.productos.find((candidato) => candidato.id === id);
 export const buscarClientePorNombre = (nombre) => estado.clientes.find((cliente) => mismoNombre(cliente.nombre, nombre));
 
-// Valor sugerido al agregar un producto: su precio de venta; si no tiene, el de su última venta
-export function ultimoValorDeVenta(productoId) {
-  const precio = buscarProducto(productoId)?.precio;
+// Valor sugerido al agregar un producto: su precio en la lista de la venta; si no tiene, el de su última venta.
+// El producto genérico no sugiere valor: se escribe en cada venta.
+export function ultimoValorDeVenta(productoId, listaPrecio = LISTA_POR_DEFECTO) {
+  const producto = buscarProducto(productoId);
+  if (producto?.generico) return 0;
+  const precio = precioDeLista(producto, listaPrecio);
   if (precio) return precio;
   for (let posicion = estado.ventas.length - 1; posicion >= 0; posicion--) {
     const item = estado.ventas[posicion].items.find((candidato) => candidato.productoId === productoId);
@@ -77,11 +80,24 @@ export const documentoPendiente = (documento) => !documento.convertidoEn && !doc
 // Unidades ya entregadas por una remisión, por producto (para no descontar dos veces al facturarla)
 const remitidas = (documento) => Object.fromEntries((documento?.tipo === 'remision' ? documento.items : []).map((item) => [item.productoId, item.cantidad]));
 
+// Lista de precio con la que vende una tienda si no se elige otra
+export const listaDeTienda = (tiendaId) => estado.tiendas.find((tienda) => tienda.id === tiendaId)?.listaPrecio ?? LISTA_POR_DEFECTO;
+
+// Nombre de cada línea: el del producto; el genérico lleva el que se escribió en la venta
+function nombreDeLinea(linea) {
+  const producto = buscarProducto(linea.productoId);
+  if (producto?.generico) return exigirTexto(linea.nombre, `el nombre de ${producto.nombre}`, { maximo: 80 });
+  return producto?.nombre ?? exigirTexto(linea.nombre, 'el nombre del producto', { maximo: 120 });
+}
+
 // Valida las líneas y arma el documento sin guardarlo: sirve para la vista previa y para registrar
-export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo', lineas, recibido, observaciones = '', documentoOrigen = '' }) {
+export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo', lineas, recibido, observaciones = '', documentoOrigen = '', listaPrecio = '' }) {
   if (!TIPOS_DOCUMENTO[tipo]) throw new Error('Elige si es factura, remisión o cotización');
   if (!lineas.length) throw new Error('Agrega al menos un producto');
-  validarLineas(lineas, 'valorUnitario', 'el valor unitario');
+  const nombres = lineas.map(nombreDeLinea);
+  validarLineas(lineas.map((linea, posicion) => ({ ...linea, nombre: nombres[posicion] })), 'valorUnitario', 'el valor unitario');
+  const repetido = lineas.find((linea, posicion) => lineas.findIndex((otra) => otra.productoId === linea.productoId) !== posicion);
+  if (repetido) throw new Error(`${repetido.nombre} está dos veces: deja una sola línea por producto`);
 
   const origen = documentoOrigen ? buscarDocumento(documentoOrigen) : null;
   if (documentoOrigen && (!origen || !documentoPendiente(origen))) throw new Error(`El documento ${documentoOrigen} ya no se puede convertir`);
@@ -97,9 +113,10 @@ export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo'
   if (tipo !== 'cotizacion' && !estado.ajustes.ventas.permitirSinExistencias) {
     for (const linea of lineas) {
       const producto = buscarProducto(linea.productoId);
+      if (!manejaStock(producto)) continue;
       const faltante = linea.cantidad - (entregadas[linea.productoId] ?? 0);
-      const disponibles = producto ? existenciasEn(producto, bodegaId) : 0;
-      if (producto && faltante > disponibles) {
+      const disponibles = existenciasEn(producto, bodegaId);
+      if (faltante > disponibles) {
         throw new Error(`No hay existencias suficientes de ${linea.nombre} en esta tienda (disponibles: ${disponibles})`);
       }
     }
@@ -111,9 +128,9 @@ export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo'
     throw new Error('Para vender a Crédito, registra primero al cliente en Clientes y escribe su nombre completo');
   }
 
-  const items = lineas.map(({ productoId, nombre, cantidad, valorUnitario }) => ({
+  const items = lineas.map(({ productoId, cantidad, valorUnitario }, posicion) => ({
     productoId,
-    nombre,
+    nombre: nombres[posicion],
     referencia: buscarProducto(productoId)?.referencia ?? '',
     cantidad,
     valorUnitario,
@@ -137,6 +154,7 @@ export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo'
     usuarioCorreo: usuarioActual()?.correo ?? '',
     tiendaId,
     bodegaId,
+    listaPrecio: esListaPrecio(listaPrecio) ? listaPrecio : (origen?.listaPrecio ?? listaDeTienda(tiendaId)),
     observaciones: exigirTexto(observaciones, 'las observaciones', { obligatorio: false, maximo: LIMITES.textoLargo }),
     items,
     total,

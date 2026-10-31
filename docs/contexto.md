@@ -16,6 +16,7 @@ CRM "Genérico" para tiendas pequeñas: ventas, inventario, clientes, caja, cont
 4. Todo cambio aplicado muestra un aviso "… correctamente" (`contexto.aviso`); las advertencias usan `contexto.alerta`.
 5. El README describe solo utilidades y funcionamiento, nunca cambios entre versiones.
 6. Respuestas breves y precisas, en español.
+7. **Graphify obligatorio:** antes de cambiar código se consulta el grafo (`graphify-out/graph.json`) para saber qué funciones, módulos y archivos dependen de lo que se va a tocar, y el cambio cubre todos esos puntos. En la nube: copiar `graph.json` del PC y consultarlo (es JSON: nodos y relaciones). En Claude Code: `graphify query`, `graphify explain`, `graphify path`. Al entregar, el usuario ejecuta `graphify . --update` (o Claude Code lo ejecuta) para que el grafo quede al día.
 
 ## Estructura
 ```
@@ -59,14 +60,14 @@ docs/                         api.md, seguridad.md, validacion.md
 - Pago en efectivo: `recibido` y `devuelta` guardados en la factura; en efectivo el recibido debe ser ≥ total.
 
 ## Tiendas, bodegas y empleados
-- `estado.tiendas` (T-01 Centro → B-01, T-02 Norte → B-02), `estado.bodegas` (B-03 central sin tienda), `estado.traslados` (TR-0001), `estado.empleados` (E-001…).
+- Datos de prueba (semilla versión 7): cadena de accesorios para celular. `estado.tiendas`: T-01 Bodega Principal (mayorista, lista `mayor`) → B-01; T-02 Almacén Principal, T-03 Almacén Unicentro y T-04 Almacén Florida (detal, lista `detal`) → B-02, B-03, B-04. Empleados: bodega 3 (admin, Felipe, Luisa), Almacén Principal 3 (Camila, Santiago, Daniela técnica), Unicentro 1, Florida 1. Clientes C-007 a C-009 son los almacenes como clientes internos (lista `surtido`). `estado.traslados` (TR-0001). El stock inicial se calcula para que el kardex cuadre con las compras, ventas, remisión y traslado de la semilla.
 - Tienda activa en preferencias (`generico.tienda-activa`), `core/tienda.js`: `tiendaActivaId`, `elegirTienda`, `exigirTiendaActiva`, `enTiendaActiva`, `bodegaDeTienda`. `usuario.tiendas` limita el alcance (vacío = todas). "todas" solo consulta: no vende, no mueve caja ni stock.
 - Stock por bodega: `producto.stock = {'B-01': n}`; `producto.existencias` es el total. `existenciasVisibles` da el de la bodega activa. Un traslado enviado no cuenta en ninguna bodega hasta recibirlo.
 - Caja por tienda (`caja.tiendaId`); ventas, documentos, notas y pagos llevan `tiendaId` (y `bodegaId` los que mueven stock); facturas de compra llevan `bodegaId`.
 - Kardex por bodega (`kardexDeProducto(id, bodegaId)`), incluye traslados.
 
 ## Acceso de prueba
-- Correo: `demo@generico.com` (Propietario, todas las tiendas), `camila@generico.com` (Cajero, solo Tienda Centro), `felipe@generico.com` (Bodega). Se puede escribir solo la parte anterior a la arroba.
+- Correo: `demo@generico.com` (Propietario, todas las tiendas), `camila@generico.com` (Cajero, solo Almacén Principal), `felipe@generico.com` (Bodega). Se puede escribir solo la parte anterior a la arroba.
 - Usuario `admin` / clave `admin123`.
 - Las cuentas están en `CUENTAS_PRUEBA` (`src/config/acceso.js`) y el ingreso las muestra con botón "Copiar".
 - Todos los correos de personas terminan en `@generico.com` (`exigirCorreoDeTienda`; igual en el backend).
@@ -81,6 +82,7 @@ Hecho y probado en el navegador (escritorio y móvil, sin errores de consola):
 - Menú por grupos con pestañas, buscador de pantallas, barra inferior en celular y panel con accesos principales.
 - Varias tiendas, bodegas con traslados y empleados con metas y comisiones.
 - Menú lateral desplegable sin navegar, cabecera destacada en todas las pantallas y patrón de Clientes (nuevo proceso, Ficha · Editar · Eliminar) en los 6 grupos. Servicios nuevos: `actualizarActividad`, `eliminarProducto` (solo sin historia ni stock). Productos ya no se editan en línea.
+- Datos de accesorios para celular, tres precios por producto con listas por tienda y cliente, producto genérico, Registrar venta y Compras en un solo bloque con pasos, y color de marca y por grupo.
 
 ## Pendiente
 - Backend: no se ha compilado ni ejecutado (sin Maven en el entorno de trabajo); solo hay revisión de sintaxis.
@@ -99,7 +101,11 @@ Hecho y probado en el navegador (escritorio y móvil, sin errores de consola):
 - **Seguimiento:** actividades (llamada, WhatsApp, visita, correo, nota) y tareas con fecha y responsable.
 - **Embudo:** cotización = oportunidad (enviada, en negociación, ganada, perdida). Perdida exige motivo; la cotización vencida sin cerrar genera una alerta para su vendedor (campana del encabezado; el Propietario ve todas).
 - **Cartera:** vencimiento por factura a crédito, cupo por cliente y cartera por edades (abonos aplicados a la factura más antigua).
-- **Inventario:** precio de venta con IVA incluido, tarifa de IVA (0, 5, 19), categoría, stock mínimo y kardex calculado desde los documentos y los ajustes manuales.
+- **Inventario:** tres precios con IVA incluido (`precioSurtido`, `precioMayor`, `precioDetal`; `LISTAS_PRECIO`, `precioDeLista` en `inventario.service.js`), tarifa de IVA (0, 5, 19), categoría, stock mínimo y kardex calculado desde los documentos y los ajustes manuales.
+- **Listas de precio:** `tienda.listaPrecio` y `cliente.listaPrecio` (vacío = la de la tienda). La venta guarda `listaPrecio`; Registrar venta la toma del cliente o de la tienda y al cambiarla reprecia las líneas.
+- **Producto genérico** (`generico: true`, ID 99 en la semilla): no maneja stock (`manejaStock`, `moverExistencias` lo ignora), su nombre y valor se escriben en cada línea de venta (`nombreDeLinea` en ventas.service; los demás productos toman el nombre del inventario). Una sola línea por producto en cada documento (las devoluciones se cuentan por `productoId`). No se compra.
+- **Registrar venta y Compras:** un solo bloque `documento-registro` con pasos numerados (`styles/documento.css`). Compras usa `buscador-cuadricula` montado sobre el panel (`montarFactura(raiz, contexto, documento, plantillasBuscador)`).
+- **Color:** `--acento`/`--marca` índigo y `--grupo-*` por grupo en `tono.css`; `[data-grupo]` (menú, cabecera y `.vista`, que pone el router) define `--color-grupo`.
 - **Proveedores:** entidad propia (PV-001) con órdenes de compra (OC-0001) que se reciben con la factura de compra.
 - **Reportes:** clientes nuevos y recurrentes, inactivos (más de 60 días), conversión de cotizaciones y ventas por vendedor.
 

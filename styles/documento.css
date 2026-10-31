@@ -1,0 +1,107 @@
+/* Registro de un documento (venta o compra): tercero, tipo, lista de precio, productos y cierre en un solo bloque */
+.documento-registro {
+  border-top: 4px solid var(--color-grupo, var(--marca));
+}
+
+.encabezado-documento {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px dashed var(--contorno);
+}
+
+.paso-documento {
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  background: var(--pasar);
+}
+
+.contenido-paso {
+  flex: 1;
+  min-width: 0;
+}
+
+.contenido-paso > label:first-child,
+.etiqueta-paso {
+  display: block;
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+
+.numero-paso {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-grupo, var(--marca));
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.titulo-paso {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 6px 0 10px;
+}
+
+.titulo-paso .texto-suave {
+  margin-left: auto;
+  font-size: 13px;
+}
+
+.paso-documento .selector-tipo {
+  margin-bottom: 6px;
+}
+
+.paso-documento .ficha-cliente {
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  margin-top: 10px;
+}
+
+.cierre-documento {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr);
+  gap: 12px;
+  align-items: end;
+}
+
+.cierre-documento label {
+  margin-top: 0;
+}
+
+.cierre-documento #campo-metodo[hidden] + .campo-observaciones {
+  grid-column: 1 / -1;
+}
+
+/* Nombre editable del producto genérico dentro de la línea */
+.campo-nombre-generico {
+  width: 100%;
+  border-color: var(--color-grupo, var(--marca));
+  background: var(--marca-suave);
+}
+
+@media (max-width: 1100px) {
+  .encabezado-documento {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .encabezado-documento .paso-documento:first-child {
+    grid-column: 1 / -1;
+  }
+}
+.paso-documento .dato-cliente {
+  padding: 7px 10px;
+  background: var(--superficie);
+}

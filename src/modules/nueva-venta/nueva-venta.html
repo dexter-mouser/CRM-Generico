@@ -5,24 +5,40 @@
     <div class="texto-suave" id="detalle-origen"></div>
   </div>
 
-  <section class="caja datos-cliente separacion-inferior" id="datos-cliente">
-    <div class="campo-cliente">
-      <label for="cliente">Cliente</label>
-      <input id="cliente" class="campo" list="lista-clientes" autocomplete="off" placeholder="Escribe el nombre · vacío = cliente sin nombre">
-      <datalist id="lista-clientes">{{{opcionesCliente}}}</datalist>
-      <div class="texto-suave">Enter pasa a la búsqueda de productos.</div>
+  <section class="caja documento-registro cuadricula-venta" id="cuadricula-venta" aria-label="Documento de venta">
+    <div class="encabezado-documento">
+      <div class="paso-documento" id="datos-cliente">
+        <span class="numero-paso">1</span>
+        <div class="contenido-paso">
+          <label for="cliente">Cliente</label>
+          <input id="cliente" class="campo" list="lista-clientes" autocomplete="off" placeholder="Escribe el nombre · vacío = cliente sin nombre">
+          <datalist id="lista-clientes">{{{opcionesCliente}}}</datalist>
+          <div class="ficha-cliente" id="ficha-cliente" aria-live="polite"></div>
+        </div>
+      </div>
+      <div class="paso-documento">
+        <span class="numero-paso">2</span>
+        <div class="contenido-paso">
+          <span class="etiqueta-paso" id="etiqueta-tipo">Documento</span>
+          <div class="segmentado selector-tipo" role="group" aria-labelledby="etiqueta-tipo">
+            <button type="button" data-tipo="factura" aria-pressed="true">Factura</button>
+            <button type="button" data-tipo="remision" aria-pressed="false">Remisión</button>
+            <button type="button" data-tipo="cotizacion" aria-pressed="false">Cotización</button>
+          </div>
+          <div class="texto-suave" id="descripcion-tipo"></div>
+        </div>
+      </div>
+      <div class="paso-documento">
+        <span class="numero-paso">3</span>
+        <div class="contenido-paso">
+          <label for="lista-precio">Lista de precio</label>
+          <select id="lista-precio" class="campo">{{{opcionesLista}}}</select>
+          <div class="texto-suave" id="detalle-lista"></div>
+        </div>
+      </div>
     </div>
-    <div class="ficha-cliente" id="ficha-cliente" aria-live="polite"></div>
-  </section>
 
-  <div class="segmentado selector-tipo" role="group" aria-label="Tipo de documento">
-    <button type="button" data-tipo="factura" aria-pressed="true">Factura de venta</button>
-    <button type="button" data-tipo="remision" aria-pressed="false">Remisión</button>
-    <button type="button" data-tipo="cotizacion" aria-pressed="false">Cotización</button>
-  </div>
-  <div class="texto-suave separacion-inferior" id="descripcion-tipo"></div>
-
-  <section class="caja cuadricula-venta" id="cuadricula-venta">
+    <div class="titulo-paso"><span class="numero-paso">4</span><strong>Productos</strong><span class="texto-suave">Enter en el cliente pasa a la búsqueda · <kbd>F2</kbd> buscar</span></div>
     <div class="cuadricula" role="grid" aria-label="Productos de la venta">
       <div class="fila-cuadricula encabezado-cuadricula" role="row">
         <div role="columnheader">ID</div>
@@ -52,12 +68,18 @@
     <div class="texto-suave margen-superior" id="sin-lineas">Aún no hay productos en la venta. Busca arriba y elige uno.</div>
     <div class="total-venta"><span>Total</span><strong id="total-venta">$ 0</strong></div>
     <div class="texto-suave iva-venta" id="iva-venta"></div>
-    <div id="campo-metodo">
-      <label for="metodo">Método de pago</label>
-      <select id="metodo" class="campo">{{{opcionesMetodo}}}</select>
+
+    <div class="titulo-paso"><span class="numero-paso">5</span><strong>Pago y cierre</strong></div>
+    <div class="cierre-documento">
+      <div id="campo-metodo">
+        <label for="metodo">Método de pago</label>
+        <select id="metodo" class="campo">{{{opcionesMetodo}}}</select>
+      </div>
+      <div class="campo-observaciones">
+        <label for="observaciones">Observaciones</label>
+        <input id="observaciones" class="campo" maxlength="300" autocomplete="off" placeholder="Opcional: dirección de entrega, condiciones, notas para el cliente">
+      </div>
     </div>
-    <label for="observaciones">Observaciones</label>
-    <input id="observaciones" class="campo" maxlength="300" autocomplete="off" placeholder="Opcional: dirección de entrega, condiciones, notas para el cliente">
 
     <div class="pago-efectivo" id="pago-efectivo">
       <div class="cabecera-efectivo">
@@ -145,6 +167,16 @@
   <span class="pieza">{{cantidad}} × {{texto}}</span>
 </template>
 
+<template id="nombre-fijo">{{nombre}}</template>
+
+<template id="nombre-generico">
+  <input class="campo campo-nombre-generico" data-campo="nombre" maxlength="80" autocomplete="off" placeholder="¿Qué se vende? Ej.: Cambio de pin de carga" aria-label="Nombre del producto genérico" value="{{nombre}}">
+</template>
+
+<template id="opcion-lista">
+  <option value="{{id}}">{{etiqueta}}</option>
+</template>
+
 <template id="opcion-metodo">
   <option>{{metodo}}</option>
 </template>
@@ -153,7 +185,7 @@
   <div class="fila-cuadricula fila-linea" role="row" data-posicion="{{posicion}}">
     <div role="gridcell">{{id}}</div>
     <div role="gridcell">{{referencia}}</div>
-    <div role="gridcell" class="texto-producto">{{nombre}}</div>
+    <div role="gridcell" class="texto-producto">{{{celdaNombre}}}</div>
     <div role="gridcell">{{costo}}</div>
     <div role="gridcell">{{existencias}}</div>
     <div role="gridcell"><input class="campo" data-campo="cantidad" data-numero="entero" inputmode="numeric" autocomplete="off" aria-label="Cantidad de {{nombre}}" value="{{cantidad}}"></div>

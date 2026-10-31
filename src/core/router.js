@@ -66,7 +66,8 @@ async function mostrar(conEsqueleto) {
     await cargarCabecera();
     const html = await modulo.dibujar(contexto);
     if (miTurno !== turno) return;
-    raiz.innerHTML = `<div class="vista${conEsqueleto ? '' : ' sin-animacion'}">${dibujarCabecera(contexto)}${pestanasDelGrupo()}${html}</div>`;
+    // data-grupo da a todo el contenido el color del grupo del menú (cabecera, pestañas, fichas y formularios)
+    raiz.innerHTML = `<div class="vista${conEsqueleto ? '' : ' sin-animacion'}" data-grupo="${escaparHtml(grupoDeModulo(id)?.id ?? '')}">${dibujarCabecera(contexto)}${pestanasDelGrupo()}${html}</div>`;
     animar(raiz, conEsqueleto);
     activarCamposNumericos(raiz);
     mostrarSoloSeccion(raiz);

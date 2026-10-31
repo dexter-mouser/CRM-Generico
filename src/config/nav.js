@@ -45,7 +45,7 @@ export const GRUPOS = [
     icono: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
     secciones: [
       { etiqueta: 'Registrar venta', modulo: 'nueva-venta',
-        descripcion: 'Factura, remisión o cotización: primero el cliente, luego los productos (busca escribiendo debajo de cada columna) y al final el pago.' },
+        descripcion: 'Factura, remisión o cotización en un solo bloque: cliente, documento, lista de precio, productos (busca escribiendo debajo de cada columna) y pago.' },
       { etiqueta: 'Facturas', modulo: 'ventas', seccion: 'facturas',
         descripcion: 'Facturas de venta con su ficha. Las devoluciones y anulaciones generan una nota anclada a la factura, devuelven el stock y ajustan la caja o la deuda.' },
       { etiqueta: 'Remisiones y cotizaciones', modulo: 'ventas', seccion: 'documentos',
@@ -75,7 +75,7 @@ export const GRUPOS = [
     icono: '<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
     secciones: [
       { etiqueta: 'Productos', modulo: 'inventario', seccion: 'productos',
-        descripcion: 'Catálogo con costo, precio con IVA, categoría, stock mínimo y existencias por bodega.' },
+        descripcion: 'Catálogo con costo, tres precios de venta (1 surtido, 2 por mayor, 3 al detal), stock mínimo y existencias por bodega. El producto genérico sirve para servicios y reparaciones.' },
       { etiqueta: 'Kardex', modulo: 'inventario', seccion: 'kardex',
         descripcion: 'Entradas (+) y salidas (−) de cada producto con el saldo después de cada movimiento: ventas, compras, devoluciones, ajustes y traslados.' },
       { etiqueta: 'Compras', modulo: 'inventario', seccion: 'compras',

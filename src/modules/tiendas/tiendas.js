@@ -3,11 +3,12 @@ import { estado } from '../../core/store.js';
 import { aPesos } from '../../core/format.js';
 import { puede } from '../../core/autorizacion.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
+import { LISTAS_PRECIO, etiquetaDeLista } from '../../services/inventario.service.js';
 import { buscarTienda, resumenDeTienda, agregarTienda, actualizarTienda, cambiarEstadoTienda } from '../../services/tiendas.service.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
 
-const CAMPOS = ['nombre', 'ciudad', 'telefono', 'direccion', 'bodegaId'];
+const CAMPOS = ['nombre', 'ciudad', 'telefono', 'direccion', 'bodegaId', 'listaPrecio'];
 let documento;
 let plantillasCuadricula;
 let plantillasFicha;
@@ -18,6 +19,7 @@ export async function dibujar() {
   documento = await cargarHtml(new URL('./tiendas.html', import.meta.url));
   [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
   return seccion(documento, 'principal', {
+    opcionesLista: repetir(documento, 'opcion', LISTAS_PRECIO.map((lista) => ({ valor: lista.id, texto: lista.etiqueta }))),
     opcionesBodega: repetir(documento, 'opcion', [{ valor: '', texto: 'Crear una bodega nueva' }, ...estado.bodegas.filter((bodega) => bodega.activa).map((bodega) => ({ valor: bodega.id, texto: `${bodega.nombre} · ${bodega.id}` }))]),
   });
 }
@@ -52,6 +54,7 @@ export function montar(raiz, contexto) {
     return {
       ...tienda,
       bodega: nombreBodega(tienda.bodegaId),
+      lista: etiquetaDeLista(tienda.listaPrecio ?? 'detal'),
       ventasMes: aPesos(resumen.ventasMes),
       caja: resumen.cajaAbierta ? 'Abierta' : 'Cerrada',
       empleados: String(resumen.empleados),
@@ -68,6 +71,7 @@ export function montar(raiz, contexto) {
       { clave: 'nombre', titulo: 'Nombre', ancho: 'minmax(0, 1.2fr)' },
       { clave: 'ciudad', titulo: 'Ciudad', ancho: '110px' },
       { clave: 'bodega', titulo: 'Bodega', ancho: 'minmax(0, 1fr)' },
+      { clave: 'lista', titulo: 'Lista de precio', ancho: '150px' },
       { clave: 'ventasMes', titulo: 'Ventas del mes', ancho: '120px', alinear: 'derecha' },
       { clave: 'caja', titulo: 'Caja', ancho: '84px' },
       { clave: 'estadoTexto', titulo: 'Estado', ancho: '90px', html: (fila) => repetir(documento, 'estado-registro', [{ texto: fila.estadoTexto, clase: fila.activa ? 'suave' : '' }]) },
@@ -84,6 +88,7 @@ export function montar(raiz, contexto) {
     // Al editar no se ofrece "crear bodega nueva": la tienda debe quedar con una bodega existente
     campo('bodegaId').options[0].hidden = Boolean(tienda);
     CAMPOS.forEach((nombre) => { campo(nombre).value = tienda?.[nombre] ?? ''; });
+    campo('listaPrecio').value = tienda?.listaPrecio ?? 'detal';
     formulario.hidden = false;
     formulario.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     campo('nombre').focus();
@@ -120,6 +125,7 @@ export function montar(raiz, contexto) {
       ],
       datos: [
         { etiqueta: 'Bodega donde vende', valor: `${nombreBodega(tienda.bodegaId)} · ${tienda.bodegaId}` },
+        { etiqueta: 'Lista de precio por defecto', valor: etiquetaDeLista(tienda.listaPrecio ?? 'detal') },
         { etiqueta: 'Ciudad', valor: tienda.ciudad ?? '' },
         { etiqueta: 'Teléfono', valor: tienda.telefono ?? '' },
         { etiqueta: 'Dirección', valor: tienda.direccion ?? '', ancho: true },

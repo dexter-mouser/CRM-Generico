@@ -1,13 +1,25 @@
-/* Tono de la interfaz: colores del tema claro y oscuro. Cada tienda puede sobrescribirlos. */
+/* Tono de la interfaz: colores del tema claro y oscuro. Cada tienda puede sobrescribirlos.
+   --acento es el color de marca (botones principales, selección); cada grupo del menú tiene su color. */
 :root {
   --fondo: #f1f1f0;
   --superficie: #ffffff;
   --borde: #e4e4e2;
   --texto: #1f1f1e;
   --suave: #6b6b68;
-  --acento: #2b2b2a;
+  --acento: #4553c9;
   --acento-texto: #ffffff;
-  --barra: #3a3a38;
+  --marca: #4553c9;
+  --marca-suave: #eceefc;
+  --exito: #1d7f55;
+  --exito-suave: #e5f4ec;
+  /* Color de cada grupo del menú */
+  --grupo-inicio: #4553c9;
+  --grupo-ventas: #12855f;
+  --grupo-clientes: #c4651c;
+  --grupo-inventario: #1f73b8;
+  --grupo-finanzas: #7a4cbc;
+  --grupo-administracion: #56657a;
+  --barra: #4553c9;
   --pista: #ececea;
   --pasar: #f4f4f2;
   --activo: #eeeeec;
@@ -35,9 +47,19 @@
     --borde: #333331;
     --texto: #ececea;
     --suave: #a3a39f;
-    --acento: #ececea;
-    --acento-texto: #161615;
-    --barra: #d6d6d3;
+    --acento: #8d97f2;
+    --acento-texto: #12142b;
+    --marca: #8d97f2;
+    --marca-suave: #262a48;
+    --exito: #5cc796;
+    --exito-suave: #1d3329;
+    --grupo-inicio: #8d97f2;
+    --grupo-ventas: #4cc497;
+    --grupo-clientes: #f0a463;
+    --grupo-inventario: #6cb2ec;
+    --grupo-finanzas: #b690ea;
+    --grupo-administracion: #9eabbd;
+    --barra: #8d97f2;
     --pista: #333331;
     --pasar: #2a2a29;
     --activo: #2f2f2e;
@@ -54,9 +76,19 @@
   --borde: #333331;
   --texto: #ececea;
   --suave: #a3a39f;
-  --acento: #ececea;
-  --acento-texto: #161615;
-  --barra: #d6d6d3;
+  --acento: #8d97f2;
+  --acento-texto: #12142b;
+  --marca: #8d97f2;
+  --marca-suave: #262a48;
+  --exito: #5cc796;
+  --exito-suave: #1d3329;
+  --grupo-inicio: #8d97f2;
+  --grupo-ventas: #4cc497;
+  --grupo-clientes: #f0a463;
+  --grupo-inventario: #6cb2ec;
+  --grupo-finanzas: #b690ea;
+  --grupo-administracion: #9eabbd;
+  --barra: #8d97f2;
   --pista: #333331;
   --pasar: #2a2a29;
   --activo: #2f2f2e;
@@ -64,3 +96,11 @@
   --contorno: #444442;
   color-scheme: dark;
 }
+
+/* Cada elemento marcado con su grupo (menú, cabecera y contenido) toma el color de ese grupo */
+[data-grupo="inicio"] { --color-grupo: var(--grupo-inicio); }
+[data-grupo="ventas"] { --color-grupo: var(--grupo-ventas); }
+[data-grupo="clientes"] { --color-grupo: var(--grupo-clientes); }
+[data-grupo="inventario"] { --color-grupo: var(--grupo-inventario); }
+[data-grupo="finanzas"] { --color-grupo: var(--grupo-finanzas); }
+[data-grupo="administracion"] { --color-grupo: var(--grupo-administracion); }

@@ -6,24 +6,25 @@ import { leerEntero } from '../../core/numeros.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
-import { agregarProducto, actualizarProducto, eliminarProducto, importarProductos, kardexDeProducto, buscarProductoPorId, categorias, bodegaActiva, existenciasVisibles, buscarBodega } from '../../services/inventario.service.js';
+import { LISTAS_PRECIO, manejaStock, agregarProducto, actualizarProducto, eliminarProducto, importarProductos, kardexDeProducto, buscarProductoPorId, categorias, bodegaActiva, existenciasVisibles, buscarBodega } from '../../services/inventario.service.js';
 import { bodegasActivas } from '../../services/bodegas.service.js';
 import { TARIFAS_IVA } from '../../core/validacion.js';
 import { buscarOrden } from '../../services/proveedores.service.js';
 import { descargarInventarioCsv, leerInventarioCsv } from '../../services/csv.service.js';
-import { dibujarSelector } from '../../components/selector-productos/selector-productos.js';
+import { cargarPlantillasBuscador } from '../../components/buscador-cuadricula/buscador-cuadricula.js';
 import { montarFactura } from './factura.js';
 import { mostrarComprobanteDeFactura } from '../../components/recibo/comprobantes.js';
 
-const CAMPOS = ['referencia', 'nombre', 'categoria', 'costo', 'precio', 'iva', 'stockMinimo', 'existencias'];
-const CAMPOS_NUMERICOS = ['costo', 'precio', 'iva', 'stockMinimo', 'existencias'];
+const CAMPOS = ['referencia', 'nombre', 'categoria', 'costo', 'precioSurtido', 'precioMayor', 'precioDetal', 'iva', 'stockMinimo', 'existencias'];
+const CAMPOS_NUMERICOS = ['costo', 'precioSurtido', 'precioMayor', 'precioDetal', 'iva', 'stockMinimo', 'existencias'];
 let documento;
 let plantillasCuadricula;
 let plantillasFicha;
+let plantillasBuscador;
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./inventario.html', import.meta.url));
-  [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
+  [plantillasCuadricula, plantillasFicha, plantillasBuscador] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha(), cargarPlantillasBuscador()]);
   const bodega = bodegaActiva();
   const activas = bodegasActivas();
   const opcionesBodega = (elegida) => activas.map((una) => ({ valor: una.id, texto: una.nombre, seleccion: una.id === elegida ? 'selected' : '' }));
@@ -33,9 +34,8 @@ export async function dibujar() {
       : 'Con "Todas las tiendas" ves el stock total; elige una tienda en el menú superior para editarlo.',
     opcionesBodegaFactura: repetir(documento, 'opcion-elegida', opcionesBodega(bodega?.id ?? activas[0]?.id)),
     opcionesBodegaKardex: repetir(documento, 'opcion-elegida', [{ valor: '', texto: 'Todas las bodegas', seleccion: bodega ? '' : 'selected' }, ...opcionesBodega(bodega?.id)]),
-    opcionesProducto: repetir(documento, 'opcion', estado.productos.map((producto) => ({ valor: producto.id, texto: `${producto.id} · ${producto.nombre}` }))),
+    opcionesProducto: repetir(documento, 'opcion', estado.productos.filter((producto) => !producto.generico).map((producto) => ({ valor: producto.id, texto: `${producto.id} · ${producto.nombre}` }))),
     hoy: fechaDeHoy(),
-    selector: await dibujarSelector(),
     opcionesProveedor: repetir(documento, 'opcion', estado.proveedores.map((proveedor) => ({ valor: proveedor.id, texto: `${proveedor.nombre} · ${proveedor.id}` }))),
     opcionesCategoria: repetir(documento, 'opcion', categorias().map((categoria) => ({ valor: categoria, texto: categoria }))),
     opcionesIva: repetir(documento, 'opcion-iva', TARIFAS_IVA.map((valor) => ({ valor, seleccion: valor === 19 ? 'selected' : '' }))),
@@ -69,21 +69,28 @@ export function montar(raiz, contexto) {
   // En una página dividida el router ya ocultó los botones de las otras partes: aquí solo se ocultan por permiso
   if (!puede('inventario', 'crear')) buscar('#nuevo-producto', raiz).hidden = true;
 
-  const estadoDe = (producto) => (producto.existencias < 0 ? 'Negativo' : (producto.existencias <= (producto.stockMinimo ?? 0) ? 'Bajo mínimo' : ''));
+  const estadoDe = (producto) => {
+    if (!manejaStock(producto)) return 'Genérico';
+    if (producto.existencias < 0) return 'Negativo';
+    return producto.existencias <= (producto.stockMinimo ?? 0) ? 'Bajo mínimo' : '';
+  };
+  const insigniaDe = (estado) => (estado ? repetir(documento, 'estado-producto', [{ texto: estado, clase: estado === 'Genérico' ? 'informativa' : '' }]) : '');
   const botonEditar = (id) => (puede('inventario', 'editar') ? repetir(documento, 'boton-editar-producto', [{ id }]) : '');
   const botonEliminar = (id) => (puede('inventario', 'eliminar') ? repetir(documento, 'boton-eliminar-producto', [{ id }]) : '');
 
   const filasProductos = () => estado.productos.map((original) => {
     // Stock de la bodega de la tienda activa (o el total con "Todas las tiendas")
     const producto = { ...original, existencias: existenciasVisibles(original) };
+    const estado = estadoDe(producto);
     return {
       ...producto,
       costoTexto: aPesos(producto.costo),
-      precioTexto: aPesos(producto.precio ?? 0),
-      ivaTexto: `${producto.iva ?? 0} %`,
-      existencias: String(producto.existencias),
+      precio1: producto.generico ? 'Libre' : aPesos(producto.precioSurtido ?? 0),
+      precio2: producto.generico ? 'Libre' : aPesos(producto.precioMayor ?? 0),
+      precio3: producto.generico ? 'Libre' : aPesos(producto.precioDetal ?? 0),
+      existencias: producto.generico ? '—' : String(producto.existencias),
       stockMinimo: String(producto.stockMinimo ?? 0),
-      estado: estadoDe(producto),
+      estado,
     };
   });
 
@@ -93,13 +100,13 @@ export function montar(raiz, contexto) {
     vacio: 'Aún no hay productos. Agrega uno con "Nuevo producto".',
     columnas: [
       { clave: 'id', titulo: 'ID', ancho: '60px' },
-      { clave: 'nombre', titulo: 'Producto', ancho: 'minmax(0, 1.6fr)' },
-      { clave: 'categoria', titulo: 'Categoría', ancho: '110px' },
-      { clave: 'costoTexto', titulo: 'Costo', ancho: '96px', alinear: 'derecha' },
-      { clave: 'precioTexto', titulo: 'Precio con IVA', ancho: '110px', alinear: 'derecha' },
-      { clave: 'existencias', titulo: bodega ? 'Stock' : 'Stock total', ancho: '70px', alinear: 'derecha' },
-      { clave: 'estado', titulo: 'Estado', ancho: '100px', html: (fila) => (fila.estado ? repetir(documento, 'estado-producto', [{ texto: fila.estado }]) : '') },
-      { clave: 'acciones', titulo: 'Acciones', ancho: '240px', filtrable: false, html: (fila) => repetir(documento, 'acciones-producto', [{ id: fila.id, editar: botonEditar(fila.id), eliminar: botonEliminar(fila.id) }]) },
+      { clave: 'nombre', titulo: 'Producto', ancho: 'minmax(0, 1.5fr)' },
+      { clave: 'costoTexto', titulo: 'Costo', ancho: '86px', alinear: 'derecha' },
+      { clave: 'precio1', titulo: 'Precio 1', ancho: '86px', alinear: 'derecha' },
+      { clave: 'precio2', titulo: 'Precio 2', ancho: '86px', alinear: 'derecha' },
+      { clave: 'precio3', titulo: 'Precio 3', ancho: '86px', alinear: 'derecha' },
+      { clave: 'existencias', titulo: bodega ? 'Stock' : 'Stock total', ancho: '104px', html: (fila) => repetir(documento, 'stock-producto', [{ texto: fila.existencias, insignia: insigniaDe(fila.estado) }]) },
+      { clave: 'acciones', titulo: 'Acciones', ancho: '214px', filtrable: false, html: (fila) => repetir(documento, 'acciones-producto', [{ id: fila.id, editar: botonEditar(fila.id), eliminar: botonEliminar(fila.id) }]) },
     ],
     filas: filasProductos(),
   });
@@ -113,6 +120,10 @@ export function montar(raiz, contexto) {
     CAMPOS.forEach((nombre) => { campo(nombre).value = producto?.[nombre] ?? ''; });
     if (!producto) campo('iva').value = '19';
     else campo('existencias').value = existenciasVisibles(producto);
+    // "Genérico" se elige al crear el producto; después no cambia (su historia de stock depende de eso)
+    campo('generico').checked = Boolean(producto?.generico);
+    campo('generico').disabled = Boolean(producto);
+    mostrarCamposStock();
     // Con "Todas las tiendas" el stock no se edita (no se sabe en qué bodega)
     campo('existencias').disabled = Boolean(producto) && !bodega;
     buscar('#etiqueta-existencias', raiz).textContent = producto
@@ -123,11 +134,15 @@ export function montar(raiz, contexto) {
     campo(producto ? 'nombre' : 'id').focus();
   };
 
+  // Un producto genérico no maneja stock: se ocultan el stock y el mínimo
+  const mostrarCamposStock = () => { buscar('#campos-stock', raiz).hidden = campo('generico').checked; };
+  campo('generico').onchange = mostrarCamposStock;
+
   // Guarda solo los campos que cambiaron (cada cambio queda en la auditoría; el stock como ajuste del kardex)
   const guardarEdicion = (id) => {
     const producto = buscarProductoPorId(id);
     CAMPOS.forEach((nombre) => {
-      if (nombre === 'existencias' && !bodega) return;
+      if ((nombre === 'existencias' && !bodega) || (producto.generico && ['existencias', 'stockMinimo'].includes(nombre))) return;
       const valor = CAMPOS_NUMERICOS.includes(nombre) ? leerEntero(campo(nombre).value) : campo(nombre).value.trim();
       const actual = nombre === 'existencias' ? existenciasVisibles(producto) : (producto[nombre] ?? (CAMPOS_NUMERICOS.includes(nombre) ? 0 : ''));
       if (valor !== actual) actualizarProducto(id, nombre, valor);
@@ -142,6 +157,7 @@ export function montar(raiz, contexto) {
       ? guardarEdicion(productoEnEdicion)
       : agregarProducto({
         id: campo('id').value,
+        generico: campo('generico').checked,
         ...Object.fromEntries(CAMPOS.map((nombre) => [nombre, CAMPOS_NUMERICOS.includes(nombre) ? leerEntero(campo(nombre).value) : campo(nombre).value])),
       })), editando ? 'Producto actualizado correctamente' : 'Producto agregado correctamente');
     if (!aplicado) return;
@@ -158,23 +174,26 @@ export function montar(raiz, contexto) {
       etiqueta: 'Ficha del producto',
       titulo: `${producto.nombre} · ID ${producto.id}`,
       subtitulo: [producto.referencia && `Ref. ${producto.referencia}`, producto.categoria, estadoDe({ ...producto, existencias: visibles })].filter(Boolean).join(' · '),
-      indicadores: [
-        { etiqueta: bodega ? `Stock en ${bodega.nombre}` : 'Stock total', valor: String(visibles), clase: visibles < 0 ? 'texto-negativo' : '' },
-        { etiqueta: 'Costo', valor: aPesos(producto.costo) },
-        { etiqueta: 'Precio con IVA', valor: aPesos(producto.precio ?? 0) },
-        { etiqueta: 'Valor del stock al costo', valor: aPesos(Math.max(0, producto.existencias) * producto.costo) },
-      ],
+      indicadores: producto.generico
+        ? [{ etiqueta: 'Tipo', valor: 'Genérico' }, { etiqueta: 'Costo de referencia', valor: aPesos(producto.costo) }]
+        : [
+          { etiqueta: bodega ? `Stock en ${bodega.nombre}` : 'Stock total', valor: String(visibles), clase: visibles < 0 ? 'texto-negativo' : '' },
+          { etiqueta: 'Costo', valor: aPesos(producto.costo) },
+          { etiqueta: 'Valor del stock al costo', valor: aPesos(Math.max(0, producto.existencias) * producto.costo) },
+        ],
       datos: [
         { etiqueta: 'Referencia', valor: producto.referencia ?? '' },
         { etiqueta: 'Categoría', valor: producto.categoria ?? '' },
         { etiqueta: 'IVA', valor: `${producto.iva ?? 0} %` },
-        { etiqueta: 'Stock mínimo', valor: String(producto.stockMinimo ?? 0) },
-        { etiqueta: 'Stock total', valor: String(producto.existencias) },
+        ...LISTAS_PRECIO.map((lista) => ({ etiqueta: lista.etiqueta, valor: producto.generico ? 'Se escribe en cada venta' : aPesos(producto[lista.campo] ?? 0) })),
+        ...(producto.generico
+          ? [{ etiqueta: 'Uso', valor: 'Servicios, reparaciones y artículos sin código: el nombre y el valor se escriben en cada venta y no mueve stock.', ancho: true }]
+          : [{ etiqueta: 'Stock mínimo', valor: String(producto.stockMinimo ?? 0) }, { etiqueta: 'Stock total', valor: String(producto.existencias) }]),
       ],
-      contenido: repetir(documento, 'contenido-ficha-producto', [{}]),
-      acciones: repetir(documento, 'enlace-kardex', [{ id: producto.id }]),
+      contenido: producto.generico ? '' : repetir(documento, 'contenido-ficha-producto', [{}]),
+      acciones: producto.generico ? '' : repetir(documento, 'enlace-kardex', [{ id: producto.id }]),
       alEditar: puede('inventario', 'editar') ? () => abrirFormulario(buscarProductoPorId(id)) : null,
-      alMontar: (seccionFicha) => montarCuadricula(seccionFicha.querySelector('[data-stock]'), {
+      alMontar: (seccionFicha) => seccionFicha.querySelector('[data-stock]') && montarCuadricula(seccionFicha.querySelector('[data-stock]'), {
         plantillas: plantillasCuadricula,
         titulo: 'Stock por bodega',
         vacio: 'No hay bodegas.',
@@ -285,7 +304,7 @@ export function montar(raiz, contexto) {
   });
 
   // Factura de compra (sección Compras)
-  const cargarOrden = montarFactura(raiz, contexto, documento);
+  const cargarOrden = montarFactura(raiz, contexto, documento, plantillasBuscador);
 
   // Recibir una orden de compra: llega desde Proveedores con ?seccion=compras&orden=OC-0001
   const orden = buscarOrden(new URLSearchParams(location.search).get('orden') ?? '');

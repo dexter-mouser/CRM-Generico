@@ -7,6 +7,7 @@ import { cargarHtml, seccion, repetir, rellenar } from '../../core/template.js';
 import { TIPOS_DOCUMENTO, TIPOS_PERSONA } from '../../core/validacion.js';
 import { resumirItems, TIPOS_DOCUMENTO as TIPOS_DE_VENTA, ETIQUETA_NOTA } from '../../services/ventas.service.js';
 import * as servicioClientes from '../../services/clientes.service.js';
+import { LISTAS_PRECIO, etiquetaDeLista } from '../../services/inventario.service.js';
 import * as servicioActividades from '../../services/actividades.service.js';
 import { etapaDe, etiquetaDeEtapa } from '../../services/embudo.service.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
@@ -26,6 +27,7 @@ export async function dibujar() {
     opcionesPersona: opciones(Object.entries(TIPOS_PERSONA)),
     opcionesDocumento: opciones([['', 'Sin documento'], ...Object.entries(TIPOS_DOCUMENTO)]),
     opcionesEtiquetas: opciones(etiquetas.map((etiqueta) => [etiqueta, etiqueta])),
+    opcionesLista: opciones([['', 'La de la tienda donde compra'], ...LISTAS_PRECIO.map((lista) => [lista.id, lista.etiqueta])]),
     opcionesActividad: opciones(Object.entries(servicioActividades.TIPOS_ACTIVIDAD)),
     opcionesResponsable: opciones(estado.usuarios.filter((usuario) => usuario.activo).map((usuario) => [usuario.correo, usuario.nombre])),
   });
@@ -35,7 +37,7 @@ export function montar(raiz, contexto) {
   let clienteEnEdicion = null; // id del cliente que se edita; null si se crea uno nuevo
   let clientePorEliminar = null;
   let clienteEnFicha = null;
-  const campos = ['nombre', 'tipoPersona', 'tipoDocumento', 'documento', 'telefono', 'correo', 'direccion', 'etiquetas', 'limiteCredito', 'plazoDias'];
+  const campos = ['nombre', 'tipoPersona', 'tipoDocumento', 'documento', 'telefono', 'correo', 'direccion', 'etiquetas', 'limiteCredito', 'plazoDias', 'listaPrecio'];
   const campo = (nombre) => buscar(`#cliente-${nombre}`, raiz);
   const etiquetasHtml = (lista = []) => repetir(documento, 'etiqueta-cliente', lista.map((texto) => ({ texto })));
 
@@ -169,6 +171,7 @@ export function montar(raiz, contexto) {
       TIPOS_PERSONA[cliente.tipoPersona],
       cliente.documento ? `${cliente.tipoDocumento} ${cliente.documento}` : 'Sin documento',
       cliente.telefono, cliente.correo, cliente.direccion,
+      cliente.listaPrecio ? etiquetaDeLista(cliente.listaPrecio) : '',
       cliente.autorizaDatos ? 'Autoriza tratamiento de datos' : 'Sin autorización de datos',
     ].filter(Boolean).join(' · ');
     buscar('#etiquetas-ficha', raiz).innerHTML = etiquetasHtml(cliente.etiquetas);

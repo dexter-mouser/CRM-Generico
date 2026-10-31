@@ -15,8 +15,29 @@ const quitarTildes = (texto) => String(texto).normalize('NFD').replace(/[̀-ͯ]/
 export const buscarProductoPorId = (id) => estado.productos.find((producto) => producto.id === id);
 export const buscarBodega = (id) => estado.bodegas.find((bodega) => bodega.id === id);
 
-// Campos que se editan en línea en la cuadrícula del inventario (el ID no se edita porque lo usan ventas y facturas)
-export const CAMPOS_EDITABLES = ['referencia', 'nombre', 'categoria', 'costo', 'precio', 'iva', 'stockMinimo', 'existencias'];
+// Campos que se pueden editar (el ID no se edita porque lo usan ventas y facturas; "genérico" se elige al crear)
+export const CAMPOS_EDITABLES = ['referencia', 'nombre', 'categoria', 'costo', 'precioSurtido', 'precioMayor', 'precioDetal', 'iva', 'stockMinimo', 'existencias'];
+
+// Listas de precio: cada producto tiene los tres precios y cada venta usa una lista
+export const LISTAS_PRECIO = [
+  { id: 'surtido', campo: 'precioSurtido', etiqueta: 'Precio 1 · Surtido', detalle: 'Casi al costo, para surtir los almacenes' },
+  { id: 'mayor', campo: 'precioMayor', etiqueta: 'Precio 2 · Por mayor', detalle: 'Ventas mayoristas' },
+  { id: 'detal', campo: 'precioDetal', etiqueta: 'Precio 3 · Al detal', detalle: 'Ventas al público' },
+];
+export const LISTA_POR_DEFECTO = 'detal';
+export const esListaPrecio = (id) => LISTAS_PRECIO.some((lista) => lista.id === id);
+export const etiquetaDeLista = (id) => LISTAS_PRECIO.find((lista) => lista.id === id)?.etiqueta ?? '';
+
+// Precio de un producto en una lista; si esa lista no tiene precio, el de la siguiente más alta
+export function precioDeLista(producto, listaId = LISTA_POR_DEFECTO) {
+  if (!producto || producto.generico) return 0;
+  const desde = Math.max(0, LISTAS_PRECIO.findIndex((lista) => lista.id === listaId));
+  for (const lista of LISTAS_PRECIO.slice(desde)) if (producto[lista.campo]) return producto[lista.campo];
+  return 0;
+}
+
+// Un producto genérico (servicios, reparaciones, artículos sin código) no maneja stock
+export const manejaStock = (producto) => Boolean(producto) && !producto.generico;
 
 export const categorias = () => [...new Set(estado.productos.map((producto) => producto.categoria).filter(Boolean))].sort();
 
@@ -36,6 +57,7 @@ export const existenciasVisibles = (producto) => existenciasEn(producto, bodegaA
 // Suma (o resta) stock en una bodega y en el total
 export function moverExistencias(producto, cantidad, bodegaId) {
   if (!bodegaId) throw new Error('Falta la bodega del movimiento');
+  if (!manejaStock(producto)) return;
   producto.stock ??= {};
   producto.stock[bodegaId] = (producto.stock[bodegaId] ?? 0) + cantidad;
   producto.existencias += cantidad;
@@ -72,7 +94,7 @@ export function buscarProductos(consulta = '') {
   const exacto = quitarTildes(consulta.trim());
   const esExacto = (producto) => quitarTildes(producto.id) === exacto || quitarTildes(producto.referencia) === exacto;
   return estado.productos.map(conStockVisible).filter((producto) => {
-    const texto = quitarTildes([producto.id, producto.nombre, producto.referencia, producto.categoria, producto.costo, producto.precio, producto.existencias].join(' '));
+    const texto = quitarTildes([producto.id, producto.nombre, producto.referencia, producto.categoria, producto.costo, producto.precioDetal, producto.existencias].join(' '));
     return terminos.every((termino) => texto.includes(termino));
   }).sort((a, b) => Number(esExacto(b)) - Number(esExacto(a)));
 }
@@ -91,6 +113,7 @@ export function actualizarProducto(id, campo, valor) {
   if (!producto) throw new Error('El producto no existe');
   if (!CAMPOS_EDITABLES.includes(campo)) throw new Error('Ese campo no se puede editar');
   if (campo === 'existencias') {
+    if (!manejaStock(producto)) throw new Error(`${producto.nombre} es genérico: no maneja stock`);
     const bodega = exigirBodegaActiva();
     const anterior = existenciasEn(producto, bodega.id);
     const limpio = validarProducto({ ...producto, existencias: valor });
@@ -163,7 +186,7 @@ export function importarProductos(filas) {
       const actual = fila.id ? buscarProductoPorId(String(Number(fila.id))) : null;
       const definidos = Object.fromEntries(Object.entries(fila).filter(([, valor]) => valor !== undefined));
       const base = actual ? { ...actual, existencias: bodega ? existenciasEn(actual, bodega.id) : actual.existencias } : {};
-      const completa = { costo: 0, existencias: 0, ...base, ...definidos };
+      const completa = { costo: 0, existencias: 0, ...base, ...definidos, generico: actual?.generico ?? false };
       const limpia = validarProducto(completa);
       if (limpia.id && vistos.has(limpia.id)) throw new Error(`el ID ${limpia.id} está repetido en el archivo`);
       if (limpia.id) vistos.add(limpia.id);
@@ -302,6 +325,7 @@ export function kardexDeProducto(productoId, bodegaId = null) {
 
 // Productos en o por debajo de su stock mínimo (en la bodega de la tienda activa o en total)
 export const productosBajoMinimo = () => estado.productos
+  .filter(manejaStock)
   .map(conStockVisible)
   .filter((producto) => producto.existencias <= (producto.stockMinimo ?? 0))
   .sort((a, b) => a.existencias - b.existencias);

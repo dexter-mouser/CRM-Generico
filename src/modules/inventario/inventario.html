@@ -4,36 +4,71 @@
   <button type="button" class="boton primario" id="nuevo-producto" data-accion-cabecera data-seccion="productos">Nuevo producto</button>
   <button type="button" class="boton primario" id="ingresar-compra" data-accion-cabecera data-seccion="compras">Ingresar compra</button>
 
-  <section class="caja panel-proceso" id="panel-factura" aria-labelledby="titulo-panel-factura" data-seccion="compras">
+  <section class="caja panel-proceso documento-registro cuadricula-venta" id="panel-factura" aria-labelledby="titulo-panel-factura" data-seccion="compras">
     <strong id="titulo-panel-factura">Ingresar factura de compra</strong>
-    <div class="texto-suave">Suma las cantidades al stock de la bodega elegida y deja el costo de la factura como costo de cada producto. Si el producto es nuevo, créalo antes en Productos; si el proveedor es nuevo, créalo en Proveedores.</div>
-    <div class="aviso-origen caja margen-superior" id="aviso-orden" hidden><strong id="texto-orden"></strong></div>
-    <div class="dos-columnas arriba margen-superior">
-      <div class="columna-angosta">
-        <label for="factura-proveedor">Proveedor</label>
-        <select id="factura-proveedor" class="campo">{{{opcionesProveedor}}}</select>
-        <label for="factura-numero">N° de factura</label>
-        <input id="factura-numero" class="campo" autocomplete="off">
-        <label for="factura-fecha">Fecha</label>
-        <input id="factura-fecha" class="campo" type="date" value="{{hoy}}">
-        <label for="factura-bodega">Entra a la bodega</label>
-        <select id="factura-bodega" class="campo">{{{opcionesBodegaFactura}}}</select>
-        {{{selector}}}
-      </div>
-      <div class="columna-ancha">
-        <div class="desplazable">
-          <table>
-            <tr><th>ID</th><th>Producto</th><th>Cantidad</th><th>Costo unitario</th><th>Subtotal</th><th></th></tr>
-            <tbody id="lineas-factura"></tbody>
-          </table>
-        </div>
-        <div class="texto-suave margen-superior" id="sin-lineas-factura">Aún no agregaste productos. Elige uno del buscador.</div>
-        <div class="total-venta"><span>Total de la factura</span><strong id="total-factura">$ 0</strong></div>
-        <div class="acciones-fila">
-          <button type="button" class="boton primario" id="registrar-factura">Registrar factura</button>
-          <button type="button" class="boton" id="vaciar-factura">Vaciar</button>
+    <div class="texto-suave separacion-inferior">Suma las cantidades al stock de la bodega elegida y deja el costo de la factura como costo de cada producto. Si el producto o el proveedor son nuevos, créalos antes en Productos o en Proveedores.</div>
+    <div class="aviso-origen caja separacion-inferior" id="aviso-orden" hidden><strong id="texto-orden"></strong></div>
+
+    <div class="encabezado-documento">
+      <div class="paso-documento">
+        <span class="numero-paso">1</span>
+        <div class="contenido-paso">
+          <label for="factura-proveedor">Proveedor</label>
+          <select id="factura-proveedor" class="campo">{{{opcionesProveedor}}}</select>
+          <div class="ficha-cliente" id="ficha-proveedor-compra" aria-live="polite"></div>
         </div>
       </div>
+      <div class="paso-documento">
+        <span class="numero-paso">2</span>
+        <div class="contenido-paso">
+          <label for="factura-numero">Factura del proveedor</label>
+          <input id="factura-numero" class="campo" autocomplete="off" placeholder="N° de la factura">
+          <label for="factura-fecha">Fecha</label>
+          <input id="factura-fecha" class="campo" type="date" value="{{hoy}}">
+        </div>
+      </div>
+      <div class="paso-documento">
+        <span class="numero-paso">3</span>
+        <div class="contenido-paso">
+          <label for="factura-bodega">Entra a la bodega</label>
+          <select id="factura-bodega" class="campo">{{{opcionesBodegaFactura}}}</select>
+          <div class="texto-suave">El stock de la cuadrícula es el de esta bodega.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="titulo-paso"><span class="numero-paso">4</span><strong>Productos</strong><span class="texto-suave">Busca escribiendo en la casilla debajo de cada columna · Enter agrega</span></div>
+    <div class="cuadricula" role="grid" aria-label="Productos de la factura de compra">
+      <div class="fila-cuadricula encabezado-cuadricula" role="row">
+        <div role="columnheader">ID</div>
+        <div role="columnheader">Referencia</div>
+        <div role="columnheader">Producto</div>
+        <div role="columnheader">Costo actual</div>
+        <div role="columnheader">Stock</div>
+        <div role="columnheader">Cantidad</div>
+        <div role="columnheader">Costo unitario</div>
+        <div role="columnheader">Subtotal</div>
+        <div role="columnheader"><span class="solo-lector">Quitar</span></div>
+      </div>
+      <div class="fila-cuadricula fila-busqueda" role="row">
+        <div role="gridcell"><input class="campo" data-filtro="id" aria-label="Buscar por ID" placeholder="Buscar" autocomplete="off"></div>
+        <div role="gridcell"><input class="campo" data-filtro="referencia" aria-label="Buscar por referencia" placeholder="Buscar" autocomplete="off"></div>
+        <div role="gridcell"><input class="campo" data-filtro="nombre" aria-label="Buscar por producto" placeholder="Buscar" autocomplete="off"></div>
+        <div role="gridcell"><input class="campo" data-filtro="costo" data-numero="entero" inputmode="numeric" aria-label="Buscar por costo" placeholder="Buscar" autocomplete="off"></div>
+        <div role="gridcell"><input class="campo" data-filtro="existencias" data-numero="entero-negativo" aria-label="Buscar por stock" placeholder="Buscar" autocomplete="off"></div>
+        <div class="texto-suave relleno-resto">Escribe en una casilla para buscar · flechas y Enter eligen</div>
+      </div>
+      <div class="resultados-cuadricula" id="resultados-cuadricula" role="listbox" aria-label="Productos encontrados" hidden></div>
+      <div id="lineas-factura"></div>
+    </div>
+    <div class="texto-suave margen-superior" id="sin-lineas-factura">Aún no agregaste productos. Busca arriba y elige uno.</div>
+    <div class="total-venta"><span>Total de la factura</span><strong id="total-factura">$ 0</strong></div>
+
+    <div class="titulo-paso"><span class="numero-paso">5</span><strong>Registrar</strong></div>
+    <div class="acciones-fila">
+      <button type="button" class="boton primario" id="registrar-factura">Registrar factura</button>
+      <button type="button" class="boton" id="vaciar-factura">Vaciar</button>
+      <button type="button" class="boton" id="cancelar-factura">Cancelar</button>
     </div>
   </section>
 
@@ -70,15 +105,26 @@
         <input id="producto-costo" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
       </div>
       <div>
-        <label for="producto-precio">Precio de venta con IVA (COP)</label>
-        <input id="producto-precio" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
-      </div>
-    </div>
-    <div class="tres-campos">
-      <div>
         <label for="producto-iva">IVA</label>
         <select id="producto-iva" class="campo">{{{opcionesIva}}}</select>
       </div>
+    </div>
+    <div class="tres-campos precios-producto">
+      <div>
+        <label for="producto-precioSurtido">Precio 1 · Surtido (COP)</label>
+        <input id="producto-precioSurtido" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="Casi al costo, para surtir almacenes">
+      </div>
+      <div>
+        <label for="producto-precioMayor">Precio 2 · Por mayor (COP)</label>
+        <input id="producto-precioMayor" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
+      </div>
+      <div>
+        <label for="producto-precioDetal">Precio 3 · Al detal (COP)</label>
+        <input id="producto-precioDetal" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
+      </div>
+    </div>
+    <div class="texto-suave">Los precios incluyen el IVA. Cada venta usa la lista de su tienda o de su cliente, y se puede cambiar al registrarla.</div>
+    <div class="tres-campos" id="campos-stock">
       <div>
         <label for="producto-stockMinimo">Stock mínimo</label>
         <input id="producto-stockMinimo" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
@@ -88,6 +134,7 @@
         <input id="producto-existencias" class="campo" data-numero="entero-negativo" autocomplete="off" placeholder="0">
       </div>
     </div>
+    <label class="marca-check"><input type="checkbox" id="producto-generico"> Producto genérico: no maneja stock y su nombre y valor se escriben en cada venta (servicios, reparaciones, artículos sin código)</label>
     <div class="acciones-fila margen-superior-grande">
       <button type="button" class="boton primario" id="guardar-producto">Guardar producto</button>
       <button type="button" class="boton" id="cancelar-producto">Cancelar</button>
@@ -156,7 +203,11 @@
 </template>
 
 <template id="estado-producto">
-  <span class="insignia">{{texto}}</span>
+  <span class="insignia {{clase}}">{{texto}}</span>
+</template>
+
+<template id="stock-producto">
+  {{texto}} {{{insignia}}}
 </template>
 
 <template id="contenido-ficha-producto">
@@ -181,12 +232,21 @@
 </template>
 
 <template id="fila-linea-factura">
-  <tr data-posicion="{{posicion}}">
-    <td>{{id}}</td>
-    <td class="celda-ancha">{{nombre}}</td>
-    <td><input class="campo campo-corto" data-campo="cantidad" data-numero="entero" inputmode="numeric" autocomplete="off" aria-label="Cantidad de {{nombre}}" value="{{cantidad}}"></td>
-    <td><input class="campo campo-medio" data-campo="costoUnitario" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="Costo unitario de {{nombre}}" value="{{costoUnitario}}"></td>
-    <td data-subtotal>{{subtotal}}</td>
-    <td><button type="button" class="boton icono" data-quitar aria-label="Quitar {{nombre}}">{{{icono}}}</button></td>
-  </tr>
+  <div class="fila-cuadricula fila-linea" role="row" data-posicion="{{posicion}}">
+    <div role="gridcell">{{id}}</div>
+    <div role="gridcell">{{referencia}}</div>
+    <div role="gridcell" class="texto-producto">{{nombre}}</div>
+    <div role="gridcell">{{costoActual}}</div>
+    <div role="gridcell">{{existencias}}</div>
+    <div role="gridcell"><input class="campo" data-campo="cantidad" data-numero="entero" inputmode="numeric" autocomplete="off" aria-label="Cantidad de {{nombre}}" value="{{cantidad}}"></div>
+    <div role="gridcell"><input class="campo" data-campo="costoUnitario" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0" aria-label="Costo unitario de {{nombre}}" value="{{costoUnitario}}"></div>
+    <div role="gridcell" data-subtotal>{{subtotal}}</div>
+    <div role="gridcell"><button type="button" class="boton icono" data-quitar aria-label="Quitar {{nombre}}">{{{icono}}}</button></div>
+  </div>
+</template>
+
+<template id="datos-proveedor-compra">
+  <div class="dato-cliente"><span>NIT</span><strong>{{nit}}</strong></div>
+  <div class="dato-cliente"><span>Plazo</span><strong>{{plazo}}</strong></div>
+  <div class="dato-cliente {{claseSaldo}}"><span>Por pagar</span><strong>{{saldo}}</strong></div>
 </template>

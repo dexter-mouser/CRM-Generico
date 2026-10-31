@@ -220,10 +220,27 @@ aside.recogido .opcion-menu span {
   flex: none;
 }
 
-/* Grupo del menú: botón que despliega sus secciones sin cambiar de página */
+/* Grupo del menú: botón que despliega sus secciones sin cambiar de página; el icono lleva el color del grupo */
 .grupo-menu {
   display: flex;
   flex-direction: column;
+}
+
+.grupo-menu > .opcion-menu svg:first-child {
+  color: var(--color-grupo, currentColor);
+}
+
+.grupo-menu > .opcion-menu.activa {
+  background: color-mix(in srgb, var(--color-grupo) 13%, var(--superficie));
+}
+
+.grupo-menu .secciones-grupo {
+  border-left-color: color-mix(in srgb, var(--color-grupo) 45%, var(--borde));
+}
+
+.grupo-menu .opcion-seccion.activa {
+  background: color-mix(in srgb, var(--color-grupo) 13%, var(--superficie));
+  color: var(--color-grupo);
 }
 
 .cuenta-grupo {
@@ -323,6 +340,16 @@ aside.recogido .secciones-grupo {
 
 #aviso.visible {
   opacity: 1;
+}
+
+#aviso[data-tipo="exito"] {
+  background: var(--exito);
+  color: var(--acento-texto);
+}
+
+#aviso[data-tipo="alerta"] {
+  background: var(--texto);
+  color: var(--superficie);
 }
 
 #aviso[data-tipo="exito"]::before {

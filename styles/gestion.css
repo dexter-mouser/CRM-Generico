@@ -39,7 +39,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  background: var(--activo);
+  background: var(--marca-suave);
+  color: var(--marca);
 }
 
 .lista-pendientes {

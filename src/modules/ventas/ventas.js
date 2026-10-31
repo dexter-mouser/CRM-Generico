@@ -10,6 +10,7 @@ import { enTiendaActiva } from '../../core/tienda.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
 import { nombreDeTienda } from '../../core/tienda.js';
+import { etiquetaDeLista } from '../../services/inventario.service.js';
 
 let documento;
 let plantillasCuadricula;
@@ -171,6 +172,7 @@ export function montar(raiz, contexto) {
     { etiqueta: 'Fecha', valor: aFecha(registro.fecha) },
     { etiqueta: 'Tienda', valor: registro.tiendaId ? nombreDeTienda(registro.tiendaId) : '' },
     { etiqueta: 'Registró', valor: registro.usuario ?? '' },
+    { etiqueta: 'Lista de precio', valor: registro.listaPrecio ? etiquetaDeLista(registro.listaPrecio) : '' },
   ];
 
   const fichaFactura = crearFicha(buscar('#ficha-factura', raiz), plantillasFicha);

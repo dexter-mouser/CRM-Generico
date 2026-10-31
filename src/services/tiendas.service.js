@@ -2,7 +2,7 @@
 import { estado, guardarEstado } from '../core/store.js';
 import { siguienteCodigo } from '../core/codigos.js';
 import { exigirPermiso } from '../core/autorizacion.js';
-import { exigirTelefono, exigirTexto, LIMITES } from '../core/validacion.js';
+import { exigirTelefono, exigirTexto, LIMITES, LISTAS_PRECIO_VALIDAS } from '../core/validacion.js';
 import { registrarAuditoria } from './auditoria.service.js';
 import { aFechaLocal, fechaDeHoy } from '../core/format.js';
 
@@ -28,6 +28,7 @@ function prepararTienda(datos, idActual) {
     direccion: exigirTexto(datos.direccion, 'la dirección', { obligatorio: false, maximo: LIMITES.textoLargo }),
     telefono: exigirTelefono(datos.telefono),
     ciudad: exigirTexto(datos.ciudad, 'la ciudad', { obligatorio: false }),
+    listaPrecio: LISTAS_PRECIO_VALIDAS.includes(datos.listaPrecio) ? datos.listaPrecio : 'detal',
   };
   if (estado.tiendas.some((tienda) => tienda.id !== idActual && normalizar(tienda.nombre) === normalizar(limpios.nombre))) {
     throw new Error(`Ya existe una tienda llamada ${limpios.nombre}`);

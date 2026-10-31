@@ -4,8 +4,9 @@ import { aPesos } from '../../core/format.js';
 import { leerEntero, activarCamposNumericos } from '../../core/numeros.js';
 import { icono, ICONO_PAPELERA } from '../../core/iconos.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
-import { buscarProductoPorCodigo } from '../../services/inventario.service.js';
-import { armarVenta, registrarVenta, ultimoValorDeVenta, buscarDocumento, documentoPendiente, buscarClientePorNombre, impuestosDe, TIPOS_DOCUMENTO, DESTINOS_POSIBLES } from '../../services/ventas.service.js';
+import { buscarProductoPorCodigo, buscarProductoPorId, LISTAS_PRECIO, precioDeLista, etiquetaDeLista } from '../../services/inventario.service.js';
+import { tiendaActivaId } from '../../core/tienda.js';
+import { armarVenta, registrarVenta, ultimoValorDeVenta, listaDeTienda, buscarDocumento, documentoPendiente, buscarClientePorNombre, impuestosDe, TIPOS_DOCUMENTO, DESTINOS_POSIBLES } from '../../services/ventas.service.js';
 import { deudaDeCliente, cupoDisponible } from '../../services/clientes.service.js';
 import { puede } from '../../core/autorizacion.js';
 import { cargarPlantillasBuscador, montarBuscadorCuadricula } from '../../components/buscador-cuadricula/buscador-cuadricula.js';
@@ -35,6 +36,7 @@ export async function dibujar() {
   const metodos = estado.ajustes.ventas.metodosPago.map((metodo) => ({ metodo }));
   return seccion(documento, 'principal', {
     opcionesMetodo: repetir(documento, 'opcion-metodo', metodos),
+    opcionesLista: repetir(documento, 'opcion-lista', LISTAS_PRECIO),
     opcionesCliente: repetir(documento, 'opcion-cliente', estado.clientes),
     billetes: repetir(documento, 'boton-billete', BILLETES.map((valor) => ({ valor, texto: aPesos(valor) }))),
     monedas: repetir(documento, 'boton-moneda', MONEDAS.map((valor) => ({ valor, texto: aPesos(valor), corto: valor.toLocaleString('es-CO') }))),
@@ -47,6 +49,9 @@ export function montar(raiz, contexto) {
   let ventaRegistrada = null;
   let tipo = 'factura';
   let documentoOrigen = '';
+  // Lista de precio de la venta: la del cliente si tiene una; si no, la de la tienda activa
+  let lista = listaDeTienda(tiendaActivaId());
+  let clienteConLista = '';
   // Billetes y monedas que entrega el cliente, en el orden en que se tocaron (vacío = paga exacto)
   const entregado = [];
   const sumaEntregada = () => entregado.reduce((acumulado, valor) => acumulado + valor, 0);
@@ -59,6 +64,7 @@ export function montar(raiz, contexto) {
     observaciones: buscar('#observaciones', raiz).value,
     recibido: sumaEntregada(),
     documentoOrigen,
+    listaPrecio: lista,
     lineas,
   });
 
@@ -108,10 +114,30 @@ export function montar(raiz, contexto) {
     elemento.classList.add('rebote');
   };
 
+  // Cambia la lista de precio y vuelve a poner el precio de esa lista en cada línea (el genérico conserva su valor)
+  const elegirLista = (nueva, avisar = true) => {
+    const cambio = nueva !== lista;
+    lista = nueva;
+    buscar('#lista-precio', raiz).value = nueva;
+    buscar('#detalle-lista', raiz).textContent = LISTAS_PRECIO.find((candidata) => candidata.id === nueva)?.detalle ?? '';
+    if (!cambio) return;
+    lineas.forEach((linea) => {
+      const producto = buscarProductoPorId(linea.productoId);
+      if (producto && !producto.generico) linea.valorUnitario = precioDeLista(producto, nueva) || linea.valorUnitario;
+    });
+    pintarLineas();
+    if (avisar && lineas.length) contexto.aviso(`${etiquetaDeLista(nueva)} aplicado correctamente`);
+  };
+
   // Ficha del cliente: si está registrado muestra sus datos y su deuda; si no, cómo queda la venta
   const pintarCliente = () => {
     const escrito = buscar('#cliente', raiz).value.trim();
     const registrado = escrito ? buscarClientePorNombre(escrito) : null;
+    // Un cliente con lista propia (mayorista, almacén interno) cambia la lista de la venta al elegirlo
+    if (registrado?.listaPrecio && registrado.id !== clienteConLista && !documentoOrigen) {
+      clienteConLista = registrado.id;
+      elegirLista(registrado.listaPrecio);
+    } else if (!registrado) clienteConLista = '';
     const ficha = buscar('#ficha-cliente', raiz);
     if (registrado) {
       const deuda = deudaDeCliente(registrado);
@@ -158,7 +184,8 @@ export function montar(raiz, contexto) {
       posicion,
       id: linea.productoId,
       referencia: linea.referencia,
-      nombre: linea.nombre,
+      nombre: linea.nombre || 'Producto genérico',
+      celdaNombre: repetir(documento, linea.generico ? 'nombre-generico' : 'nombre-fijo', [{ nombre: linea.nombre }]),
       costo: aPesos(linea.costo),
       existencias: linea.existencias,
       cantidad: linea.cantidad || '',
@@ -172,25 +199,27 @@ export function montar(raiz, contexto) {
   };
 
   // Al elegir un producto (o escanear su código) se agrega la línea y el cursor pasa a su cantidad para escribirla
+  // El producto genérico entra sin nombre ni valor: el cursor va a su nombre para escribir qué se vende
   function agregarProducto(producto) {
     let posicion = lineas.findIndex((linea) => linea.productoId === producto.id);
-    if (posicion >= 0) lineas[posicion].cantidad += 1;
-    else {
+    if (posicion >= 0 && !producto.generico) lineas[posicion].cantidad += 1;
+    else if (posicion < 0) {
       lineas.push({
         productoId: producto.id,
         referencia: producto.referencia,
-        nombre: producto.nombre,
+        nombre: producto.generico ? '' : producto.nombre,
+        generico: Boolean(producto.generico),
         costo: producto.costo,
-        existencias: producto.existencias,
+        existencias: producto.generico ? '—' : producto.existencias,
         cantidad: 1,
-        valorUnitario: ultimoValorDeVenta(producto.id),
+        valorUnitario: ultimoValorDeVenta(producto.id, lista),
       });
       posicion = lineas.length - 1;
     }
     pintarLineas();
-    const campoCantidad = buscar(`[data-posicion="${posicion}"] [data-campo="cantidad"]`, contenedorLineas);
-    campoCantidad.focus();
-    campoCantidad.select();
+    const campo = buscar(`[data-posicion="${posicion}"] [data-campo="${producto.generico ? 'nombre' : 'cantidad'}"]`, contenedorLineas);
+    campo.focus();
+    campo.select();
   }
 
   montarBuscadorCuadricula(raiz, { plantillas: plantillasBuscador, alElegir: agregarProducto });
@@ -201,18 +230,23 @@ export function montar(raiz, contexto) {
     if (!campo) return;
     const fila = campo.closest('.fila-linea');
     const linea = lineas[Number(fila.dataset.posicion)];
+    if (campo.dataset.campo === 'nombre') {
+      linea.nombre = campo.value;
+      return;
+    }
     linea[campo.dataset.campo] = leerEntero(campo.value);
     buscar('[data-subtotal]', fila).textContent = aPesos(subtotal(linea));
     pintarTotal();
   });
 
-  // Enter pasa de la cantidad al valor y del valor a la búsqueda de ID, para registrar sin usar el ratón
+  // Enter pasa del nombre (genérico) a la cantidad, de la cantidad al valor y del valor a la búsqueda de ID
   contenedorLineas.addEventListener('keydown', (evento) => {
     const campo = evento.target.closest('[data-campo]');
     if (evento.key !== 'Enter' || !campo) return;
     evento.preventDefault();
-    const siguiente = campo.dataset.campo === 'cantidad'
-      ? buscar('[data-campo="valorUnitario"]', campo.closest('.fila-linea'))
+    const siguientes = { nombre: '[data-campo="cantidad"]', cantidad: '[data-campo="valorUnitario"]' };
+    const siguiente = siguientes[campo.dataset.campo]
+      ? buscar(siguientes[campo.dataset.campo], campo.closest('.fila-linea'))
       : buscar('[data-filtro="id"]', raiz);
     siguiente.focus();
     siguiente.select?.();
@@ -243,7 +277,6 @@ export function montar(raiz, contexto) {
       ventaRegistrada = registrarVenta(datosDeVenta());
       const etiqueta = TIPOS_DOCUMENTO[ventaRegistrada.tipo].etiqueta;
       buscar('#cuadricula-venta', raiz).hidden = true;
-      buscar('#datos-cliente', raiz).hidden = true;
       buscar('#venta-registrada', raiz).hidden = false;
       buscar('#titulo-registrada', raiz).textContent = `${etiqueta} ${ventaRegistrada.id} registrada correctamente`;
       const devuelta = ventaRegistrada.devuelta ? ` · Devuelta ${aPesos(ventaRegistrada.devuelta)}` : '';
@@ -269,6 +302,7 @@ export function montar(raiz, contexto) {
     buscar('[data-filtro="id"]', raiz).focus();
   });
   buscar('#metodo', raiz).onchange = pintarPago;
+  buscar('#lista-precio', raiz).onchange = (evento) => elegirLista(evento.target.value);
   const zonaEfectivo = buscar('#pago-efectivo', raiz);
   // Clic: suma la pieza. Clic derecho: quita una de esa denominación
   zonaEfectivo.addEventListener('click', (evento) => {
@@ -314,8 +348,9 @@ export function montar(raiz, contexto) {
     documentoOrigen = origen.id;
     origen.items.forEach((item) => {
       const producto = estado.productos.find((candidato) => candidato.id === item.productoId);
-      lineas.push({ ...item, costo: producto?.costo ?? 0, existencias: producto?.existencias ?? 0 });
+      lineas.push({ ...item, generico: Boolean(producto?.generico), costo: producto?.costo ?? 0, existencias: producto?.generico ? '—' : (producto?.existencias ?? 0) });
     });
+    lista = origen.listaPrecio ?? lista;
     buscar('#cliente', raiz).value = origen.cliente === 'Cliente sin nombre' ? '' : origen.cliente;
     buscar('#observaciones', raiz).value = origen.observaciones ?? '';
     buscar('#aviso-origen', raiz).hidden = false;
@@ -329,6 +364,7 @@ export function montar(raiz, contexto) {
   montarAtajos(raiz, contexto, agregarProducto);
 
   elegirTipo(tipoInicial);
+  elegirLista(lista, false);
   pintarLineas();
   pintarCliente();
   // El cliente es lo primero que se llena (si viene de otro documento ya está escrito y se pasa a los productos)
@@ -349,8 +385,8 @@ function montarAtajos(raiz, contexto, agregarProducto) {
     const boton = buscar(selector, raiz);
     if (boton && !boton.closest('[hidden]')) boton.click();
   };
-  // Campos donde se escribe texto de verdad (cliente, método): el lector no actúa ahí
-  const enCampoDeLaVenta = (destino) => destino.matches?.('input:not([data-filtro]):not([data-campo]), select, textarea');
+  // Campos donde se escribe texto de verdad (cliente, método, nombre del genérico): el lector no actúa ahí
+  const enCampoDeLaVenta = (destino) => destino.matches?.('input:not([data-filtro]):not([data-campo]), input[data-campo="nombre"], select, textarea');
   let valorAntesDelCodigo = '';
 
   escuchaTeclado = (evento) => {

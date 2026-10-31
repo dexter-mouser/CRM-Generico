@@ -72,8 +72,14 @@ export const TARIFAS_IVA = [0, 5, 19];
 
 // Datos de un producto del inventario. El ID es solo números y opcional: se genera uno si está vacío.
 // Los ceros a la izquierda se quitan para que "007" y "7" sean el mismo producto.
-export function validarProducto({ id = '', referencia = '', nombre, categoria = '', costo, precio = 0, iva = 19, stockMinimo = 0, existencias }) {
+// Tiene tres precios de venta (1 surtido, 2 por mayor, 3 al detal). Un producto genérico no maneja stock:
+// su nombre y su valor se escriben en cada venta.
+export function validarProducto({
+  id = '', referencia = '', nombre, categoria = '', costo, precioSurtido = 0, precioMayor = 0, precioDetal = 0,
+  iva = 19, stockMinimo = 0, existencias, generico = false,
+}) {
   if (!TARIFAS_IVA.includes(iva)) throw new Error(`El IVA debe ser ${TARIFAS_IVA.join(', ')} %`);
+  const esGenerico = generico === true;
   const idLimpio = limpiarTexto(id);
   if (idLimpio && !PATRONES.codigoProducto.test(idLimpio)) throw new Error(`El ID "${idLimpio}" solo puede tener números`);
   return {
@@ -81,15 +87,20 @@ export function validarProducto({ id = '', referencia = '', nombre, categoria = 
     referencia: exigirTexto(referencia, 'la referencia', { obligatorio: false, maximo: 40 }),
     nombre: exigirTexto(nombre, 'el nombre del producto'),
     categoria: exigirTexto(categoria, 'la categoría', { obligatorio: false, maximo: 60 }),
-    costo: exigirEntero(costo, 'el costo'),
-    precio: exigirEntero(precio, 'el precio de venta'),
+    costo: exigirEntero(costo ?? 0, 'el costo'),
+    precioSurtido: exigirEntero(precioSurtido, 'el precio 1 (surtido)'),
+    precioMayor: exigirEntero(precioMayor, 'el precio 2 (por mayor)'),
+    precioDetal: exigirEntero(precioDetal, 'el precio 3 (al detal)'),
     iva,
-    stockMinimo: exigirEntero(stockMinimo, 'el stock mínimo'),
-    existencias: exigirEntero(existencias, 'el stock', { minimo: -LIMITES.valorMaximo }),
+    stockMinimo: esGenerico ? 0 : exigirEntero(stockMinimo, 'el stock mínimo'),
+    existencias: esGenerico ? 0 : exigirEntero(existencias, 'el stock', { minimo: -LIMITES.valorMaximo }),
+    generico: esGenerico,
   };
 }
 
 // --- Clientes ----------------------------------------------------------------------------------------------
+// Listas de precio que puede tener un cliente o una tienda (los detalles están en inventario.service.js)
+export const LISTAS_PRECIO_VALIDAS = ['surtido', 'mayor', 'detal'];
 export const TIPOS_DOCUMENTO = { CC: 'Cédula de ciudadanía', NIT: 'NIT', CE: 'Cédula de extranjería', PAS: 'Pasaporte', TI: 'Tarjeta de identidad' };
 export const TIPOS_PERSONA = { natural: 'Persona natural', juridica: 'Persona jurídica' };
 
@@ -112,6 +123,8 @@ export function validarCliente(datos) {
     autorizaDatos: Boolean(datos.autorizaDatos),
     limiteCredito: exigirEntero(datos.limiteCredito ?? 0, 'el cupo de crédito'),
     plazoDias: exigirEntero(datos.plazoDias ?? 30, 'el plazo', { minimo: 1, maximo: 365 }),
+    // Lista de precio con la que se le vende; vacío = la de la tienda donde compra
+    listaPrecio: LISTAS_PRECIO_VALIDAS.includes(datos.listaPrecio) ? datos.listaPrecio : '',
   };
 }
 
