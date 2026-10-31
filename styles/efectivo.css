@@ -1,0 +1,237 @@
+/* Cobro en efectivo de Registrar venta: "Paga exacto", billetes y monedas que se tocan para sumar lo recibido */
+.pago-efectivo {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  background: var(--pasar);
+}
+
+.cabecera-efectivo {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.pago-exacto {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px dashed var(--contorno);
+  border-radius: 12px;
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.12s;
+}
+
+.pago-exacto:hover {
+  background: var(--activo);
+}
+
+.pago-exacto:active {
+  transform: scale(0.99);
+}
+
+.pago-exacto[aria-pressed="true"] {
+  border-style: solid;
+  border-color: var(--acento);
+  box-shadow: inset 0 0 0 1px var(--acento);
+}
+
+.grupo-efectivo {
+  margin-top: 14px;
+}
+
+.titulo-grupo {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--suave);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.billetes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 10px;
+}
+
+.monedas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Pieza común: billete o moneda */
+.billete,
+.moneda {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--color-pieza) 55%, var(--contorno));
+  background: color-mix(in srgb, var(--color-pieza) 16%, var(--superficie));
+  color: var(--texto);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.billete:hover,
+.moneda:hover {
+  background: color-mix(in srgb, var(--color-pieza) 26%, var(--superficie));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgb(0 0 0 / 0.08);
+}
+
+.billete:active,
+.moneda:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.billete:focus-visible,
+.moneda:focus-visible,
+.pago-exacto:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.billete.elegida,
+.moneda.elegida {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-pieza) 75%, var(--texto));
+}
+
+/* Billete: rectángulo con franja de color a la izquierda */
+.billete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 58px;
+  padding: 0 12px 0 20px;
+  border-radius: 8px;
+  font-size: 15px;
+  overflow: visible;
+}
+
+.billete::before {
+  content: '';
+  position: absolute;
+  inset: 6px auto 6px 6px;
+  width: 6px;
+  border-radius: 3px;
+  background: var(--color-pieza);
+}
+
+.billete[data-denominacion="2000"] { --color-pieza: var(--billete-2000); }
+.billete[data-denominacion="5000"] { --color-pieza: var(--billete-5000); }
+.billete[data-denominacion="10000"] { --color-pieza: var(--billete-10000); }
+.billete[data-denominacion="20000"] { --color-pieza: var(--billete-20000); }
+.billete[data-denominacion="50000"] { --color-pieza: var(--billete-50000); }
+.billete[data-denominacion="100000"] { --color-pieza: var(--billete-100000); }
+
+/* Moneda: círculo con borde interior */
+.moneda {
+  --color-pieza: var(--moneda);
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  font-size: 13px;
+}
+
+.moneda::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px dashed color-mix(in srgb, var(--color-pieza) 60%, transparent);
+  border-radius: 50%;
+}
+
+/* Contador de piezas tocadas */
+.cuenta {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 24px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--acento);
+  color: var(--acento-texto);
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+}
+
+.desglose {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 28px;
+  margin-top: 16px;
+}
+
+.pieza {
+  padding: 3px 10px;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--superficie);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.resumen-efectivo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.dato-efectivo {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--superficie);
+}
+
+.dato-efectivo span {
+  color: var(--suave);
+}
+
+.dato-efectivo strong {
+  display: inline-block;
+  font-size: 20px;
+}
+
+.dato-efectivo.falta strong,
+.dato-efectivo.falta span {
+  color: var(--negativo);
+}
+
+/* Rebote al tocar una pieza o al cambiar lo recibido */
+.rebote {
+  animation: rebote 0.28s ease;
+}
+
+@keyframes rebote {
+  40% {
+    transform: scale(1.08);
+  }
+}
+
+@media (max-width: 600px) {
+  .billetes {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

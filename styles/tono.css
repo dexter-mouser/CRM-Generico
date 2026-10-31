@@ -13,6 +13,14 @@
   --activo: #eeeeec;
   --negativo: #9b2c2c;
   --contorno: #d6d6d3;
+  /* Billetes y monedas de Colombia (tonos apagados; se mezclan con la superficie en claro y oscuro) */
+  --billete-2000: #4f8fa8;
+  --billete-5000: #a07a4f;
+  --billete-10000: #b85c5c;
+  --billete-20000: #c28a3a;
+  --billete-50000: #8a5c9e;
+  --billete-100000: #5f8f5a;
+  --moneda: #b9a26a;
   box-sizing: border-box;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);

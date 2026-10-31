@@ -480,22 +480,6 @@ td input[type="checkbox"] {
   border-color: var(--acento);
 }
 
-.pago-efectivo {
-  margin-top: 12px;
-}
-
-.fichas-monto {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-
-.boton.ficha[aria-pressed="true"] {
-  border-color: var(--acento);
-  font-weight: 600;
-}
-
 kbd {
   padding: 1px 6px;
   border: 1px solid var(--borde);

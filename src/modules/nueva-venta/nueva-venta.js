@@ -19,7 +19,9 @@ const DESCRIPCIONES = {
   cotizacion: 'Oferta con vigencia de 15 días. No descuenta stock ni registra dinero. Después se pasa a remisión o a factura.',
 };
 const TEXTO_REGISTRAR = { factura: 'Registrar factura', remision: 'Registrar remisión', cotizacion: 'Guardar cotización' };
-const DENOMINACIONES = [1000, 10000, 50000, 100000];
+// Billetes y monedas de Colombia con los que se arma lo que entrega el cliente
+const BILLETES = [2000, 5000, 10000, 20000, 50000, 100000];
+const MONEDAS = [50, 100, 200, 500, 1000];
 
 // Un lector de códigos teclea muy rápido (menos de 50 ms entre teclas) y termina con Enter
 const MILISEGUNDOS_ENTRE_TECLAS_DE_LECTOR = 50;
@@ -32,6 +34,8 @@ export async function dibujar() {
   return seccion(documento, 'principal', {
     opcionesMetodo: repetir(documento, 'opcion-metodo', metodos),
     opcionesCliente: repetir(documento, 'opcion-cliente', estado.clientes),
+    billetes: repetir(documento, 'boton-billete', BILLETES.map((valor) => ({ valor, texto: aPesos(valor) }))),
+    monedas: repetir(documento, 'boton-moneda', MONEDAS.map((valor) => ({ valor, texto: aPesos(valor), corto: valor.toLocaleString('es-CO') }))),
   });
 }
 
@@ -41,6 +45,9 @@ export function montar(raiz, contexto) {
   let ventaRegistrada = null;
   let tipo = 'factura';
   let documentoOrigen = '';
+  // Billetes y monedas que entrega el cliente, en el orden en que se tocaron (vacío = paga exacto)
+  const entregado = [];
+  const sumaEntregada = () => entregado.reduce((acumulado, valor) => acumulado + valor, 0);
   const subtotal = (linea) => linea.cantidad * linea.valorUnitario;
   const totalActual = () => lineas.reduce((acumulado, linea) => acumulado + subtotal(linea), 0);
   const datosDeVenta = () => ({
@@ -48,28 +55,55 @@ export function montar(raiz, contexto) {
     cliente: buscar('#cliente', raiz).value,
     metodo: buscar('#metodo', raiz).value,
     observaciones: buscar('#observaciones', raiz).value,
-    recibido: leerEntero(buscar('#monto-recibido', raiz).value),
+    recibido: sumaEntregada(),
     documentoOrigen,
     lineas,
   });
 
-  // Pago en efectivo: montos rápidos (exacto y billetes que lo cubren) y devuelta calculada
+  // Pago en efectivo: "Paga exacto" o la suma de los billetes y monedas que entrega el cliente, con la devuelta calculada
   const pintarPago = () => {
     const efectivo = tipo === 'factura' && buscar('#metodo', raiz).value === 'Efectivo';
     buscar('#pago-efectivo', raiz).hidden = !efectivo;
     if (!efectivo) return;
     const total = totalActual();
-    const redondeos = DENOMINACIONES.map((paso) => Math.ceil(total / paso) * paso).filter((valor) => valor > total);
-    const montos = [total, ...new Set(redondeos)].slice(0, 5).filter((valor) => valor > 0);
-    const recibido = leerEntero(buscar('#monto-recibido', raiz).value);
-    buscar('#fichas-monto', raiz).innerHTML = repetir(documento, 'ficha-monto', montos.map((valor) => ({
-      valor,
-      texto: valor === total ? `Exacto ${aPesos(valor)}` : aPesos(valor),
-    })));
-    buscarTodos('[data-monto]', raiz).forEach((ficha) => ficha.setAttribute('aria-pressed', String(recibido === Number(ficha.dataset.monto))));
-    const diferencia = (recibido || total) - total;
-    buscar('#fila-devuelta span', raiz).textContent = diferencia < 0 ? 'Faltan' : 'Devuelta';
+    const exacto = entregado.length === 0;
+    const recibido = exacto ? total : sumaEntregada();
+    const diferencia = recibido - total;
+
+    buscar('#valor-exacto', raiz).textContent = aPesos(total);
+    buscar('#pago-exacto', raiz).setAttribute('aria-pressed', String(exacto));
+    buscar('#deshacer-efectivo', raiz).disabled = exacto;
+    buscar('#limpiar-efectivo', raiz).disabled = exacto;
+
+    // Cuántas piezas de cada denominación se han tocado
+    const cuentas = {};
+    entregado.forEach((valor) => { cuentas[valor] = (cuentas[valor] ?? 0) + 1; });
+    buscarTodos('[data-denominacion]', raiz).forEach((boton) => {
+      const cantidad = cuentas[boton.dataset.denominacion] ?? 0;
+      const insignia = buscar('[data-cuenta]', boton);
+      insignia.hidden = cantidad === 0;
+      insignia.textContent = `×${cantidad}`;
+      boton.classList.toggle('elegida', cantidad > 0);
+    });
+
+    const piezas = [...BILLETES, ...MONEDAS].sort((a, b) => b - a).filter((valor) => cuentas[valor])
+      .map((valor) => ({ cantidad: cuentas[valor], texto: aPesos(valor) }));
+    buscar('#desglose', raiz).innerHTML = exacto
+      ? `<span class="texto-suave">El cliente paga ${aPesos(total)} exactos, sin devuelta.</span>`
+      : repetir(documento, 'pieza-desglose', piezas);
+
+    buscar('#recibido', raiz).textContent = aPesos(recibido);
+    const filaDevuelta = buscar('#fila-devuelta', raiz);
+    filaDevuelta.classList.toggle('falta', diferencia < 0);
+    buscar('span', filaDevuelta).textContent = diferencia < 0 ? 'Faltan' : 'Devuelta';
     buscar('#devuelta', raiz).textContent = aPesos(Math.abs(diferencia));
+  };
+
+  // Pequeño rebote al tocar una pieza (se reinicia aunque se toque varias veces seguidas)
+  const rebotar = (elemento) => {
+    elemento.classList.remove('rebote');
+    void elemento.offsetWidth;
+    elemento.classList.add('rebote');
   };
 
   const pintarTotal = () => {
@@ -194,13 +228,39 @@ export function montar(raiz, contexto) {
 
   buscarTodos('[data-tipo]', raiz).forEach((boton) => { boton.onclick = () => elegirTipo(boton.dataset.tipo); });
   buscar('#metodo', raiz).onchange = pintarPago;
-  buscar('#monto-recibido', raiz).addEventListener('input', pintarPago);
-  buscar('#fichas-monto', raiz).addEventListener('click', (evento) => {
-    const ficha = evento.target.closest('[data-monto]');
-    if (!ficha) return;
-    buscar('#monto-recibido', raiz).value = ficha.dataset.monto;
+  const zonaEfectivo = buscar('#pago-efectivo', raiz);
+  // Clic: suma la pieza. Clic derecho: quita una de esa denominación
+  zonaEfectivo.addEventListener('click', (evento) => {
+    const pieza = evento.target.closest('[data-denominacion]');
+    if (!pieza) return;
+    entregado.push(Number(pieza.dataset.denominacion));
     pintarPago();
+    rebotar(pieza);
+    rebotar(buscar('#recibido', raiz));
   });
+  zonaEfectivo.addEventListener('contextmenu', (evento) => {
+    const pieza = evento.target.closest('[data-denominacion]');
+    if (!pieza) return;
+    evento.preventDefault();
+    const posicion = entregado.lastIndexOf(Number(pieza.dataset.denominacion));
+    if (posicion < 0) return;
+    entregado.splice(posicion, 1);
+    pintarPago();
+    rebotar(buscar('#recibido', raiz));
+  });
+  buscar('#pago-exacto', raiz).onclick = () => {
+    entregado.length = 0;
+    pintarPago();
+    rebotar(buscar('#recibido', raiz));
+  };
+  buscar('#deshacer-efectivo', raiz).onclick = () => {
+    entregado.pop();
+    pintarPago();
+  };
+  buscar('#limpiar-efectivo', raiz).onclick = () => {
+    entregado.length = 0;
+    pintarPago();
+  };
 
   // Pasar un documento a otro: llega desde Ventas con ?documento=C5&tipo=remision (o tipo=factura).
   // La cotización se pasa a remisión o a factura; la remisión, solo a factura. El nuevo documento conserva el número.

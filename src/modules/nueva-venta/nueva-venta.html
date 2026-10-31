@@ -58,10 +58,37 @@
     <input id="observaciones" class="campo" maxlength="300" autocomplete="off" placeholder="Opcional: dirección de entrega, condiciones, notas para el cliente">
 
     <div class="pago-efectivo" id="pago-efectivo">
-      <label for="monto-recibido">Monto recibido</label>
-      <div class="fichas-monto" id="fichas-monto" role="group" aria-label="Montos rápidos"></div>
-      <input id="monto-recibido" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="Escribe con cuánto paga el cliente (vacío = valor exacto)">
-      <div class="total-venta" id="fila-devuelta"><span>Devuelta</span><strong id="devuelta">$ 0</strong></div>
+      <div class="cabecera-efectivo">
+        <div>
+          <strong>¿Con cuánto paga?</strong>
+          <div class="texto-suave">Toca cada billete o moneda que entrega el cliente. Clic derecho sobre uno lo quita.</div>
+        </div>
+        <div class="acciones-fila">
+          <button type="button" class="boton" id="deshacer-efectivo" disabled>Deshacer</button>
+          <button type="button" class="boton" id="limpiar-efectivo" disabled>Limpiar</button>
+        </div>
+      </div>
+
+      <button type="button" class="pago-exacto" id="pago-exacto" aria-pressed="true">
+        <span>Paga exacto</span>
+        <strong id="valor-exacto">$ 0</strong>
+      </button>
+
+      <div class="grupo-efectivo">
+        <span class="titulo-grupo">Billetes</span>
+        <div class="billetes" role="group" aria-label="Billetes">{{{billetes}}}</div>
+      </div>
+      <div class="grupo-efectivo">
+        <span class="titulo-grupo">Monedas</span>
+        <div class="monedas" role="group" aria-label="Monedas">{{{monedas}}}</div>
+      </div>
+
+      <div class="desglose" id="desglose" aria-live="polite"></div>
+
+      <div class="resumen-efectivo">
+        <div class="dato-efectivo"><span>Recibido</span><strong id="recibido">$ 0</strong></div>
+        <div class="dato-efectivo" id="fila-devuelta"><span>Devuelta</span><strong id="devuelta">$ 0</strong></div>
+      </div>
     </div>
 
     <div class="acciones-fila margen-superior-grande">
@@ -85,8 +112,22 @@
   <option value="{{nombre}}"></option>
 </template>
 
-<template id="ficha-monto">
-  <button type="button" class="boton ficha" data-monto="{{valor}}">{{texto}}</button>
+<template id="boton-billete">
+  <button type="button" class="billete" data-denominacion="{{valor}}" aria-label="Agregar billete de {{texto}}">
+    <span class="valor-denominacion">{{texto}}</span>
+    <span class="cuenta" data-cuenta hidden></span>
+  </button>
+</template>
+
+<template id="boton-moneda">
+  <button type="button" class="moneda" data-denominacion="{{valor}}" aria-label="Agregar moneda de {{texto}}">
+    <span class="valor-denominacion">{{corto}}</span>
+    <span class="cuenta" data-cuenta hidden></span>
+  </button>
+</template>
+
+<template id="pieza-desglose">
+  <span class="pieza">{{cantidad}} × {{texto}}</span>
 </template>
 
 <template id="opcion-metodo">
