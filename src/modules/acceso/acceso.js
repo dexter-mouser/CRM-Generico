@@ -3,7 +3,7 @@ import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import { logoCompleto } from '../../components/logo/logo.js';
 import { iniciarSesion } from '../../core/sesion.js';
 import { icono, ICONO_OJO, ICONO_OJO_TACHADO } from '../../core/iconos.js';
-import { USUARIOS } from '../../config/acceso.js';
+import { USUARIOS, CUENTAS_PRUEBA } from '../../config/acceso.js';
 import { MENU } from '../../config/nav.js';
 import { estado, guardarEstado } from '../../core/store.js';
 import { DOMINIO_CORREO } from '../../core/validacion.js';
@@ -26,12 +26,28 @@ const guardarIntentos = (datos) => {
 };
 const minutosDeBloqueo = () => Math.ceil((leerIntentos().hasta - Date.now()) / 60000);
 
+// Deja registradas las cuentas de prueba aunque haya datos guardados de antes
+function asegurarCuentasDePrueba() {
+  let cambio = false;
+  CUENTAS_PRUEBA.filter((cuenta) => estado.roles.some((rol) => rol.id === cuenta.rolId)).forEach((cuenta) => {
+    const persona = estado.usuarios.find((existente) => existente.id === cuenta.id);
+    if (!persona) {
+      estado.usuarios.push({ ...cuenta, activo: true });
+      cambio = true;
+    } else if (persona.correo !== cuenta.correo) {
+      persona.correo = cuenta.correo;
+      cambio = true;
+    }
+  });
+  if (cambio) guardarEstado();
+}
+
 export async function dibujar() {
   const documento = await cargarHtml(new URL('./acceso.html', import.meta.url));
-  // Cuentas de prueba: cada persona activa con el rol con el que entra
-  const cuentas = estado.usuarios.filter((persona) => persona.activo).map((persona) => ({
-    correo: persona.correo,
-    rol: estado.roles.find((rol) => rol.id === persona.rolId)?.nombre ?? '',
+  asegurarCuentasDePrueba();
+  const cuentas = CUENTAS_PRUEBA.map((cuenta) => ({
+    correo: cuenta.correo,
+    rol: estado.roles.find((rol) => rol.id === cuenta.rolId)?.nombre ?? '',
   }));
   return seccion(documento, 'principal', { logo: logoCompleto(40), cuentas: repetir(documento, 'cuenta-prueba', cuentas) });
 }
