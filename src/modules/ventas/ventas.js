@@ -19,7 +19,7 @@ function estadoDeFactura(venta) {
 
 function estadoDeDocumento(registro) {
   if (registro.anulado) return 'Anulado';
-  return registro.facturadaEn ? `Facturado en ${registro.facturadaEn}` : 'Pendiente';
+  return registro.convertidoEn ? `Pasado a ${registro.convertidoEn}` : 'Pendiente';
 }
 
 const insignia = (texto, clase) => `<span class="insignia ${clase}">${texto}</span>`;
@@ -53,8 +53,10 @@ export function montar(raiz, contexto) {
   });
 
   const filasDocumentos = () => estado.documentos.slice().reverse().map((registro) => {
+    const pasarARemision = servicioVentas.DESTINOS_POSIBLES[registro.tipo].includes('remision')
+      ? repetir(documento, 'accion-pasar-remision', [{ id: registro.id }]) : '';
     const acciones = servicioVentas.documentoPendiente(registro) && puede('nueva-venta', 'crear')
-      ? repetir(documento, 'acciones-documento-pendiente', [{ id: registro.id }]) : '';
+      ? repetir(documento, 'acciones-documento-pendiente', [{ id: registro.id, pasarARemision }]) : '';
     return {
       id: registro.id,
       tipo: etiquetaDe(registro.tipo),
@@ -189,7 +191,7 @@ export function montar(raiz, contexto) {
     const registro = servicioVentas.buscarDocumento(id);
     abrirPanel({
       titulo: `Anular ${etiquetaDe(registro.tipo).toLowerCase()} ${id}`,
-      descripcion: registro.tipo === 'remision' ? 'Lo entregado vuelve al stock.' : 'La cotización deja de poder facturarse.',
+      descripcion: registro.tipo === 'remision' ? 'Lo entregado vuelve al stock.' : 'La cotización deja de poder pasarse a remisión o a factura.',
       columnaCantidad: 'Cantidad',
       filas: registro.items.map((item) => ({ ...item, valorUnitario: aPesos(item.valorUnitario), disponibles: item.cantidad })),
       esAnulacion: true,

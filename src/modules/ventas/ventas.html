@@ -14,13 +14,13 @@
 
   <section class="caja margen-superior-grande" aria-labelledby="titulo-documentos">
     <strong id="titulo-documentos">Remisiones y cotizaciones</strong>
-    <div class="texto-suave">Una remisión descuenta el stock sin cobrar; una cotización es solo una oferta. Ambas se pasan a factura con "Facturar".</div>
+    <div class="texto-suave">Una remisión descuenta el stock sin cobrar y se pasa a factura; una cotización es solo una oferta y se pasa a remisión o a factura. Al pasarse conservan su número (C5 → R5 → F5).</div>
     <div id="cuadricula-documentos"></div>
   </section>
 
   <section class="caja margen-superior-grande" aria-labelledby="titulo-notas">
     <strong id="titulo-notas">Notas de devolución y de anulación</strong>
-    <div class="texto-suave">Cada nota queda anclada a su factura original (ND = devolución, NA = anulación).</div>
+    <div class="texto-suave">Cada nota queda anclada a su factura original y tiene su propio consecutivo (ND = devolución, NA = anulación).</div>
     <div id="cuadricula-notas"></div>
   </section>
 </div>
@@ -45,8 +45,13 @@
 </template>
 
 <template id="acciones-documento-pendiente">
-  <a class="boton primario" href="nueva-venta.html?documento={{id}}">Facturar</a>
+  <a class="boton primario" href="nueva-venta.html?documento={{id}}&amp;tipo=factura">Facturar</a>
+  {{{pasarARemision}}}
   <button type="button" class="boton peligro" data-anular-documento="{{id}}">Anular</button>
+</template>
+
+<template id="accion-pasar-remision">
+  <a class="boton" href="nueva-venta.html?documento={{id}}&amp;tipo=remision">Pasar a remisión</a>
 </template>
 
 <template id="acciones-nota">

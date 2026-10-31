@@ -12,7 +12,7 @@ public final class VentaDto {
     public record Item(String productoId, String nombre, int cantidad, long valorUnitario) {
     }
 
-    public record Venta(String codigo, OffsetDateTime fecha, String cliente, String metodo, String usuario, long total,
+    public record Venta(String codigo, OffsetDateTime fecha, String cliente, String clienteCodigo, String metodo, String usuario, long total,
             long recibido, long devuelta, String observaciones, String documentoOrigen, boolean anulada, List<Item> items) {
     }
 

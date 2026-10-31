@@ -24,7 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Reglas de ventas. El total, los nombres y el vendedor los calcula el servidor: nunca se confía en lo que envía el cliente.
- * Devoluciones y anulaciones devuelven el stock, y el dinero (en efectivo, de la caja abierta) o la deuda si fue a Fiado.
+ * Facturas (F), remisiones (R) y cotizaciones (C) comparten el consecutivo "DOC": su código es una letra y un número (F1, R2, C3).
+ * Las notas de devolución (ND1) y de anulación (NA1) tienen cada una su propio consecutivo.
+ * Devoluciones y anulaciones devuelven el stock, y el dinero (en efectivo, de la caja abierta) o la deuda si fue a Crédito.
  */
 @Service
 public class VentaServicio {
@@ -36,6 +38,8 @@ public class VentaServicio {
     }
 
     static final int MAXIMO_LINEAS = 200;
+    static final String METODO_CREDITO = "Crédito";
+    static final String CONSECUTIVO_DOCUMENTOS = "DOC";
 
     private final VentaRepositorio repositorio;
     private final TiendaRepositorio tiendas;
@@ -110,8 +114,12 @@ public class VentaServicio {
         }
         Validaciones.entero(total, "el total de la venta", 0, Validaciones.VALOR_MAXIMO * 10);
 
-        if ("Fiado".equals(metodo) && clientes.buscarPorNombre(quien.tiendaId(), cliente).isEmpty()) {
-            throw new ReglaDeNegocioException("Para vender a Fiado, registra primero al cliente en Clientes y escribe su nombre completo");
+        Optional<Cliente> registrado = cliente.isEmpty() ? Optional.empty() : clientes.buscarPorNombre(quien.tiendaId(), cliente);
+        if (METODO_CREDITO.equals(metodo) && registrado.isEmpty()) {
+            throw new ReglaDeNegocioException("Para vender a Crédito, registra primero al cliente en Clientes y escribe su nombre completo");
+        }
+        if ("Efectivo".equals(metodo) && !repositorio.hayCajaAbierta(quien.tiendaId())) {
+            throw new ReglaDeNegocioException("Abre la caja antes de registrar ventas en efectivo");
         }
 
         // En efectivo se puede indicar con cuánto paga el cliente; la devuelta es la diferencia. En los demás métodos se paga lo exacto
@@ -124,9 +132,9 @@ public class VentaServicio {
         }
         String observaciones = Validaciones.textoOpcional(solicitud.observaciones(), "las observaciones", Validaciones.TEXTO_LARGO);
 
-        String codigoVenta = consecutivos.siguiente(quien.tiendaId(), "V", 4);
-        repositorio.insertarVenta(quien.tiendaId(), codigoVenta, cliente.isEmpty() ? "Cliente sin nombre" : cliente, metodo, quien.nombre(), total,
-                recibido, recibido - total, observaciones);
+        String codigoVenta = "F" + consecutivos.siguienteNumero(quien.tiendaId(), CONSECUTIVO_DOCUMENTOS);
+        repositorio.insertarVenta(quien.tiendaId(), codigoVenta, cliente.isEmpty() ? "Cliente sin nombre" : cliente,
+                registrado.map(Cliente::codigo).orElse(null), metodo, quien.nombre(), total, recibido, recibido - total, observaciones);
         int linea = 1;
         for (VentaDto.Item item : items) {
             repositorio.insertarItemVenta(quien.tiendaId(), codigoVenta, linea++, item);
@@ -188,9 +196,10 @@ public class VentaServicio {
             throw new ReglaDeNegocioException("Escribe la cantidad que se devuelve de al menos un producto");
         }
 
-        // De dónde sale el dinero: Fiado baja la deuda; efectivo sale de la caja abierta; los demás métodos se reintegran por el mismo medio
-        if ("Fiado".equals(venta.metodo())) {
-            Optional<Cliente> cliente = clientes.buscarPorNombre(quien.tiendaId(), venta.cliente());
+        // De dónde sale el dinero: Crédito baja la deuda; efectivo sale de la caja abierta; los demás métodos se reintegran por el mismo medio
+        if (METODO_CREDITO.equals(venta.metodo())) {
+            Optional<Cliente> cliente = venta.clienteCodigo().isEmpty() ? Optional.empty()
+                    : clientes.buscarPorCodigo(quien.tiendaId(), venta.clienteCodigo());
             if (cliente.isPresent() && total > cliente.get().deuda()) {
                 throw new ReglaDeNegocioException(cliente.get().nombre()
                         + " ya abonó parte de esta venta: la devolución supera su deuda actual. Registra el reembolso como egreso en Caja");
@@ -199,9 +208,11 @@ public class VentaServicio {
             throw new ReglaDeNegocioException("Abre la caja para devolver dinero en efectivo");
         }
 
-        // Nota de devolución (ND) o de anulación (NA), anclada a la factura original
-        String codigo = consecutivos.siguiente(quien.tiendaId(), "anulacion".equals(tipo) ? "NA" : "ND", 4);
-        repositorio.insertarDevolucion(quien.tiendaId(), codigo, ventaCodigo, tipo, motivoLimpio, quien.nombre(), venta.cliente(), venta.metodo(), total);
+        // Nota de devolución (ND1) o de anulación (NA1), anclada a la factura original y con su propio consecutivo
+        String prefijoNota = "anulacion".equals(tipo) ? "NA" : "ND";
+        String codigo = prefijoNota + consecutivos.siguienteNumero(quien.tiendaId(), prefijoNota);
+        repositorio.insertarDevolucion(quien.tiendaId(), codigo, ventaCodigo, tipo, motivoLimpio, quien.nombre(), venta.cliente(),
+                venta.clienteCodigo().isEmpty() ? null : venta.clienteCodigo(), venta.metodo(), total);
         int linea = 1;
         for (VentaDto.Item item : items) {
             repositorio.insertarItemDevolucion(quien.tiendaId(), codigo, linea++, item);

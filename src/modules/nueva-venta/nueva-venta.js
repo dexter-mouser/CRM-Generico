@@ -5,7 +5,7 @@ import { leerEntero, activarCamposNumericos } from '../../core/numeros.js';
 import { icono, ICONO_PAPELERA } from '../../core/iconos.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import { buscarProductoPorCodigo } from '../../services/inventario.service.js';
-import { armarVenta, registrarVenta, ultimoValorDeVenta, buscarDocumento, documentoPendiente, TIPOS_DOCUMENTO } from '../../services/ventas.service.js';
+import { armarVenta, registrarVenta, ultimoValorDeVenta, buscarDocumento, documentoPendiente, TIPOS_DOCUMENTO, DESTINOS_POSIBLES } from '../../services/ventas.service.js';
 import { cargarPlantillasBuscador, montarBuscadorCuadricula } from '../../components/buscador-cuadricula/buscador-cuadricula.js';
 import { mostrarReciboDeVenta as mostrarRecibo } from '../../components/recibo/comprobantes.js';
 
@@ -16,7 +16,7 @@ let escuchaTeclado = null;
 const DESCRIPCIONES = {
   factura: 'Cuenta como venta, descuenta el stock y mueve la caja o la deuda del cliente.',
   remision: 'Entrega la mercancía y descuenta el stock sin cobrar. Después se pasa a factura desde Ventas.',
-  cotizacion: 'Oferta con vigencia de 15 días. No descuenta stock ni registra dinero.',
+  cotizacion: 'Oferta con vigencia de 15 días. No descuenta stock ni registra dinero. Después se pasa a remisión o a factura.',
 };
 const TEXTO_REGISTRAR = { factura: 'Registrar factura', remision: 'Registrar remisión', cotizacion: 'Guardar cotización' };
 const DENOMINACIONES = [1000, 10000, 50000, 100000];
@@ -202,9 +202,14 @@ export function montar(raiz, contexto) {
     pintarPago();
   });
 
-  // Facturar una remisión o cotización: llega desde Ventas con ?documento=REM-0001
-  const origen = buscarDocumento(new URLSearchParams(location.search).get('documento') ?? '');
+  // Pasar un documento a otro: llega desde Ventas con ?documento=C5&tipo=remision (o tipo=factura).
+  // La cotización se pasa a remisión o a factura; la remisión, solo a factura. El nuevo documento conserva el número.
+  const parametros = new URLSearchParams(location.search);
+  const origen = buscarDocumento(parametros.get('documento') ?? '');
+  let tipoInicial = 'factura';
   if (origen && documentoPendiente(origen)) {
+    const destinos = DESTINOS_POSIBLES[origen.tipo];
+    tipoInicial = destinos.includes(parametros.get('tipo')) ? parametros.get('tipo') : destinos[0];
     documentoOrigen = origen.id;
     origen.items.forEach((item) => {
       const producto = estado.productos.find((candidato) => candidato.id === item.productoId);
@@ -213,13 +218,16 @@ export function montar(raiz, contexto) {
     buscar('#cliente', raiz).value = origen.cliente === 'Cliente sin nombre' ? '' : origen.cliente;
     buscar('#observaciones', raiz).value = origen.observaciones ?? '';
     buscar('#aviso-origen', raiz).hidden = false;
-    buscar('#texto-origen', raiz).textContent = `Pasando a factura: ${origen.id} · ${origen.cliente}`;
-    buscarTodos('[data-tipo]:not([data-tipo="factura"])', raiz).forEach((boton) => { boton.disabled = true; });
+    buscar('#texto-origen', raiz).textContent = `Pasando ${TIPOS_DOCUMENTO[origen.tipo].etiqueta.toLowerCase()} ${origen.id} · ${origen.cliente}. Conserva el número ${origen.id.slice(1)}.`;
+    buscar('#detalle-origen', raiz).textContent = origen.tipo === 'remision'
+      ? 'Las cantidades ya entregadas no se descuentan otra vez del stock; lo remitido que quites de la factura vuelve al stock.'
+      : 'La cotización no movió el stock: la remisión o la factura lo descuentan al registrarse.';
+    buscarTodos('[data-tipo]', raiz).forEach((boton) => { boton.disabled = !destinos.includes(boton.dataset.tipo); });
   }
 
   montarAtajos(raiz, contexto, agregarProducto);
 
-  elegirTipo('factura');
+  elegirTipo(tipoInicial);
   pintarLineas();
 }
 

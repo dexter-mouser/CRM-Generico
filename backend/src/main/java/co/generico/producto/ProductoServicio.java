@@ -1,7 +1,6 @@
 package co.generico.producto;
 
 import co.generico.auditoria.AuditoriaServicio;
-import co.generico.comun.Consecutivos;
 import co.generico.comun.NoEncontradoException;
 import co.generico.comun.ReglaDeNegocioException;
 import co.generico.comun.Validaciones;
@@ -26,12 +25,10 @@ public class ProductoServicio {
     static final int MAXIMO_FILAS_IMPORTACION = 5000;
 
     private final ProductoRepositorio repositorio;
-    private final Consecutivos consecutivos;
     private final AuditoriaServicio auditoria;
 
-    public ProductoServicio(ProductoRepositorio repositorio, Consecutivos consecutivos, AuditoriaServicio auditoria) {
+    public ProductoServicio(ProductoRepositorio repositorio, AuditoriaServicio auditoria) {
         this.repositorio = repositorio;
-        this.consecutivos = consecutivos;
         this.auditoria = auditoria;
     }
 
@@ -52,7 +49,7 @@ public class ProductoServicio {
     @Transactional
     public Producto crear(UsuarioSesion quien, DatosProducto datos) {
         String codigoPedido = Validaciones.codigo(datos.id());
-        String codigo = codigoPedido.isEmpty() ? consecutivos.siguiente(quien.tiendaId(), "P", 3) : codigoPedido;
+        String codigo = codigoPedido.isEmpty() ? repositorio.siguienteCodigo(quien.tiendaId()) : codigoPedido;
         Producto producto = validar(datos, codigo);
         if (repositorio.buscarPorCodigo(quien.tiendaId(), codigo).isPresent()) {
             throw new ReglaDeNegocioException("Ya existe un producto con el ID " + codigo);
@@ -96,7 +93,7 @@ public class ProductoServicio {
             try {
                 DatosProducto fila = filas.get(posicion);
                 String codigo = Validaciones.codigo(fila.id());
-                if (!codigo.isEmpty() && !vistos.add(codigo.toLowerCase())) {
+                if (!codigo.isEmpty() && !vistos.add(codigo)) {
                     throw new ReglaDeNegocioException("el ID " + codigo + " está repetido en el archivo");
                 }
                 validas.add(validar(fila, codigo));
@@ -116,7 +113,7 @@ public class ProductoServicio {
                 repositorio.actualizar(quien.tiendaId(), fila);
                 actualizados++;
             } else {
-                String codigo = fila.codigo().isEmpty() ? consecutivos.siguiente(quien.tiendaId(), "P", 3) : fila.codigo();
+                String codigo = fila.codigo().isEmpty() ? repositorio.siguienteCodigo(quien.tiendaId()) : fila.codigo();
                 repositorio.insertar(quien.tiendaId(), new Producto(codigo, fila.referencia(), fila.nombre(), fila.costo(), fila.existencias()));
                 agregados++;
             }

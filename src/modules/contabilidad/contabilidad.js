@@ -15,7 +15,7 @@ const lineasDeResumen = (resumen) => repetir(documento, 'linea-resumen', [
   ['Devoluciones y anulaciones', aPesos(resumen.devoluciones)],
   ['Costo de lo vendido', aPesos(resumen.costoVendido)],
   ['Utilidad estimada', aPesos(resumen.utilidad)],
-  ['Ventas a Fiado', aPesos(resumen.ventasFiado)],
+  ['Ventas a Crédito', aPesos(resumen.ventasCredito)],
   ['Abonos de clientes', aPesos(resumen.abonosClientes)],
   ['Pagos a proveedores', aPesos(resumen.pagosProveedores)],
   ['Compras facturadas', aPesos(resumen.comprasFacturadas)],
@@ -58,7 +58,7 @@ export async function dibujar() {
 
 const COLUMNAS_CIERRES = [
   ['dia', 'Día', '120px'], ['cantidad', 'Ventas', '80px'], ['total', 'Total vendido', '112px'], ['devoluciones', 'Devoluciones', '112px'],
-  ['costo', 'Costo', '104px'], ['utilidad', 'Utilidad', '104px'], ['fiado', 'Fiado', '96px'], ['abonos', 'Abonos', '96px'],
+  ['costo', 'Costo', '104px'], ['utilidad', 'Utilidad', '104px'], ['credito', 'Crédito', '96px'], ['abonos', 'Abonos', '96px'],
   ['pagos', 'Pagos a proveedores', '124px'], ['compras', 'Compras', '104px'], ['diferencia', 'Dif. de caja', '104px'],
 ].map(([clave, titulo, ancho]) => ({ clave, titulo, ancho, alinear: clave === 'dia' ? undefined : 'derecha' }));
 
@@ -75,7 +75,7 @@ export function montar(raiz, contexto) {
       devoluciones: aPesos(cierre.devoluciones ?? 0),
       costo: aPesos(cierre.costoVendido),
       utilidad: aPesos(cierre.utilidad),
-      fiado: aPesos(cierre.ventasFiado),
+      credito: aPesos(cierre.ventasCredito ?? 0),
       abonos: aPesos(cierre.abonosClientes),
       pagos: aPesos(cierre.pagosProveedores),
       compras: aPesos(cierre.comprasFacturadas),

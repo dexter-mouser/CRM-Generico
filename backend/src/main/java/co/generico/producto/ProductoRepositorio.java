@@ -31,12 +31,23 @@ public class ProductoRepositorio {
             sql.append(" and unaccent(lower(concat_ws(' ', codigo, nombre, referencia, costo::text, existencias::text))) like unaccent(lower(:t")
                     .append(posicion).append("))");
         }
-        sql.append(" order by codigo");
+        // Los códigos son números guardados como texto: se ordenan por largo y luego por valor (2 antes que 10)
+        sql.append(" order by length(codigo), codigo");
         JdbcClient.StatementSpec consultaSql = jdbc.sql(sql.toString()).param("tienda", tiendaId);
         for (int posicion = 0; posicion < terminos.size(); posicion++) {
             consultaSql = consultaSql.param("t" + posicion, "%" + escaparLike(terminos.get(posicion)) + "%");
         }
         return consultaSql.query(Producto.class).list();
+    }
+
+    /** Siguiente código de producto: el mayor código numérico de la tienda más uno. */
+    public String siguienteCodigo(UUID tiendaId) {
+        return jdbc.sql("""
+                select (coalesce(max(codigo::bigint), 0) + 1)::text from producto
+                where tienda_id = :tienda and codigo ~ '^[0-9]{1,12}$'
+                """)
+                .param("tienda", tiendaId)
+                .query(String.class).single();
     }
 
     public Optional<Producto> buscarPorCodigo(UUID tiendaId, String codigo) {

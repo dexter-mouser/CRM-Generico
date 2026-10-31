@@ -10,14 +10,14 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class ClienteRepositorio {
 
-    /** Consulta base: la deuda sale de las ventas a Fiado, las devoluciones a Fiado y los abonos del cliente. */
+    /** Consulta base: la deuda sale de las ventas a Crédito, las devoluciones a Crédito y los abonos, relacionados por el código del cliente. */
     private static final String SELECT_CLIENTE = """
             select c.codigo, c.nombre, c.telefono, c.correo, c.direccion,
               greatest(0,
-                coalesce((select sum(v.total) from venta v where v.tienda_id = c.tienda_id and v.metodo = 'Fiado'
-                          and lower(v.cliente) = lower(c.nombre)), 0)
-                - coalesce((select sum(d.total) from devolucion d where d.tienda_id = c.tienda_id and d.metodo = 'Fiado'
-                          and lower(d.cliente) = lower(c.nombre)), 0)
+                coalesce((select sum(v.total) from venta v where v.tienda_id = c.tienda_id and v.metodo = 'Crédito'
+                          and v.cliente_codigo = c.codigo), 0)
+                - coalesce((select sum(d.total) from devolucion d where d.tienda_id = c.tienda_id and d.metodo = 'Crédito'
+                          and d.cliente_codigo = c.codigo), 0)
                 - coalesce((select sum(p.valor) from pago p where p.tienda_id = c.tienda_id and p.tipo = 'abono'
                           and p.tercero_codigo = c.codigo), 0)
               )::bigint as deuda
@@ -57,7 +57,7 @@ public class ClienteRepositorio {
                 .query(Cliente.class).optional();
     }
 
-    /** Búsqueda por nombre sin importar mayúsculas: las ventas guardan el nombre del cliente. */
+    /** Búsqueda por nombre sin importar mayúsculas: al vender se escribe el nombre del cliente. */
     public Optional<Cliente> buscarPorNombre(UUID tiendaId, String nombre) {
         return jdbc.sql(SELECT_CLIENTE + " where c.tienda_id = :tienda and lower(c.nombre) = lower(:nombre)")
                 .param("tienda", tiendaId).param("nombre", nombre.trim())
@@ -84,22 +84,14 @@ public class ClienteRepositorio {
                 .update();
     }
 
-    /** Si cambia el nombre, las ventas y devoluciones anteriores se actualizan para no perder la deuda del cliente. */
-    public void renombrarEnMovimientos(UUID tiendaId, String anterior, String nuevo) {
-        jdbc.sql("update venta set cliente = :nuevo where tienda_id = :tienda and lower(cliente) = lower(:anterior)")
-                .param("nuevo", nuevo).param("tienda", tiendaId).param("anterior", anterior).update();
-        jdbc.sql("update devolucion set cliente = :nuevo where tienda_id = :tienda and lower(cliente) = lower(:anterior)")
-                .param("nuevo", nuevo).param("tienda", tiendaId).param("anterior", anterior).update();
-    }
-
     public void eliminar(UUID tiendaId, String codigo) {
         jdbc.sql("delete from cliente where tienda_id = :tienda and codigo = :codigo")
                 .param("tienda", tiendaId).param("codigo", codigo).update();
     }
 
-    public List<String> ventasDe(UUID tiendaId, String nombre) {
-        return jdbc.sql("select codigo from venta where tienda_id = :tienda and lower(cliente) = lower(:nombre) order by fecha desc")
-                .param("tienda", tiendaId).param("nombre", nombre)
+    public List<String> ventasDe(UUID tiendaId, String clienteCodigo) {
+        return jdbc.sql("select codigo from venta where tienda_id = :tienda and cliente_codigo = :cliente order by fecha desc")
+                .param("tienda", tiendaId).param("cliente", clienteCodigo)
                 .query(String.class).list();
     }
 }

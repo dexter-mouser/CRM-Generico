@@ -1,25 +1,37 @@
 // Reglas de negocio de ventas. Hay tres documentos:
-//  - Factura de venta: descuenta el stock, cuenta como venta y mueve caja o deuda.
-//  - Remisión: descuenta el stock de lo entregado, pero no cobra; después se pasa a factura.
-//  - Cotización: solo una oferta con vigencia; no toca stock ni dinero.
-// Las devoluciones y anulaciones generan una nota (ND / NA) anclada a la factura original.
+//  - Factura de venta (F): descuenta el stock, cuenta como venta y mueve caja o deuda.
+//  - Remisión (R): descuenta el stock de lo entregado, pero no cobra; después se pasa a factura.
+//  - Cotización (C): solo una oferta con vigencia; no toca stock ni dinero. Se pasa a remisión o a factura.
+// Los tres comparten un mismo consecutivo (F1, R2, C3...). Al pasar un documento a otro se conserva el número:
+// la cotización C5 se convierte en la remisión R5 o en la factura F5.
+// Las devoluciones y anulaciones generan una nota con su propio consecutivo (ND1, NA1) anclada a la factura.
 import { estado, guardarEstado } from '../core/store.js';
-import { siguienteCodigo } from '../core/codigos.js';
+import { numeroMayor, siguienteNumero } from '../core/codigos.js';
 import { aFechaLocal } from '../core/format.js';
 import { exigirPermiso, nombreDeUsuario } from '../core/autorizacion.js';
 import { exigirEntero, exigirMotivo, exigirTexto, validarLineas, LIMITES } from '../core/validacion.js';
 import { registrarAuditoria } from './auditoria.service.js';
 import { ultimoDiaCerrado } from './contabilidad.service.js';
 import { cajaAbierta } from './caja.service.js';
-import { deudaDeCliente } from './clientes.service.js';
+import { buscarCliente, deudaDeCliente } from './clientes.service.js';
 
 const DIAS_VIGENCIA_COTIZACION = 15;
 
 export const TIPOS_DOCUMENTO = {
-  factura: { etiqueta: 'Factura de venta', prefijo: 'V' },
-  remision: { etiqueta: 'Remisión', prefijo: 'REM' },
-  cotizacion: { etiqueta: 'Cotización', prefijo: 'COT' },
+  factura: { etiqueta: 'Factura de venta', prefijo: 'F' },
+  remision: { etiqueta: 'Remisión', prefijo: 'R' },
+  cotizacion: { etiqueta: 'Cotización', prefijo: 'C' },
 };
+
+// Método de pago que deja el valor como deuda del cliente
+export const METODO_CREDITO = 'Crédito';
+
+// A qué documentos se puede pasar cada uno
+export const DESTINOS_POSIBLES = { cotizacion: ['factura', 'remision'], remision: ['factura'], factura: [] };
+
+// Número compartido por facturas, remisiones y cotizaciones
+const numeroDe = (codigo) => numeroMayor([codigo]);
+const siguienteNumeroDeDocumento = () => siguienteNumero([...estado.ventas, ...estado.documentos].map((registro) => registro.id));
 
 export const resumirItems = (venta) => venta.items.map((item) => `${item.nombre} ×${item.cantidad}`).join(', ');
 const mismoNombre = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
@@ -37,7 +49,7 @@ export function ultimoValorDeVenta(productoId) {
 
 // --- Documentos sin factura: remisiones y cotizaciones ---------------------------------------------------
 export const buscarDocumento = (id) => estado.documentos.find((documento) => documento.id === id);
-export const documentoPendiente = (documento) => !documento.facturadaEn && !documento.anulado;
+export const documentoPendiente = (documento) => !documento.convertidoEn && !documento.anulado;
 
 // Unidades ya entregadas por una remisión, por producto (para no descontar dos veces al facturarla)
 const remitidas = (documento) => Object.fromEntries((documento?.tipo === 'remision' ? documento.items : []).map((item) => [item.productoId, item.cantidad]));
@@ -49,7 +61,10 @@ export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo'
   validarLineas(lineas, 'valorUnitario', 'el valor unitario');
 
   const origen = documentoOrigen ? buscarDocumento(documentoOrigen) : null;
-  if (documentoOrigen && (!origen || !documentoPendiente(origen))) throw new Error(`El documento ${documentoOrigen} ya no se puede facturar`);
+  if (documentoOrigen && (!origen || !documentoPendiente(origen))) throw new Error(`El documento ${documentoOrigen} ya no se puede convertir`);
+  if (origen && !DESTINOS_POSIBLES[origen.tipo].includes(tipo)) {
+    throw new Error(`${TIPOS_DOCUMENTO[origen.tipo].etiqueta} ${origen.id} no se puede pasar a ${TIPOS_DOCUMENTO[tipo].etiqueta.toLowerCase()}`);
+  }
   const entregadas = remitidas(origen);
 
   if (tipo !== 'cotizacion' && !estado.ajustes.ventas.permitirSinExistencias) {
@@ -64,8 +79,8 @@ export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo'
 
   const nombreCliente = exigirTexto(cliente, 'el cliente', { obligatorio: false });
   const registrado = buscarClientePorNombre(nombreCliente);
-  if (tipo === 'factura' && metodo === 'Fiado' && !registrado) {
-    throw new Error('Para vender a Fiado, registra primero al cliente en Clientes y escribe su nombre completo');
+  if (tipo === 'factura' && metodo === METODO_CREDITO && !registrado) {
+    throw new Error('Para vender a Crédito, registra primero al cliente en Clientes y escribe su nombre completo');
   }
 
   const items = lineas.map(({ productoId, nombre, cantidad, valorUnitario }) => ({
@@ -88,11 +103,11 @@ export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo'
     total,
   };
 
+  if (tipo !== 'cotizacion') documento.documentoOrigen = documentoOrigen;
   if (tipo === 'cotizacion') {
     documento.vigenciaHasta = new Date(ahora.getTime() + DIAS_VIGENCIA_COTIZACION * 86_400_000).toISOString();
   } else if (tipo === 'factura') {
     documento.metodo = metodo;
-    documento.documentoOrigen = documentoOrigen;
     // En efectivo se puede escribir con cuánto paga el cliente; la devuelta es la diferencia
     const pagaCon = metodo === 'Efectivo' && recibido ? exigirEntero(recibido, 'el monto recibido', { minimo: 0 }) : total;
     if (pagaCon < total) throw new Error('El monto recibido no cubre el total de la venta');
@@ -107,33 +122,43 @@ const moverStock = (items, signo, entregadas = {}) => items.forEach((item) => {
   if (producto) producto.existencias -= signo * (item.cantidad - (entregadas[item.productoId] ?? 0));
 });
 
+// Lo remitido que no quedó en la factura vuelve al stock: no se entregó o el cliente lo devolvió
+function devolverLoNoFacturado(origen, items) {
+  if (origen?.tipo !== 'remision') return;
+  const facturados = new Set(items.map((item) => item.productoId));
+  const sobrantes = origen.items.filter((item) => !facturados.has(item.productoId));
+  moverStock(sobrantes, -1);
+}
+
 // Registra la factura, la remisión o la cotización según el tipo; devuelve el documento guardado
 export function registrarVenta(datos) {
   exigirPermiso('nueva-venta', 'crear', 'registrar ventas');
   const documento = armarVenta(datos);
-  const etiqueta = TIPOS_DOCUMENTO[documento.tipo].etiqueta;
-
-  if (documento.tipo === 'factura') {
-    const origen = datos.documentoOrigen ? buscarDocumento(datos.documentoOrigen) : null;
-    const venta = { id: siguienteCodigo(estado.ventas.map((existente) => existente.id), 'V', 4), ...documento };
-    estado.ventas.push(venta);
-    moverStock(venta.items, 1, remitidas(origen));
-    if (origen) origen.facturadaEn = venta.id;
-    registrarAuditoria('ventas', 'Factura de venta registrada', `${venta.id} · ${venta.cliente} · ${venta.metodo} · $ ${venta.total}${origen ? ` · desde ${origen.id}` : ''}`);
-    guardarEstado();
-    return venta;
+  if (documento.tipo === 'factura' && documento.metodo === 'Efectivo' && !cajaAbierta()) {
+    throw new Error('Abre la caja antes de registrar ventas en efectivo');
   }
+  const etiqueta = TIPOS_DOCUMENTO[documento.tipo].etiqueta;
+  const origen = datos.documentoOrigen ? buscarDocumento(datos.documentoOrigen) : null;
+  // Si viene de otro documento conserva su número; si no, toma el siguiente del consecutivo compartido
+  const numero = origen ? numeroDe(origen.id) : siguienteNumeroDeDocumento();
+  const id = `${TIPOS_DOCUMENTO[documento.tipo].prefijo}${numero}`;
+  if ([...estado.ventas, ...estado.documentos].some((existente) => existente.id === id)) throw new Error(`Ya existe el documento ${id}`);
+  const desde = origen ? ` · desde ${origen.id}` : '';
 
-  const prefijo = TIPOS_DOCUMENTO[documento.tipo].prefijo;
-  const registro = {
-    id: siguienteCodigo(estado.documentos.filter((existente) => existente.tipo === documento.tipo).map((existente) => existente.id), prefijo, 4),
-    ...documento,
-    facturadaEn: null,
-    anulado: false,
-  };
-  estado.documentos.push(registro);
-  if (registro.tipo === 'remision') moverStock(registro.items, 1);
-  registrarAuditoria('ventas', `${etiqueta} registrada`, `${registro.id} · ${registro.cliente} · $ ${registro.total}`);
+  let registro;
+  if (documento.tipo === 'factura') {
+    registro = { id, ...documento };
+    estado.ventas.push(registro);
+    moverStock(registro.items, 1, remitidas(origen));
+    devolverLoNoFacturado(origen, registro.items);
+    registrarAuditoria('ventas', 'Factura de venta registrada', `${id} · ${registro.cliente} · ${registro.metodo} · $ ${registro.total}${desde}`);
+  } else {
+    registro = { id, ...documento, convertidoEn: null, anulado: false };
+    estado.documentos.push(registro);
+    if (registro.tipo === 'remision') moverStock(registro.items, 1);
+    registrarAuditoria('ventas', `${etiqueta} registrada`, `${id} · ${registro.cliente} · $ ${registro.total}${desde}`);
+  }
+  if (origen) origen.convertidoEn = id;
   guardarEstado();
   return registro;
 }
@@ -144,7 +169,7 @@ export function anularDocumento(id, motivo) {
   const documento = buscarDocumento(id);
   if (!documento) throw new Error('El documento no existe');
   const motivoLimpio = exigirMotivo(motivo);
-  if (documento.facturadaEn) throw new Error(`${id} ya se facturó en ${documento.facturadaEn}: anula o devuelve esa factura`);
+  if (documento.convertidoEn) throw new Error(`${id} ya se pasó a ${documento.convertidoEn}: anula ese documento`);
   if (documento.anulado) throw new Error(`${id} ya está anulado`);
   documento.anulado = true;
   documento.motivoAnulacion = motivoLimpio;
@@ -155,9 +180,10 @@ export function anularDocumento(id, motivo) {
 }
 
 // --- Devoluciones y anulaciones de facturas ------------------------------------------------------------
-// Cada una genera una nota anclada a la factura: ND-0001 (nota de devolución) o NA-0001 (nota de anulación).
+// Cada una genera una nota anclada a la factura: ND1 (nota de devolución) o NA1 (nota de anulación),
+// con un consecutivo propio para cada tipo de nota, independiente del de facturas, remisiones y cotizaciones.
 // Una anulación es la devolución de todo lo que quedaba de la factura. Ambas suman el stock, devuelven el dinero
-// con el mismo método de pago (en efectivo sale de la caja abierta) o bajan la deuda si la venta fue a Fiado.
+// con el mismo método de pago (en efectivo sale de la caja abierta) o bajan la deuda si la venta fue a Crédito.
 export const devolucionesDeVenta = (ventaId) => estado.devoluciones.filter((devolucion) => devolucion.ventaId === ventaId);
 export const estaAnulada = (venta) => devolucionesDeVenta(venta.id).some((devolucion) => devolucion.tipo === 'anulacion');
 export const totalDevuelto = (ventaId) => devolucionesDeVenta(ventaId).reduce((acumulado, devolucion) => acumulado + devolucion.total, 0);
@@ -190,8 +216,8 @@ function crearNota(venta, tipo, cantidades, motivo) {
   if (exceso) throw new Error(`De ${exceso.nombre} solo se pueden devolver ${exceso.disponibles} unidad(es)`);
   const total = items.reduce((acumulado, item) => acumulado + item.cantidad * item.valorUnitario, 0);
 
-  if (venta.metodo === 'Fiado') {
-    const cliente = buscarClientePorNombre(venta.cliente);
+  if (venta.metodo === METODO_CREDITO) {
+    const cliente = buscarCliente(venta.clienteId);
     if (cliente && total > deudaDeCliente(cliente)) {
       throw new Error(`${cliente.nombre} ya abonó parte de esta factura: la devolución supera su deuda actual. Registra el reembolso como egreso en Caja`);
     }
@@ -200,13 +226,14 @@ function crearNota(venta, tipo, cantidades, motivo) {
   }
 
   const nota = {
-    id: siguienteCodigo(estado.devoluciones.filter((existente) => existente.tipo === tipo).map((existente) => existente.id), PREFIJO_NOTA[tipo], 4),
+    id: `${PREFIJO_NOTA[tipo]}${siguienteNumero(estado.devoluciones.filter((existente) => existente.tipo === tipo).map((existente) => existente.id))}`,
     ventaId: venta.id,
     fecha: new Date().toISOString(),
     tipo,
     motivo: motivoLimpio,
     usuario: nombreDeUsuario(),
     cliente: venta.cliente,
+    clienteId: venta.clienteId ?? '',
     metodo: venta.metodo,
     items: items.map(({ productoId, nombre, referencia, cantidad, valorUnitario }) => ({ productoId, nombre, referencia, cantidad, valorUnitario })),
     total,

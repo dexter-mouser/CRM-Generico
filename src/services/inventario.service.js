@@ -1,5 +1,5 @@
 import { estado, guardarEstado } from '../core/store.js';
-import { siguienteCodigo } from '../core/codigos.js';
+import { siguienteNumero } from '../core/codigos.js';
 import { ultimoDiaCerrado } from './contabilidad.service.js';
 import { exigirPermiso, nombreDeUsuario } from '../core/autorizacion.js';
 import { exigirFecha, exigirTexto, validarLineas, validarProducto } from '../core/validacion.js';
@@ -8,6 +8,9 @@ import { registrarAuditoria } from './auditoria.service.js';
 const quitarTildes = (texto) => String(texto).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 export const buscarProductoPorId = (id) => estado.productos.find((producto) => producto.id === id);
+
+// El ID de producto es solo números: el siguiente es el mayor que exista más uno
+const siguienteIdProducto = () => String(siguienteNumero(estado.productos.map((producto) => producto.id)));
 
 // Cada palabra escrita debe aparecer en algún atributo: ID, nombre, referencia, costo o stock
 export function buscarProductos(consulta = '') {
@@ -47,7 +50,7 @@ export const buscarProductoPorCodigo = (codigo) => {
 export function agregarProducto(datos) {
   exigirPermiso('inventario', 'crear', 'crear productos');
   const limpio = validarProducto(datos);
-  const idFinal = limpio.id || siguienteCodigo(estado.productos.map((producto) => producto.id), 'P', 3);
+  const idFinal = limpio.id || siguienteIdProducto();
   if (buscarProductoPorId(idFinal)) throw new Error(`Ya existe un producto con el ID ${idFinal}`);
   const producto = { ...limpio, id: idFinal };
   estado.productos.push(producto);
@@ -66,8 +69,8 @@ export function importarProductos(filas) {
   const validas = filas.map((fila, posicion) => {
     try {
       const limpia = validarProducto(fila);
-      if (limpia.id && vistos.has(limpia.id.toLowerCase())) throw new Error(`el ID ${limpia.id} está repetido en el archivo`);
-      if (limpia.id) vistos.add(limpia.id.toLowerCase());
+      if (limpia.id && vistos.has(limpia.id)) throw new Error(`el ID ${limpia.id} está repetido en el archivo`);
+      if (limpia.id) vistos.add(limpia.id);
       return limpia;
     } catch (error) {
       problemas.push(`Fila ${posicion + 2}: ${error.message}`);
@@ -86,7 +89,7 @@ export function importarProductos(filas) {
       Object.assign(existente, { referencia: fila.referencia, nombre: fila.nombre, costo: fila.costo, existencias: fila.existencias });
       actualizados++;
     } else {
-      const idFinal = fila.id || siguienteCodigo(estado.productos.map((producto) => producto.id), 'P', 3);
+      const idFinal = fila.id || siguienteIdProducto();
       estado.productos.push({ ...fila, id: idFinal });
       agregados++;
     }

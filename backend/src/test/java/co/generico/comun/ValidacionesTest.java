@@ -51,7 +51,10 @@ class ValidacionesTest {
     @Test
     void codigoDeProducto() {
         assertEquals("", Validaciones.codigo("  "));
-        assertEquals("P-001", Validaciones.codigo("P-001"));
+        assertEquals("1", Validaciones.codigo("1"));
+        assertEquals("7", Validaciones.codigo("007"));
+        assertThrows(ReglaDeNegocioException.class, () -> Validaciones.codigo("P-001"));
         assertThrows(ReglaDeNegocioException.class, () -> Validaciones.codigo("Z 2"));
+        assertThrows(ReglaDeNegocioException.class, () -> Validaciones.codigo("1234567890123"));
     }
 }

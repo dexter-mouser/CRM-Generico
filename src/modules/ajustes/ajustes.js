@@ -19,8 +19,8 @@ const EXPORTACIONES = {
     filas: () => estado.clientes.map((c) => [c.id, c.nombre, c.telefono, c.correo, c.direccion]) },
   pagos: { archivo: 'pagos.csv', columnas: ['N°', 'Fecha', 'Tipo', 'Cliente o proveedor', 'Concepto', 'Método', 'Valor'],
     filas: () => estado.pagos.map((p) => [p.id, aFecha(p.fecha), p.tipo, p.tercero, p.concepto, p.metodo, p.valor]) },
-  contabilidad: { archivo: 'dias-cerrados.csv', columnas: ['Día', 'Ventas', 'Total vendido', 'Devoluciones', 'Utilidad', 'Fiado', 'Abonos', 'Pagos a proveedores', 'Compras', 'Diferencia de caja'],
-    filas: () => estado.contabilidad.map((c) => [c.dia, c.cantidadVentas, c.totalVentas, c.devoluciones ?? 0, c.utilidad, c.ventasFiado, c.abonosClientes, c.pagosProveedores, c.comprasFacturadas, c.diferenciaCaja]) },
+  contabilidad: { archivo: 'dias-cerrados.csv', columnas: ['Día', 'Ventas', 'Total vendido', 'Devoluciones', 'Utilidad', 'Crédito', 'Abonos', 'Pagos a proveedores', 'Compras', 'Diferencia de caja'],
+    filas: () => estado.contabilidad.map((c) => [c.dia, c.cantidadVentas, c.totalVentas, c.devoluciones ?? 0, c.utilidad, c.ventasCredito ?? 0, c.abonosClientes, c.pagosProveedores, c.comprasFacturadas, c.diferenciaCaja]) },
   auditoria: { archivo: 'auditoria.csv', columnas: ['N°', 'Fecha', 'Usuario', 'Módulo', 'Acción', 'Detalle'],
     filas: () => estado.auditoria.map((a) => [a.id, aFecha(a.fecha), a.usuario, a.modulo, a.accion, a.detalle]) },
 };

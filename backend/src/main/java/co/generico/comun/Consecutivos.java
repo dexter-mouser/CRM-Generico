@@ -4,7 +4,10 @@ import java.util.UUID;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 
-/** Números consecutivos por tienda: siguiente(tienda, "V", 4) -> "V-0001". Seguro con peticiones simultáneas. */
+/**
+ * Números consecutivos por tienda, seguros con peticiones simultáneas.
+ * siguiente(tienda, "C", 3) -> "C-001" (clientes). siguienteNumero(tienda, "DOC") -> 1, 2, 3... (documentos y notas).
+ */
 @Component
 public class Consecutivos {
 
@@ -15,15 +18,19 @@ public class Consecutivos {
     }
 
     public String siguiente(UUID tiendaId, String prefijo, int ancho) {
-        long numero = jdbc.sql("""
+        return prefijo + "-" + String.format("%0" + ancho + "d", siguienteNumero(tiendaId, prefijo));
+    }
+
+    /** Siguiente número de la clave indicada, sin prefijo ni relleno. */
+    public long siguienteNumero(UUID tiendaId, String clave) {
+        return jdbc.sql("""
                 insert into consecutivo (tienda_id, clave, ultimo) values (:tienda, :clave, 1)
                 on conflict (tienda_id, clave) do update set ultimo = consecutivo.ultimo + 1
                 returning ultimo
                 """)
                 .param("tienda", tiendaId)
-                .param("clave", prefijo)
+                .param("clave", clave)
                 .query(Long.class)
                 .single();
-        return prefijo + "-" + String.format("%0" + ancho + "d", numero);
     }
 }

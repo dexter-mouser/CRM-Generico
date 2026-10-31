@@ -8,8 +8,8 @@ import { buscarCliente, deudaDeCliente } from './clientes.service.js';
 
 const mismoNombre = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
-// Métodos con los que se puede pagar: los de ventas, sin "Fiado" (que es dejar la deuda pendiente)
-export const metodosDePago = () => estado.ajustes.ventas.metodosPago.filter((metodo) => metodo !== 'Fiado');
+// Métodos con los que se puede pagar: los de ventas, sin "Crédito" (que es dejar la deuda pendiente)
+export const metodosDePago = () => estado.ajustes.ventas.metodosPago.filter((metodo) => metodo !== 'Crédito');
 
 export function proveedoresConSaldo() {
   const nombres = [...new Set(estado.facturas.map((factura) => factura.proveedor.trim()))];

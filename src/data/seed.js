@@ -10,141 +10,141 @@ const hace = (dias, hora, minutos = 0) => {
 };
 
 export const semilla = {
-  version: 3,
+  version: 4,
   productos: [
-    { id: 'P-001', referencia: 'DC-AD-4', nombre: 'Dog Chow adulto razas medianas 4 kg', costo: 52000, existencias: 14 },
-    { id: 'P-002', referencia: 'PD-CA-2', nombre: 'Pedigree cachorro 2 kg', costo: 24000, existencias: 9 },
-    { id: 'P-003', referencia: 'CC-AD-15', nombre: 'Cat Chow gatos adultos 1,5 kg', costo: 21000, existencias: 12 },
-    { id: 'P-004', referencia: 'WH-SO-85', nombre: 'Whiskas pescado sobre 85 g', costo: 1800, existencias: 60 },
-    { id: 'P-005', referencia: 'AR-GA-10', nombre: 'Arena sanitaria para gatos 10 kg', costo: 19000, existencias: 3 },
-    { id: 'P-006', referencia: 'CO-AJ-M', nombre: 'Collar ajustable talla M', costo: 6500, existencias: 18 },
-    { id: 'P-007', referencia: 'CR-NY-15', nombre: 'Correa de nylon 1,5 m', costo: 8000, existencias: 11 },
-    { id: 'P-008', referencia: 'PE-CA-01', nombre: 'Pelota de caucho', costo: 2500, existencias: 25 },
-    { id: 'P-009', referencia: 'HU-CU-M', nombre: 'Hueso de cuero prensado mediano', costo: 3000, existencias: 30 },
-    { id: 'P-010', referencia: 'SH-AP-250', nombre: 'Shampoo antipulgas 250 ml', costo: 11000, existencias: 7 },
-    { id: 'P-011', referencia: 'AP-PI-M', nombre: 'Antipulgas pipeta perro mediano', costo: 17000, existencias: 2 },
-    { id: 'P-012', referencia: 'CA-PE-M', nombre: 'Cama para perro mediana', costo: 38000, existencias: 4 },
-    { id: 'P-013', referencia: 'CM-AC-01', nombre: 'Comedero de acero inoxidable', costo: 7500, existencias: 16 },
-    { id: 'P-014', referencia: 'AL-PE-50', nombre: 'Alimento para peces en hojuelas 50 g', costo: 3500, existencias: 20 },
-    { id: 'P-015', referencia: 'JA-HA-01', nombre: 'Jaula para hámster', costo: 42000, existencias: 3 },
-    { id: 'P-016', referencia: 'RA-GA-01', nombre: 'Rascador para gatos', costo: 28000, existencias: 5 },
-    { id: 'P-017', referencia: 'SN-DE-07', nombre: 'Snack dental para perro x 7', costo: 9500, existencias: 22 },
-    { id: 'P-018', referencia: 'TR-ME-01', nombre: 'Transportadora mediana', costo: 45000, existencias: 6 },
+    { id: '1', referencia: 'DC-AD-4', nombre: 'Dog Chow adulto razas medianas 4 kg', costo: 52000, existencias: 14 },
+    { id: '2', referencia: 'PD-CA-2', nombre: 'Pedigree cachorro 2 kg', costo: 24000, existencias: 9 },
+    { id: '3', referencia: 'CC-AD-15', nombre: 'Cat Chow gatos adultos 1,5 kg', costo: 21000, existencias: 12 },
+    { id: '4', referencia: 'WH-SO-85', nombre: 'Whiskas pescado sobre 85 g', costo: 1800, existencias: 60 },
+    { id: '5', referencia: 'AR-GA-10', nombre: 'Arena sanitaria para gatos 10 kg', costo: 19000, existencias: 3 },
+    { id: '6', referencia: 'CO-AJ-M', nombre: 'Collar ajustable talla M', costo: 6500, existencias: 18 },
+    { id: '7', referencia: 'CR-NY-15', nombre: 'Correa de nylon 1,5 m', costo: 8000, existencias: 11 },
+    { id: '8', referencia: 'PE-CA-01', nombre: 'Pelota de caucho', costo: 2500, existencias: 25 },
+    { id: '9', referencia: 'HU-CU-M', nombre: 'Hueso de cuero prensado mediano', costo: 3000, existencias: 30 },
+    { id: '10', referencia: 'SH-AP-250', nombre: 'Shampoo antipulgas 250 ml', costo: 11000, existencias: 7 },
+    { id: '11', referencia: 'AP-PI-M', nombre: 'Antipulgas pipeta perro mediano', costo: 17000, existencias: 2 },
+    { id: '12', referencia: 'CA-PE-M', nombre: 'Cama para perro mediana', costo: 38000, existencias: 4 },
+    { id: '13', referencia: 'CM-AC-01', nombre: 'Comedero de acero inoxidable', costo: 7500, existencias: 16 },
+    { id: '14', referencia: 'AL-PE-50', nombre: 'Alimento para peces en hojuelas 50 g', costo: 3500, existencias: 20 },
+    { id: '15', referencia: 'JA-HA-01', nombre: 'Jaula para hámster', costo: 42000, existencias: 3 },
+    { id: '16', referencia: 'RA-GA-01', nombre: 'Rascador para gatos', costo: 28000, existencias: 5 },
+    { id: '17', referencia: 'SN-DE-07', nombre: 'Snack dental para perro x 7', costo: 9500, existencias: 22 },
+    { id: '18', referencia: 'TR-ME-01', nombre: 'Transportadora mediana', costo: 45000, existencias: 6 },
   ],
   ventas: [
     {
-      id: 'V-0001', fecha: hace(6, 9, 1), cliente: 'Cliente sin nombre', metodo: 'Efectivo', total: 29600,
+      id: 'F1', fecha: hace(6, 9, 1), cliente: 'Cliente sin nombre', metodo: 'Efectivo', total: 29600,
       items: [
-        { productoId: 'P-004', nombre: 'Whiskas pescado sobre 85 g', cantidad: 6, valorUnitario: 2600 },
-        { productoId: 'P-009', nombre: 'Hueso de cuero prensado mediano', cantidad: 2, valorUnitario: 7000 }
+        { productoId: '4', nombre: 'Whiskas pescado sobre 85 g', cantidad: 6, valorUnitario: 2600 },
+        { productoId: '9', nombre: 'Hueso de cuero prensado mediano', cantidad: 2, valorUnitario: 7000 }
       ],
     },
     {
-      id: 'V-0002', fecha: hace(6, 11, 2), cliente: 'Laura Martínez', metodo: 'Nequi', total: 100000,
+      id: 'F2', fecha: hace(6, 11, 2), cliente: 'Laura Martínez', clienteId: 'C-001', metodo: 'Nequi', total: 100000,
       items: [
-        { productoId: 'P-001', nombre: 'Dog Chow adulto razas medianas 4 kg', cantidad: 1, valorUnitario: 68000 },
-        { productoId: 'P-017', nombre: 'Snack dental para perro x 7', cantidad: 2, valorUnitario: 16000 }
+        { productoId: '1', nombre: 'Dog Chow adulto razas medianas 4 kg', cantidad: 1, valorUnitario: 68000 },
+        { productoId: '17', nombre: 'Snack dental para perro x 7', cantidad: 2, valorUnitario: 16000 }
       ],
     },
     {
-      id: 'V-0003', fecha: hace(6, 16, 3), cliente: 'Veterinaria Patitas', metodo: 'Fiado', total: 215000,
+      id: 'F3', fecha: hace(6, 16, 3), cliente: 'Veterinaria Patitas', clienteId: 'C-008', metodo: 'Crédito', total: 215000,
       items: [
-        { productoId: 'P-010', nombre: 'Shampoo antipulgas 250 ml', cantidad: 4, valorUnitario: 18500 },
-        { productoId: 'P-011', nombre: 'Antipulgas pipeta perro mediano', cantidad: 3, valorUnitario: 26000 },
-        { productoId: 'P-002', nombre: 'Pedigree cachorro 2 kg', cantidad: 2, valorUnitario: 31500 }
+        { productoId: '10', nombre: 'Shampoo antipulgas 250 ml', cantidad: 4, valorUnitario: 18500 },
+        { productoId: '11', nombre: 'Antipulgas pipeta perro mediano', cantidad: 3, valorUnitario: 26000 },
+        { productoId: '2', nombre: 'Pedigree cachorro 2 kg', cantidad: 2, valorUnitario: 31500 }
       ],
     },
     {
-      id: 'V-0004', fecha: hace(5, 10, 4), cliente: 'Carlos Rodríguez', metodo: 'Tarjeta', total: 87000,
+      id: 'F4', fecha: hace(5, 10, 4), cliente: 'Carlos Rodríguez', clienteId: 'C-002', metodo: 'Tarjeta', total: 87000,
       items: [
-        { productoId: 'P-012', nombre: 'Cama para perro mediana', cantidad: 1, valorUnitario: 59000 },
-        { productoId: 'P-013', nombre: 'Comedero de acero inoxidable', cantidad: 2, valorUnitario: 14000 }
+        { productoId: '12', nombre: 'Cama para perro mediana', cantidad: 1, valorUnitario: 59000 },
+        { productoId: '13', nombre: 'Comedero de acero inoxidable', cantidad: 2, valorUnitario: 14000 }
       ],
     },
     {
-      id: 'V-0005', fecha: hace(5, 15, 5), cliente: 'Cliente sin nombre', metodo: 'Efectivo', total: 30000,
+      id: 'F5', fecha: hace(5, 15, 5), cliente: 'Cliente sin nombre', metodo: 'Efectivo', total: 30000,
       items: [
-        { productoId: 'P-008', nombre: 'Pelota de caucho', cantidad: 3, valorUnitario: 6000 },
-        { productoId: 'P-006', nombre: 'Collar ajustable talla M', cantidad: 1, valorUnitario: 12000 }
+        { productoId: '8', nombre: 'Pelota de caucho', cantidad: 3, valorUnitario: 6000 },
+        { productoId: '6', nombre: 'Collar ajustable talla M', cantidad: 1, valorUnitario: 12000 }
       ],
     },
     {
-      id: 'V-0006', fecha: hace(4, 9, 6), cliente: 'Valentina Gómez', metodo: 'Fiado', total: 82000,
+      id: 'F6', fecha: hace(4, 9, 6), cliente: 'Valentina Gómez', clienteId: 'C-003', metodo: 'Crédito', total: 82000,
       items: [
-        { productoId: 'P-003', nombre: 'Cat Chow gatos adultos 1,5 kg', cantidad: 2, valorUnitario: 28000 },
-        { productoId: 'P-005', nombre: 'Arena sanitaria para gatos 10 kg', cantidad: 1, valorUnitario: 26000 }
+        { productoId: '3', nombre: 'Cat Chow gatos adultos 1,5 kg', cantidad: 2, valorUnitario: 28000 },
+        { productoId: '5', nombre: 'Arena sanitaria para gatos 10 kg', cantidad: 1, valorUnitario: 26000 }
       ],
     },
     {
-      id: 'V-0007', fecha: hace(4, 17, 7), cliente: 'Mariana Ospina', metodo: 'Transferencia', total: 80000,
+      id: 'F7', fecha: hace(4, 17, 7), cliente: 'Mariana Ospina', clienteId: 'C-005', metodo: 'Transferencia', total: 80000,
       items: [
-        { productoId: 'P-015', nombre: 'Jaula para hámster', cantidad: 1, valorUnitario: 65000 },
-        { productoId: 'P-014', nombre: 'Alimento para peces en hojuelas 50 g', cantidad: 2, valorUnitario: 7500 }
+        { productoId: '15', nombre: 'Jaula para hámster', cantidad: 1, valorUnitario: 65000 },
+        { productoId: '14', nombre: 'Alimento para peces en hojuelas 50 g', cantidad: 2, valorUnitario: 7500 }
       ],
     },
     {
-      id: 'V-0008', fecha: hace(3, 12, 8), cliente: 'Cliente sin nombre', metodo: 'Efectivo', total: 78400,
+      id: 'F8', fecha: hace(3, 12, 8), cliente: 'Cliente sin nombre', metodo: 'Efectivo', total: 78400,
       items: [
-        { productoId: 'P-001', nombre: 'Dog Chow adulto razas medianas 4 kg', cantidad: 1, valorUnitario: 68000 },
-        { productoId: 'P-004', nombre: 'Whiskas pescado sobre 85 g', cantidad: 4, valorUnitario: 2600 }
+        { productoId: '1', nombre: 'Dog Chow adulto razas medianas 4 kg', cantidad: 1, valorUnitario: 68000 },
+        { productoId: '4', nombre: 'Whiskas pescado sobre 85 g', cantidad: 4, valorUnitario: 2600 }
       ],
     },
     {
-      id: 'V-0009', fecha: hace(3, 18, 9), cliente: 'Andrés Herrera', metodo: 'Nequi', total: 48000,
+      id: 'F9', fecha: hace(3, 18, 9), cliente: 'Andrés Herrera', clienteId: 'C-004', metodo: 'Nequi', total: 48000,
       items: [
-        { productoId: 'P-007', nombre: 'Correa de nylon 1,5 m', cantidad: 1, valorUnitario: 15000 },
-        { productoId: 'P-006', nombre: 'Collar ajustable talla M', cantidad: 1, valorUnitario: 12000 },
-        { productoId: 'P-009', nombre: 'Hueso de cuero prensado mediano', cantidad: 3, valorUnitario: 7000 }
+        { productoId: '7', nombre: 'Correa de nylon 1,5 m', cantidad: 1, valorUnitario: 15000 },
+        { productoId: '6', nombre: 'Collar ajustable talla M', cantidad: 1, valorUnitario: 12000 },
+        { productoId: '9', nombre: 'Hueso de cuero prensado mediano', cantidad: 3, valorUnitario: 7000 }
       ],
     },
     {
-      id: 'V-0010', fecha: hace(2, 10, 10), cliente: 'Juan Pablo Cardona', metodo: 'Efectivo', total: 71000,
+      id: 'F10', fecha: hace(2, 10, 10), cliente: 'Juan Pablo Cardona', clienteId: 'C-006', metodo: 'Efectivo', total: 71000,
       items: [
-        { productoId: 'P-016', nombre: 'Rascador para gatos', cantidad: 1, valorUnitario: 45000 },
-        { productoId: 'P-005', nombre: 'Arena sanitaria para gatos 10 kg', cantidad: 1, valorUnitario: 26000 }
+        { productoId: '16', nombre: 'Rascador para gatos', cantidad: 1, valorUnitario: 45000 },
+        { productoId: '5', nombre: 'Arena sanitaria para gatos 10 kg', cantidad: 1, valorUnitario: 26000 }
       ],
     },
     {
-      id: 'V-0011', fecha: hace(2, 14, 11), cliente: 'Sofía Restrepo', metodo: 'Tarjeta', total: 120000,
+      id: 'F11', fecha: hace(2, 14, 11), cliente: 'Sofía Restrepo', clienteId: 'C-007', metodo: 'Tarjeta', total: 120000,
       items: [
-        { productoId: 'P-018', nombre: 'Transportadora mediana', cantidad: 1, valorUnitario: 72000 },
-        { productoId: 'P-017', nombre: 'Snack dental para perro x 7', cantidad: 3, valorUnitario: 16000 }
+        { productoId: '18', nombre: 'Transportadora mediana', cantidad: 1, valorUnitario: 72000 },
+        { productoId: '17', nombre: 'Snack dental para perro x 7', cantidad: 3, valorUnitario: 16000 }
       ],
     },
     {
-      id: 'V-0012', fecha: hace(1, 9, 12), cliente: 'Cliente sin nombre', metodo: 'Efectivo', total: 75000,
+      id: 'F12', fecha: hace(1, 9, 12), cliente: 'Cliente sin nombre', metodo: 'Efectivo', total: 75000,
       items: [
-        { productoId: 'P-002', nombre: 'Pedigree cachorro 2 kg', cantidad: 2, valorUnitario: 31500 },
-        { productoId: 'P-008', nombre: 'Pelota de caucho', cantidad: 2, valorUnitario: 6000 }
+        { productoId: '2', nombre: 'Pedigree cachorro 2 kg', cantidad: 2, valorUnitario: 31500 },
+        { productoId: '8', nombre: 'Pelota de caucho', cantidad: 2, valorUnitario: 6000 }
       ],
     },
     {
-      id: 'V-0013', fecha: hace(1, 13, 13), cliente: 'Carlos Rodríguez', metodo: 'Nequi', total: 100500,
+      id: 'F13', fecha: hace(1, 13, 13), cliente: 'Carlos Rodríguez', clienteId: 'C-002', metodo: 'Nequi', total: 100500,
       items: [
-        { productoId: 'P-001', nombre: 'Dog Chow adulto razas medianas 4 kg', cantidad: 1, valorUnitario: 68000 },
-        { productoId: 'P-010', nombre: 'Shampoo antipulgas 250 ml', cantidad: 1, valorUnitario: 18500 },
-        { productoId: 'P-013', nombre: 'Comedero de acero inoxidable', cantidad: 1, valorUnitario: 14000 }
+        { productoId: '1', nombre: 'Dog Chow adulto razas medianas 4 kg', cantidad: 1, valorUnitario: 68000 },
+        { productoId: '10', nombre: 'Shampoo antipulgas 250 ml', cantidad: 1, valorUnitario: 18500 },
+        { productoId: '13', nombre: 'Comedero de acero inoxidable', cantidad: 1, valorUnitario: 14000 }
       ],
     },
     {
-      id: 'V-0014', fecha: hace(1, 17, 14), cliente: 'Valentina Gómez', metodo: 'Fiado', total: 74000,
+      id: 'F14', fecha: hace(1, 17, 14), cliente: 'Valentina Gómez', clienteId: 'C-003', metodo: 'Crédito', total: 74000,
       items: [
-        { productoId: 'P-012', nombre: 'Cama para perro mediana', cantidad: 1, valorUnitario: 59000 },
-        { productoId: 'P-007', nombre: 'Correa de nylon 1,5 m', cantidad: 1, valorUnitario: 15000 }
+        { productoId: '12', nombre: 'Cama para perro mediana', cantidad: 1, valorUnitario: 59000 },
+        { productoId: '7', nombre: 'Correa de nylon 1,5 m', cantidad: 1, valorUnitario: 15000 }
       ],
     },
     {
-      id: 'V-0015', fecha: hace(0, 9, 15), cliente: 'Laura Martínez', metodo: 'Efectivo', total: 29000,
+      id: 'F15', fecha: hace(0, 9, 15), cliente: 'Laura Martínez', clienteId: 'C-001', metodo: 'Efectivo', total: 29000,
       items: [
-        { productoId: 'P-004', nombre: 'Whiskas pescado sobre 85 g', cantidad: 5, valorUnitario: 2600 },
-        { productoId: 'P-017', nombre: 'Snack dental para perro x 7', cantidad: 1, valorUnitario: 16000 }
+        { productoId: '4', nombre: 'Whiskas pescado sobre 85 g', cantidad: 5, valorUnitario: 2600 },
+        { productoId: '17', nombre: 'Snack dental para perro x 7', cantidad: 1, valorUnitario: 16000 }
       ],
     },
     {
-      id: 'V-0016', fecha: hace(0, 10, 16), cliente: 'Cliente sin nombre', metodo: 'Nequi', total: 42000,
+      id: 'F16', fecha: hace(0, 10, 16), cliente: 'Cliente sin nombre', metodo: 'Nequi', total: 42000,
       items: [
-        { productoId: 'P-003', nombre: 'Cat Chow gatos adultos 1,5 kg', cantidad: 1, valorUnitario: 28000 },
-        { productoId: 'P-009', nombre: 'Hueso de cuero prensado mediano', cantidad: 2, valorUnitario: 7000 }
+        { productoId: '3', nombre: 'Cat Chow gatos adultos 1,5 kg', cantidad: 1, valorUnitario: 28000 },
+        { productoId: '9', nombre: 'Hueso de cuero prensado mediano', cantidad: 2, valorUnitario: 7000 }
       ],
     },
   ],
@@ -152,30 +152,30 @@ export const semilla = {
     {
       numero: 'F-2301', proveedor: 'Distribuidora Pet del Valle', fecha: hace(9, 8).slice(0, 10), total: 1230000,
       items: [
-        { productoId: 'P-001', nombre: 'Dog Chow adulto razas medianas 4 kg', cantidad: 12, costoUnitario: 52000 },
-        { productoId: 'P-002', nombre: 'Pedigree cachorro 2 kg', cantidad: 10, costoUnitario: 24000 },
-        { productoId: 'P-003', nombre: 'Cat Chow gatos adultos 1,5 kg', cantidad: 12, costoUnitario: 21000 },
-        { productoId: 'P-005', nombre: 'Arena sanitaria para gatos 10 kg', cantidad: 6, costoUnitario: 19000 }
+        { productoId: '1', nombre: 'Dog Chow adulto razas medianas 4 kg', cantidad: 12, costoUnitario: 52000 },
+        { productoId: '2', nombre: 'Pedigree cachorro 2 kg', cantidad: 10, costoUnitario: 24000 },
+        { productoId: '3', nombre: 'Cat Chow gatos adultos 1,5 kg', cantidad: 12, costoUnitario: 21000 },
+        { productoId: '5', nombre: 'Arena sanitaria para gatos 10 kg', cantidad: 6, costoUnitario: 19000 }
       ],
     },
     {
       numero: 'F-0877', proveedor: 'Agrocampo Pet S.A.S.', fecha: hace(6, 8).slice(0, 10), total: 532000,
       items: [
-        { productoId: 'P-004', nombre: 'Whiskas pescado sobre 85 g', cantidad: 80, costoUnitario: 1800 },
-        { productoId: 'P-009', nombre: 'Hueso de cuero prensado mediano', cantidad: 30, costoUnitario: 3000 },
-        { productoId: 'P-017', nombre: 'Snack dental para perro x 7', cantidad: 24, costoUnitario: 9500 },
-        { productoId: 'P-014', nombre: 'Alimento para peces en hojuelas 50 g', cantidad: 20, costoUnitario: 3500 }
+        { productoId: '4', nombre: 'Whiskas pescado sobre 85 g', cantidad: 80, costoUnitario: 1800 },
+        { productoId: '9', nombre: 'Hueso de cuero prensado mediano', cantidad: 30, costoUnitario: 3000 },
+        { productoId: '17', nombre: 'Snack dental para perro x 7', cantidad: 24, costoUnitario: 9500 },
+        { productoId: '14', nombre: 'Alimento para peces en hojuelas 50 g', cantidad: 20, costoUnitario: 3500 }
       ],
     },
     {
       numero: 'F-4410', proveedor: 'Accesorios Canino Ltda.', fecha: hace(3, 8).slice(0, 10), total: 1022000,
       items: [
-        { productoId: 'P-006', nombre: 'Collar ajustable talla M', cantidad: 20, costoUnitario: 6500 },
-        { productoId: 'P-007', nombre: 'Correa de nylon 1,5 m', cantidad: 12, costoUnitario: 8000 },
-        { productoId: 'P-012', nombre: 'Cama para perro mediana', cantidad: 5, costoUnitario: 38000 },
-        { productoId: 'P-018', nombre: 'Transportadora mediana', cantidad: 6, costoUnitario: 45000 },
-        { productoId: 'P-016', nombre: 'Rascador para gatos', cantidad: 6, costoUnitario: 28000 },
-        { productoId: 'P-015', nombre: 'Jaula para hámster', cantidad: 4, costoUnitario: 42000 }
+        { productoId: '6', nombre: 'Collar ajustable talla M', cantidad: 20, costoUnitario: 6500 },
+        { productoId: '7', nombre: 'Correa de nylon 1,5 m', cantidad: 12, costoUnitario: 8000 },
+        { productoId: '12', nombre: 'Cama para perro mediana', cantidad: 5, costoUnitario: 38000 },
+        { productoId: '18', nombre: 'Transportadora mediana', cantidad: 6, costoUnitario: 45000 },
+        { productoId: '16', nombre: 'Rascador para gatos', cantidad: 6, costoUnitario: 28000 },
+        { productoId: '15', nombre: 'Jaula para hámster', cantidad: 4, costoUnitario: 42000 }
       ],
     },
   ],
@@ -185,7 +185,7 @@ export const semilla = {
   auditoria: [],
   ajustes: {
     tienda: { nombre: 'Mundo Mascota', nit: '900.456.789-1', telefono: '604 555 0100', ciudad: 'Medellín', direccion: 'Calle 50 # 42-18' },
-    ventas: { metodosPago: ['Efectivo', 'Nequi', 'Tarjeta', 'Transferencia', 'Fiado'], permitirSinExistencias: false },
+    ventas: { metodosPago: ['Efectivo', 'Nequi', 'Tarjeta', 'Transferencia', 'Crédito'], permitirSinExistencias: false },
     recibo: { pie: 'Gracias por cuidar a tu mascota con nosotros', mostrarDatosTienda: true },
   },
   clientes: [

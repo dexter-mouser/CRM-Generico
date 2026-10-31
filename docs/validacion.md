@@ -14,7 +14,7 @@ Todas las reglas viven en un solo archivo, **`src/core/validacion.js`**: JavaScr
 | Stock | Entero (admite negativos) |
 | Correo | `^[^\s@]+@[^\s@]+\.[^\s@]+$`, máximo 120 caracteres |
 | Teléfono | `^[\d\s()+-]{7,20}$` |
-| ID de producto | `^[A-Za-z0-9][A-Za-z0-9._-]{0,29}$` (si se deja vacío, se genera `P-001`…) |
+| ID de producto | Solo números: `^\d{1,12}$`, sin ceros a la izquierda (si se deja vacío, se genera el siguiente: el mayor más uno) |
 | Fecha | `AAAA-MM-DD` válida |
 | Archivos (CSV y copia) | Máximo 10 MB; CSV de hasta 5000 filas |
 

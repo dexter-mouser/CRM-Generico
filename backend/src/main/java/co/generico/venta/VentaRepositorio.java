@@ -15,7 +15,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class VentaRepositorio {
 
-    private record VentaFila(String codigo, OffsetDateTime fecha, String cliente, String metodo, String usuario, long total,
+    private record VentaFila(String codigo, OffsetDateTime fecha, String cliente, String clienteCodigo, String metodo, String usuario, long total,
             long recibido, long devuelta, String observaciones, String documentoOrigen, boolean anulada) {
     }
 
@@ -34,7 +34,7 @@ public class VentaRepositorio {
     }
 
     private static final String SELECT_VENTA = """
-            select v.codigo, v.fecha, v.cliente, v.metodo, v.usuario, v.total, v.recibido, v.devuelta, v.observaciones,
+            select v.codigo, v.fecha, v.cliente, coalesce(v.cliente_codigo, '') as cliente_codigo, v.metodo, v.usuario, v.total, v.recibido, v.devuelta, v.observaciones,
                    coalesce(v.documento_origen, '') as documento_origen,
                    exists (select 1 from devolucion d where d.tienda_id = v.tienda_id and d.venta_codigo = v.codigo and d.tipo = 'anulacion') as anulada
             from venta v
@@ -85,7 +85,7 @@ public class VentaRepositorio {
                 .collect(Collectors.groupingBy(ItemFila::padre, LinkedHashMap::new,
                         Collectors.mapping(item -> new VentaDto.Item(item.productoCodigo(), item.nombre(), item.cantidad(), item.valorUnitario()),
                                 Collectors.toList())));
-        return filas.stream().map(fila -> new VentaDto.Venta(fila.codigo(), fila.fecha(), fila.cliente(), fila.metodo(), fila.usuario(),
+        return filas.stream().map(fila -> new VentaDto.Venta(fila.codigo(), fila.fecha(), fila.cliente(), fila.clienteCodigo(), fila.metodo(), fila.usuario(),
                 fila.total(), fila.recibido(), fila.devuelta(), fila.observaciones(), fila.documentoOrigen(), fila.anulada(), items.getOrDefault(fila.codigo(), List.of()))).toList();
     }
 
@@ -161,13 +161,13 @@ public class VentaRepositorio {
 
     // --- Escritura ---------------------------------------------------------------------------------------
 
-    public void insertarVenta(UUID tiendaId, String codigo, String cliente, String metodo, String usuario, long total,
+    public void insertarVenta(UUID tiendaId, String codigo, String cliente, String clienteCodigo, String metodo, String usuario, long total,
             long recibido, long devuelta, String observaciones) {
         jdbc.sql("""
-                insert into venta (tienda_id, codigo, cliente, metodo, usuario, total, recibido, devuelta, observaciones)
-                values (:tienda, :codigo, :cliente, :metodo, :usuario, :total, :recibido, :devuelta, :observaciones)
+                insert into venta (tienda_id, codigo, cliente, cliente_codigo, metodo, usuario, total, recibido, devuelta, observaciones)
+                values (:tienda, :codigo, :cliente, :clienteCodigo, :metodo, :usuario, :total, :recibido, :devuelta, :observaciones)
                 """)
-                .param("tienda", tiendaId).param("codigo", codigo).param("cliente", cliente)
+                .param("tienda", tiendaId).param("codigo", codigo).param("cliente", cliente).param("clienteCodigo", clienteCodigo)
                 .param("metodo", metodo).param("usuario", usuario).param("total", total)
                 .param("recibido", recibido).param("devuelta", devuelta).param("observaciones", observaciones)
                 .update();
@@ -184,13 +184,14 @@ public class VentaRepositorio {
     }
 
     public void insertarDevolucion(UUID tiendaId, String codigo, String ventaCodigo, String tipo, String motivo,
-            String usuario, String cliente, String metodo, long total) {
+            String usuario, String cliente, String clienteCodigo, String metodo, long total) {
         jdbc.sql("""
-                insert into devolucion (tienda_id, codigo, venta_codigo, tipo, motivo, usuario, cliente, metodo, total)
-                values (:tienda, :codigo, :venta, :tipo, :motivo, :usuario, :cliente, :metodo, :total)
+                insert into devolucion (tienda_id, codigo, venta_codigo, tipo, motivo, usuario, cliente, cliente_codigo, metodo, total)
+                values (:tienda, :codigo, :venta, :tipo, :motivo, :usuario, :cliente, :clienteCodigo, :metodo, :total)
                 """)
                 .param("tienda", tiendaId).param("codigo", codigo).param("venta", ventaCodigo).param("tipo", tipo)
-                .param("motivo", motivo).param("usuario", usuario).param("cliente", cliente).param("metodo", metodo)
+                .param("motivo", motivo).param("usuario", usuario).param("cliente", cliente).param("clienteCodigo", clienteCodigo)
+                .param("metodo", metodo)
                 .param("total", total)
                 .update();
     }

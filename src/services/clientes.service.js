@@ -1,4 +1,5 @@
-// Reglas de negocio de Clientes. La deuda sale de las ventas a "Fiado" menos las devoluciones y los abonos registrados en Pagos.
+// Reglas de negocio de Clientes. La deuda sale de las ventas a "Crédito" menos las devoluciones y los abonos registrados en Pagos.
+// Ventas, devoluciones y abonos se relacionan con el cliente por su ID (no por el nombre), así cambiar el nombre no afecta la deuda.
 import { estado, guardarEstado } from '../core/store.js';
 import { siguienteCodigo } from '../core/codigos.js';
 import { exigirPermiso } from '../core/autorizacion.js';
@@ -9,19 +10,21 @@ const normalizar = (texto) => String(texto).normalize('NFD').replace(/[̀-ͯ]/g,
 
 export const buscarCliente = (id) => estado.clientes.find((cliente) => cliente.id === id);
 
-export const ventasDeCliente = (cliente) => estado.ventas.filter((venta) => normalizar(venta.cliente) === normalizar(cliente.nombre));
+const METODO_CREDITO = 'Crédito';
+
+export const ventasDeCliente = (cliente) => estado.ventas.filter((venta) => venta.clienteId === cliente.id);
 
 export function deudaDeCliente(cliente) {
-  const fiado = ventasDeCliente(cliente)
-    .filter((venta) => venta.metodo === 'Fiado')
+  const credito = ventasDeCliente(cliente)
+    .filter((venta) => venta.metodo === METODO_CREDITO)
     .reduce((acumulado, venta) => acumulado + venta.total, 0);
   const devuelto = estado.devoluciones
-    .filter((devolucion) => devolucion.metodo === 'Fiado' && normalizar(devolucion.cliente) === normalizar(cliente.nombre))
+    .filter((devolucion) => devolucion.metodo === METODO_CREDITO && devolucion.clienteId === cliente.id)
     .reduce((acumulado, devolucion) => acumulado + devolucion.total, 0);
   const abonos = estado.pagos
     .filter((pago) => pago.tipo === 'abono' && pago.terceroId === cliente.id)
     .reduce((acumulado, pago) => acumulado + pago.valor, 0);
-  return Math.max(0, fiado - devuelto - abonos);
+  return Math.max(0, credito - devuelto - abonos);
 }
 
 export const clientesConDeuda = () => estado.clientes.filter((cliente) => deudaDeCliente(cliente) > 0);
@@ -49,17 +52,12 @@ export function agregarCliente(datos) {
   return cliente;
 }
 
-// Si cambia el nombre, las ventas anteriores se actualizan para no perder la deuda del cliente
+// Las ventas anteriores conservan el nombre con el que se hicieron; la deuda sigue al cliente por su ID
 export function actualizarCliente(id, datos) {
   exigirPermiso('clientes', 'editar', 'editar clientes');
   const cliente = buscarCliente(id);
   if (!cliente) throw new Error('El cliente no existe');
   const limpios = prepararDatos(datos, id);
-  if (limpios.nombre !== cliente.nombre) {
-    ventasDeCliente(cliente).forEach((venta) => { venta.cliente = limpios.nombre; });
-    estado.devoluciones.filter((devolucion) => normalizar(devolucion.cliente) === normalizar(cliente.nombre))
-      .forEach((devolucion) => { devolucion.cliente = limpios.nombre; });
-  }
   Object.assign(cliente, limpios);
   registrarAuditoria('clientes', 'Cliente editado', `${cliente.id} · ${cliente.nombre}`);
   guardarEstado();

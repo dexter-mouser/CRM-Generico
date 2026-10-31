@@ -14,7 +14,7 @@ export const LIMITES = {
 export const PATRONES = {
   correo: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   telefono: /^[\d\s()+-]{7,20}$/,
-  codigo: /^[A-Za-z0-9][A-Za-z0-9._-]{0,29}$/,
+  codigoProducto: /^\d{1,12}$/,
   fecha: /^\d{4}-\d{2}-\d{2}$/,
 };
 
@@ -67,12 +67,13 @@ export function exigirFecha(valor, etiqueta = 'la fecha') {
 
 export const exigirMotivo = (valor) => exigirTexto(valor, 'el motivo', { maximo: LIMITES.motivo, minimo: LIMITES.minimoMotivo });
 
-// Datos de un producto del inventario (el ID es opcional: se genera uno si está vacío)
+// Datos de un producto del inventario. El ID es solo números y opcional: se genera uno si está vacío.
+// Los ceros a la izquierda se quitan para que "007" y "7" sean el mismo producto.
 export function validarProducto({ id = '', referencia = '', nombre, costo, existencias }) {
   const idLimpio = limpiarTexto(id);
-  if (idLimpio && !PATRONES.codigo.test(idLimpio)) throw new Error(`El ID "${idLimpio}" solo puede tener letras, números, punto, guion y guion bajo`);
+  if (idLimpio && !PATRONES.codigoProducto.test(idLimpio)) throw new Error(`El ID "${idLimpio}" solo puede tener números`);
   return {
-    id: idLimpio,
+    id: idLimpio ? String(Number(idLimpio)) : '',
     referencia: exigirTexto(referencia, 'la referencia', { obligatorio: false, maximo: 40 }),
     nombre: exigirTexto(nombre, 'el nombre del producto'),
     costo: exigirEntero(costo, 'el costo'),

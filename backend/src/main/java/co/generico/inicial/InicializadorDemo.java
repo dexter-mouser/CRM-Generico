@@ -109,9 +109,9 @@ public class InicializadorDemo implements ApplicationRunner {
                     .param("telefono", cliente.get("telefono").asText()).param("correo", cliente.get("correo").asText())
                     .param("direccion", cliente.get("direccion").asText()).update();
         }
-        // Los consecutivos arrancan después de los códigos sembrados (P-018, C-008)
-        jdbc.sql("insert into consecutivo (tienda_id, clave, ultimo) values (:tienda, 'P', :productos), (:tienda, 'C', :clientes)")
-                .param("tienda", tiendaId).param("productos", datos.get("productos").size()).param("clientes", datos.get("clientes").size()).update();
+        // El consecutivo de clientes arranca después de los sembrados (C-008). Los productos usan el mayor código más uno.
+        jdbc.sql("insert into consecutivo (tienda_id, clave, ultimo) values (:tienda, 'C', :clientes)")
+                .param("tienda", tiendaId).param("clientes", datos.get("clientes").size()).update();
         registro.warn("Datos de demostración creados (tienda {}). No usar en producción.", tienda.get("nombre").asText());
     }
 }

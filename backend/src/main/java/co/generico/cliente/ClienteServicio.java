@@ -33,7 +33,7 @@ public class ClienteServicio {
 
     public List<String> ventasDe(UsuarioSesion quien, String codigo) {
         Cliente cliente = obtener(quien.tiendaId(), codigo);
-        return repositorio.ventasDe(quien.tiendaId(), cliente.nombre());
+        return repositorio.ventasDe(quien.tiendaId(), cliente.codigo());
     }
 
     private Cliente obtener(UUID tiendaId, String codigo) {
@@ -69,9 +69,6 @@ public class ClienteServicio {
     public Cliente actualizar(UsuarioSesion quien, String codigo, DatosCliente datos) {
         Cliente actual = obtener(quien.tiendaId(), codigo);
         Cliente limpio = limpiar(quien.tiendaId(), datos, codigo);
-        if (!limpio.nombre().equals(actual.nombre())) {
-            repositorio.renombrarEnMovimientos(quien.tiendaId(), actual.nombre(), limpio.nombre());
-        }
         repositorio.actualizar(quien.tiendaId(), codigo, limpio);
         auditoria.registrar(quien, "clientes", "Cliente editado", codigo + " · " + limpio.nombre());
         return obtener(quien.tiendaId(), codigo);

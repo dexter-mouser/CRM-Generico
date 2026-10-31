@@ -6,7 +6,7 @@ import { exigirPermiso } from '../core/autorizacion.js';
 import { exigirTelefono, exigirTexto, LIMITES } from '../core/validacion.js';
 import { registrarAuditoria } from './auditoria.service.js';
 
-export const METODOS_DISPONIBLES = ['Efectivo', 'Nequi', 'Tarjeta', 'Transferencia', 'Fiado'];
+export const METODOS_DISPONIBLES = ['Efectivo', 'Nequi', 'Tarjeta', 'Transferencia', 'Crédito'];
 
 export function guardarDatosTienda({ nombre, nit, telefono, ciudad, direccion }) {
   exigirPermiso('ajustes', 'editar', 'cambiar los ajustes');
@@ -53,11 +53,12 @@ export function establecerPermitirSinExistencias(valor) {
   guardarEstado();
 }
 
-// Vuelve el inventario, las ventas, los clientes, los pagos, la caja y la contabilidad a los datos de ejemplo; los ajustes, roles y personas no cambian
+// Vuelve el inventario, las ventas, las remisiones y cotizaciones, los clientes, los pagos, la caja y la contabilidad
+// a los datos de ejemplo; los ajustes, roles, personas y la auditoría no cambian
 export function restablecerDatosDePrueba() {
   exigirPermiso('ajustes', 'editar', 'cambiar los ajustes');
   const datos = structuredClone(semilla);
-  const claves = ['productos', 'ventas', 'facturas', 'orden', 'clientes', 'pagos', 'cajas', 'movimientosCaja', 'contabilidad', 'devoluciones'];
+  const claves = ['productos', 'ventas', 'documentos', 'facturas', 'orden', 'clientes', 'pagos', 'cajas', 'movimientosCaja', 'contabilidad', 'devoluciones'];
   claves.forEach((clave) => { estado[clave] = datos[clave]; });
   borrarBusquedas();
   registrarAuditoria('ajustes', 'Datos de ejemplo restablecidos', '');

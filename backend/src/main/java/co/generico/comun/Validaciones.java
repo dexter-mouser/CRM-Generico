@@ -16,7 +16,7 @@ public final class Validaciones {
 
     private static final Pattern CORREO = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
     private static final Pattern TELEFONO = Pattern.compile("^[\\d\\s()+-]{7,20}$");
-    private static final Pattern CODIGO = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9._-]{0,29}$");
+    private static final Pattern CODIGO_PRODUCTO = Pattern.compile("^\\d{1,12}$");
 
     private Validaciones() {
     }
@@ -94,13 +94,16 @@ public final class Validaciones {
         return telefono;
     }
 
-    /** ID de producto: vacío (se genera uno) o con el formato permitido. */
+    /** ID de producto: vacío (se genera uno) o solo números, sin ceros a la izquierda ("007" -> "7"). */
     public static String codigo(String valor) {
         String codigo = limpiar(valor);
-        if (!codigo.isEmpty() && !CODIGO.matcher(codigo).matches()) {
-            throw new ReglaDeNegocioException("El ID \"" + codigo + "\" solo puede tener letras, números, punto, guion y guion bajo");
+        if (codigo.isEmpty()) {
+            return "";
         }
-        return codigo;
+        if (!CODIGO_PRODUCTO.matcher(codigo).matches()) {
+            throw new ReglaDeNegocioException("El ID \"" + codigo + "\" solo puede tener números");
+        }
+        return Long.toString(Long.parseLong(codigo));
     }
 
     public static String motivo(String valor) {

@@ -33,7 +33,7 @@ export async function montarMenuLateral(ranura) {
   // "Cerrar sesión" es siempre la última opción del menú
   menu.innerHTML = enlaces.join('') + rellenar(plantillaSalir, { icono: icono(ICONO_SALIR) });
   buscar('.opcion-menu.activa', menu)?.setAttribute('aria-current', 'page');
-  buscar('#cerrar-sesion', menu).onclick = cerrarSesion;
+  buscar('#cerrar-sesion', menu).onclick = () => cerrarSesion();
 
   const recogido = preferencias.leer(CLAVE_MENU);
   if (recogido === '1' || (recogido === null && innerWidth < 800)) menu.classList.add('recogido');

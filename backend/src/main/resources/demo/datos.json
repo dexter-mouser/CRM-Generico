@@ -8,126 +8,126 @@
   },
   "productos": [
     {
-      "codigo": "P-001",
+      "codigo": "1",
       "referencia": "DC-AD-4",
       "nombre": "Dog Chow adulto razas medianas 4 kg",
       "costo": 52000,
       "existencias": 14
     },
     {
-      "codigo": "P-002",
+      "codigo": "2",
       "referencia": "PD-CA-2",
       "nombre": "Pedigree cachorro 2 kg",
       "costo": 24000,
       "existencias": 9
     },
     {
-      "codigo": "P-003",
+      "codigo": "3",
       "referencia": "CC-AD-15",
       "nombre": "Cat Chow gatos adultos 1,5 kg",
       "costo": 21000,
       "existencias": 12
     },
     {
-      "codigo": "P-004",
+      "codigo": "4",
       "referencia": "WH-SO-85",
       "nombre": "Whiskas pescado sobre 85 g",
       "costo": 1800,
       "existencias": 60
     },
     {
-      "codigo": "P-005",
+      "codigo": "5",
       "referencia": "AR-GA-10",
       "nombre": "Arena sanitaria para gatos 10 kg",
       "costo": 19000,
       "existencias": 3
     },
     {
-      "codigo": "P-006",
+      "codigo": "6",
       "referencia": "CO-AJ-M",
       "nombre": "Collar ajustable talla M",
       "costo": 6500,
       "existencias": 18
     },
     {
-      "codigo": "P-007",
+      "codigo": "7",
       "referencia": "CR-NY-15",
       "nombre": "Correa de nylon 1,5 m",
       "costo": 8000,
       "existencias": 11
     },
     {
-      "codigo": "P-008",
+      "codigo": "8",
       "referencia": "PE-CA-01",
       "nombre": "Pelota de caucho",
       "costo": 2500,
       "existencias": 25
     },
     {
-      "codigo": "P-009",
+      "codigo": "9",
       "referencia": "HU-CU-M",
       "nombre": "Hueso de cuero prensado mediano",
       "costo": 3000,
       "existencias": 30
     },
     {
-      "codigo": "P-010",
+      "codigo": "10",
       "referencia": "SH-AP-250",
       "nombre": "Shampoo antipulgas 250 ml",
       "costo": 11000,
       "existencias": 7
     },
     {
-      "codigo": "P-011",
+      "codigo": "11",
       "referencia": "AP-PI-M",
       "nombre": "Antipulgas pipeta perro mediano",
       "costo": 17000,
       "existencias": 2
     },
     {
-      "codigo": "P-012",
+      "codigo": "12",
       "referencia": "CA-PE-M",
       "nombre": "Cama para perro mediana",
       "costo": 38000,
       "existencias": 4
     },
     {
-      "codigo": "P-013",
+      "codigo": "13",
       "referencia": "CM-AC-01",
       "nombre": "Comedero de acero inoxidable",
       "costo": 7500,
       "existencias": 16
     },
     {
-      "codigo": "P-014",
+      "codigo": "14",
       "referencia": "AL-PE-50",
       "nombre": "Alimento para peces en hojuelas 50 g",
       "costo": 3500,
       "existencias": 20
     },
     {
-      "codigo": "P-015",
+      "codigo": "15",
       "referencia": "JA-HA-01",
       "nombre": "Jaula para hámster",
       "costo": 42000,
       "existencias": 3
     },
     {
-      "codigo": "P-016",
+      "codigo": "16",
       "referencia": "RA-GA-01",
       "nombre": "Rascador para gatos",
       "costo": 28000,
       "existencias": 5
     },
     {
-      "codigo": "P-017",
+      "codigo": "17",
       "referencia": "SN-DE-07",
       "nombre": "Snack dental para perro x 7",
       "costo": 9500,
       "existencias": 22
     },
     {
-      "codigo": "P-018",
+      "codigo": "18",
       "referencia": "TR-ME-01",
       "nombre": "Transportadora mediana",
       "costo": 45000,

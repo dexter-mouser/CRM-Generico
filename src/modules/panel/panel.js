@@ -43,7 +43,7 @@ export async function dibujar() {
       detalle: cajaAbierta() ? 'Caja abierta' : 'Caja cerrada',
     },
     {
-      etiqueta: 'Fiados pendientes',
+      etiqueta: 'Créditos pendientes',
       valor: conDeuda.reduce((acumulado, cliente) => acumulado + deudaDeCliente(cliente), 0),
       formato: 'pesos',
       detalle: `${conDeuda.length} ${conDeuda.length === 1 ? 'cliente' : 'clientes'} con deuda`,
