@@ -42,7 +42,7 @@ export const manejaStock = (producto) => Boolean(producto) && !producto.generico
 export const categorias = () => [...new Set(estado.productos.map((producto) => producto.categoria).filter(Boolean))].sort();
 
 // El ID de producto es solo números: el siguiente es el mayor que exista más uno
-const siguienteIdProducto = () => String(siguienteNumero(estado.productos.map((producto) => producto.id)));
+export const siguienteIdProducto = () => String(siguienteNumero(estado.productos.map((producto) => producto.id)));
 
 // --- Stock por bodega --------------------------------------------------------------------------------------
 // Stock de un producto en una bodega; sin bodega, el total

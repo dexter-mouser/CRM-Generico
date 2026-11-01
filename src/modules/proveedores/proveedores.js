@@ -10,24 +10,26 @@ import { dibujarSelector, montarSelectorProductos } from '../../components/selec
 import { mostrarComprobanteDeOrden } from '../../components/recibo/comprobantes.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
+import { cargarPlantillasFormulario, montarFormulario } from '../../components/formulario/formulario.js';
+import { montarSelectorRegistro } from '../../components/selector-registro/selector-registro.js';
+import { COLUMNAS_PROVEEDOR, proveedoresParaElegir } from '../../components/selector-registro/registros.js';
 
 let documento;
 let plantillasCuadricula;
 let plantillasFicha;
+let plantillasFormulario;
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./proveedores.html', import.meta.url));
-  [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
+  [plantillasCuadricula, plantillasFicha, plantillasFormulario] = await Promise.all([
+    cargarPlantillasCuadricula(), cargarPlantillasFicha(), cargarPlantillasFormulario(),
+  ]);
   return seccion(documento, 'principal', {
-    opcionesProveedor: repetir(documento, 'opcion', estado.proveedores.map((proveedor) => ({ valor: proveedor.id, texto: `${proveedor.nombre} · ${proveedor.id}` }))),
     selector: await dibujarSelector(),
   });
 }
 
 export function montar(raiz, contexto) {
-  const campos = ['nombre', 'nit', 'plazoDias', 'contacto', 'telefono', 'correo'];
-  const campo = (nombre) => buscar(`#proveedor-${nombre}`, raiz);
-  let enEdicion = null;
   let porEliminar = null;
   let ordenPorAnular = null;
   buscar('#nuevo-proveedor', raiz).hidden = !puede('proveedores', 'crear');
@@ -69,26 +71,33 @@ export function montar(raiz, contexto) {
     filas: filasProveedores(),
   });
 
-  const abrirFormulario = (proveedor) => {
-    enEdicion = proveedor?.id ?? null;
-    buscar('#titulo-formulario-proveedor', raiz).textContent = proveedor ? `Editar a ${proveedor.nombre}` : 'Nuevo proveedor';
-    campos.forEach((nombre) => { campo(nombre).value = proveedor?.[nombre] ?? (nombre === 'plazoDias' ? '30' : ''); });
-    buscar('#formulario-proveedor', raiz).hidden = false;
-    buscar('#formulario-proveedor', raiz).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    campo('nombre').focus();
-  };
+  const formulario = montarFormulario(buscar('#formulario-proveedor', raiz), {
+    plantillas: plantillasFormulario,
+    clave: 'proveedor',
+    titulo: 'Nuevo proveedor',
+    tituloEditar: (proveedor) => `Editar a ${proveedor.nombre}`,
+    textoGuardar: 'Guardar proveedor',
+    alError: contexto.alerta,
+    campos: [
+      { clave: 'nombre', etiqueta: 'Nombre o razón social', obligatorio: true },
+      { clave: 'nit', etiqueta: 'NIT', ejemplo: '900123456-7' },
+      { clave: 'plazoDias', etiqueta: 'Plazo de pago (días)', tipo: 'entero', valor: 30, ayuda: '0 = de contado' },
+      { clave: 'contacto', etiqueta: 'Persona de contacto' },
+      { clave: 'telefono', etiqueta: 'Teléfono', tipo: 'telefono' },
+      { clave: 'correo', etiqueta: 'Correo', tipo: 'correo' },
+    ],
+    alGuardar: (datos, proveedor) => {
+      const aplicado = ejecutar(
+        () => (proveedor ? servicioProveedores.actualizarProveedor(proveedor.id, datos) : servicioProveedores.agregarProveedor(datos)),
+        proveedor ? 'Proveedor actualizado correctamente' : 'Proveedor agregado correctamente',
+      );
+      if (!aplicado) return false;
+      contexto.redibujar();
+      return true;
+    },
+  });
+  const abrirFormulario = (proveedor) => formulario.abrir(proveedor);
   buscar('#nuevo-proveedor', raiz).onclick = () => abrirFormulario(null);
-  buscar('#cancelar-proveedor', raiz).onclick = () => { buscar('#formulario-proveedor', raiz).hidden = true; };
-  buscar('#guardar-proveedor', raiz).onclick = () => {
-    const datos = Object.fromEntries(campos.map((nombre) => [nombre, campo(nombre).value]));
-    datos.plazoDias = leerEntero(datos.plazoDias);
-    const editando = enEdicion !== null;
-    const aplicado = ejecutar(
-      () => (editando ? servicioProveedores.actualizarProveedor(enEdicion, datos) : servicioProveedores.agregarProveedor(datos)),
-      editando ? 'Proveedor actualizado correctamente' : 'Proveedor agregado correctamente',
-    );
-    if (aplicado) contexto.redibujar();
-  };
 
   // Ficha del proveedor: datos, saldo, facturas de compra, pagos y órdenes
   const fichaProveedor = crearFicha(buscar('#ficha-proveedor', raiz), plantillasFicha);
@@ -192,16 +201,25 @@ export function montar(raiz, contexto) {
     pintarLineas();
   });
   const panelOrden = buscar('#panel-orden', raiz);
+  const proveedorOrden = montarSelectorRegistro(buscar('#selector-proveedor-orden', raiz), {
+    plantillas: plantillasFormulario,
+    clave: 'proveedor-orden',
+    etiqueta: 'proveedores',
+    columnas: COLUMNAS_PROVEEDOR,
+    registros: proveedoresParaElegir,
+    vacio: 'Elige el proveedor de la orden',
+    alSalir: () => buscar('#orden-observaciones', raiz).focus(),
+  });
   buscar('#nueva-orden', raiz).onclick = () => {
     if (!estado.proveedores.length) return contexto.alerta('Crea primero un proveedor');
     panelOrden.hidden = false;
     panelOrden.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    buscar('#orden-proveedor', raiz).focus();
+    proveedorOrden.enfocar();
   };
   buscar('#cancelar-orden', raiz).onclick = () => { panelOrden.hidden = true; };
   buscar('#registrar-orden', raiz).onclick = () => {
     const orden = ejecutar(() => servicioProveedores.registrarOrden({
-      proveedorId: buscar('#orden-proveedor', raiz).value,
+      proveedorId: proveedorOrden.elegido()?.id ?? '',
       observaciones: buscar('#orden-observaciones', raiz).value,
       lineas,
     }), 'Orden de compra registrada correctamente');

@@ -10,12 +10,11 @@
     <div class="aviso-origen caja separacion-inferior" id="aviso-orden" hidden><strong id="texto-orden"></strong></div>
 
     <div class="encabezado-documento">
-      <div class="paso-documento">
+      <div class="paso-documento paso-registro">
         <span class="numero-paso">1</span>
         <div class="contenido-paso">
-          <label for="factura-proveedor">Proveedor</label>
-          <select id="factura-proveedor" class="campo">{{{opcionesProveedor}}}</select>
-          <div class="ficha-cliente" id="ficha-proveedor-compra" aria-live="polite"></div>
+          <span class="etiqueta-paso">Proveedor <span class="texto-suave">· busca por cualquier dato</span></span>
+          <div id="selector-proveedor-compra"></div>
         </div>
       </div>
       <div class="paso-documento">
@@ -78,68 +77,7 @@
   </section>
   <div id="ficha-factura-compra" data-seccion="compras"></div>
 
-  <section class="caja formulario-en-linea" id="formulario-producto" aria-labelledby="titulo-formulario-producto" data-seccion="productos">
-    <strong id="titulo-formulario-producto">Nuevo producto</strong>
-    <div class="tres-campos">
-      <div>
-        <label for="producto-id">ID</label>
-        <input id="producto-id" class="campo" data-numero="entero" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="Solo números · automático si lo dejas vacío">
-      </div>
-      <div>
-        <label for="producto-referencia">Referencia</label>
-        <input id="producto-referencia" class="campo" autocomplete="off">
-      </div>
-      <div>
-        <label for="producto-nombre">Nombre</label>
-        <input id="producto-nombre" class="campo" autocomplete="off">
-      </div>
-    </div>
-    <div class="tres-campos">
-      <div>
-        <label for="producto-categoria">Categoría</label>
-        <input id="producto-categoria" class="campo" list="lista-categorias" autocomplete="off">
-        <datalist id="lista-categorias">{{{opcionesCategoria}}}</datalist>
-      </div>
-      <div>
-        <label for="producto-costo">Costo (COP)</label>
-        <input id="producto-costo" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
-      </div>
-      <div>
-        <label for="producto-iva">IVA</label>
-        <select id="producto-iva" class="campo">{{{opcionesIva}}}</select>
-      </div>
-    </div>
-    <div class="tres-campos precios-producto">
-      <div>
-        <label for="producto-precioSurtido">Precio 1 · Surtido (COP)</label>
-        <input id="producto-precioSurtido" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="Casi al costo, para surtir almacenes">
-      </div>
-      <div>
-        <label for="producto-precioMayor">Precio 2 · Por mayor (COP)</label>
-        <input id="producto-precioMayor" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
-      </div>
-      <div>
-        <label for="producto-precioDetal">Precio 3 · Al detal (COP)</label>
-        <input id="producto-precioDetal" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
-      </div>
-    </div>
-    <div class="texto-suave">Los precios incluyen el IVA. Cada venta usa la lista de su tienda o de su cliente, y se puede cambiar al registrarla.</div>
-    <div class="tres-campos" id="campos-stock">
-      <div>
-        <label for="producto-stockMinimo">Stock mínimo</label>
-        <input id="producto-stockMinimo" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
-      </div>
-      <div>
-        <label for="producto-existencias" id="etiqueta-existencias">Stock inicial (bodega de la tienda activa)</label>
-        <input id="producto-existencias" class="campo" data-numero="entero-negativo" autocomplete="off" placeholder="0">
-      </div>
-    </div>
-    <label class="marca-check"><input type="checkbox" id="producto-generico"> Producto genérico: no maneja stock y su nombre y valor se escriben en cada venta (servicios, reparaciones, artículos sin código)</label>
-    <div class="acciones-fila margen-superior-grande">
-      <button type="button" class="boton primario" id="guardar-producto">Guardar producto</button>
-      <button type="button" class="boton" id="cancelar-producto">Cancelar</button>
-    </div>
-  </section>
+  <div id="formulario-producto" data-seccion="productos"></div>
 
   <section class="caja" aria-labelledby="titulo-lista-productos" data-seccion="productos">
     <strong id="titulo-lista-productos">Lista de productos</strong>
@@ -155,10 +93,10 @@
 
   <section class="caja" id="panel-kardex" aria-labelledby="titulo-kardex" data-seccion="kardex">
     <strong id="titulo-kardex">Consultar kardex</strong>
-    <div class="formulario-gestion margen-superior">
-      <div>
-        <label for="kardex-producto">Producto</label>
-        <select id="kardex-producto" class="campo">{{{opcionesProducto}}}</select>
+    <div class="rejilla-campos margen-superior">
+      <div class="campo-formulario ancho-completo">
+        <span class="etiqueta-campo">Producto · busca por cualquier dato</span>
+        <div class="contenedor-selector" id="selector-kardex"></div>
       </div>
       <div>
         <label for="kardex-bodega">Bodega</label>
@@ -170,9 +108,6 @@
   </section>
 </div>
 
-<template id="opcion-iva">
-  <option value="{{valor}}" {{seleccion}}>{{valor}} %</option>
-</template>
 
 <template id="opcion-elegida">
   <option value="{{valor}}" {{seleccion}}>{{texto}}</option>
@@ -245,8 +180,3 @@
   </div>
 </template>
 
-<template id="datos-proveedor-compra">
-  <div class="dato-cliente"><span>NIT</span><strong>{{nit}}</strong></div>
-  <div class="dato-cliente"><span>Plazo</span><strong>{{plazo}}</strong></div>
-  <div class="dato-cliente {{claseSaldo}}"><span>Por pagar</span><strong>{{saldo}}</strong></div>
-</template>

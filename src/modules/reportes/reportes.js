@@ -4,14 +4,17 @@ import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import { descargarCsv } from '../../services/csv.service.js';
 import * as servicioReportes from '../../services/reportes.service.js';
 import { carteraPorEdades, RANGOS_CARTERA } from '../../services/clientes.service.js';
+import { cargarPlantillasTabla, montarTablaResumen } from '../../components/tabla-resumen/tabla-resumen.js';
 
 let documento;
+let plantillasTabla;
 
 const primerDiaDelMes = () => `${fechaDeHoy().slice(0, 8)}01`;
 const haceDias = (dias) => aFechaLocal(new Date(Date.now() - dias * 86400000).toISOString());
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./reportes.html', import.meta.url));
+  plantillasTabla = await cargarPlantillasTabla();
   return seccion(documento, 'principal', { desde: primerDiaDelMes(), hasta: fechaDeHoy() });
 }
 
@@ -19,6 +22,25 @@ export function montar(raiz, contexto) {
   const desde = buscar('#fecha-desde', raiz);
   const hasta = buscar('#fecha-hasta', raiz);
   let reporte;
+
+  const tabla = (selector, columnas, vacio) => montarTablaResumen(buscar(selector, raiz), { plantillas: plantillasTabla, columnas, vacio });
+  const derecha = (clave, titulo) => ({ clave, titulo, alinear: 'derecha' });
+  const tablas = {
+    porVendedor: tabla('#por-vendedor', [{ clave: 'vendedor', titulo: 'Vendedor' }, derecha('cantidad', 'Facturas'), derecha('total', 'Total neto')], 'No hay ventas en este rango.'),
+    inactivos: tabla('#inactivos', [
+      { clave: 'nombre', titulo: 'Cliente', html: (fila) => repetir(documento, 'enlace-cliente', [fila]) },
+      { clave: 'ultima', titulo: 'Última compra' }, derecha('dias', 'Días'),
+    ], 'Todos los clientes han comprado en los últimos 60 días.'),
+    cartera: tabla('#cartera', [
+      { clave: 'nombre', titulo: 'Cliente' },
+      ...RANGOS_CARTERA.map((rango) => derecha(rango.id, rango.etiqueta)),
+      { clave: 'total', titulo: 'Total', alinear: 'derecha', html: (fila) => repetir(documento, 'total-cartera', [fila]) },
+    ], 'No hay cartera pendiente.'),
+    porMetodo: tabla('#por-metodo', [{ clave: 'metodo', titulo: 'Método' }, derecha('valor', 'Total')], 'No hay ventas en este rango.'),
+    masVendidos: tabla('#mas-vendidos', [{ clave: 'id', titulo: 'ID' }, { clave: 'nombre', titulo: 'Producto' }, derecha('cantidad', 'Unidades'), derecha('total', 'Total')], 'No hay ventas en este rango.'),
+    stockBajo: tabla('#stock-bajo', [{ clave: 'id', titulo: 'ID' }, { clave: 'nombre', titulo: 'Producto' }, derecha('stockMinimo', 'Mínimo'), derecha('existencias', 'Stock')], 'Ningún producto tiene poco stock.'),
+    deudas: tabla('#deudas', [{ clave: 'nombre', titulo: 'Cliente' }, derecha('deuda', 'Deuda')], 'Ningún cliente tiene deuda.'),
+  };
 
   const pintar = () => {
     reporte = servicioReportes.reporteDeVentas(desde.value, hasta.value);
@@ -28,11 +50,8 @@ export function montar(raiz, contexto) {
       { etiqueta: 'Ticket promedio', valor: aPesos(reporte.ticketPromedio) },
       { etiqueta: 'Utilidad estimada', valor: aPesos(reporte.utilidad) },
     ]);
-    buscar('#por-metodo', raiz).innerHTML = repetir(documento, 'fila-metodo',
-      reporte.porMetodo.map((fila) => ({ metodo: fila.metodo, valor: aPesos(fila.valor) })));
-    buscar('#sin-ventas', raiz).hidden = reporte.cantidad > 0;
-    buscar('#mas-vendidos', raiz).innerHTML = repetir(documento, 'fila-mas-vendido',
-      reporte.masVendidos.map((fila) => ({ ...fila, total: aPesos(fila.total) })));
+    tablas.porMetodo.actualizar(reporte.porMetodo.map((fila) => ({ metodo: fila.metodo, valor: aPesos(fila.valor) })));
+    tablas.masVendidos.actualizar(reporte.masVendidos.map((fila) => ({ ...fila, total: aPesos(fila.total) })));
 
     const clientes = servicioReportes.clientesNuevosYRecurrentes(desde.value, hasta.value);
     const conversion = servicioReportes.conversionDeCotizaciones(desde.value, hasta.value);
@@ -42,12 +61,8 @@ export function montar(raiz, contexto) {
       { etiqueta: 'Cotizaciones creadas', valor: conversion.cantidad },
       { etiqueta: 'Conversión de cotizaciones', valor: `${conversion.conversion} %` },
     ]);
-    buscar('#por-vendedor', raiz).innerHTML = repetir(documento, 'fila-vendedor',
-      servicioReportes.ventasPorVendedor(desde.value, hasta.value).map((fila) => ({ ...fila, total: aPesos(fila.total) })));
-    const inactivos = servicioReportes.clientesInactivos();
-    buscar('#inactivos', raiz).innerHTML = repetir(documento, 'fila-inactivo',
-      inactivos.map((fila) => ({ ...fila, ultima: aFecha(fila.ultima.slice(0, 10)) })));
-    buscar('#sin-inactivos', raiz).hidden = inactivos.length > 0;
+    tablas.porVendedor.actualizar(servicioReportes.ventasPorVendedor(desde.value, hasta.value).map((fila) => ({ ...fila, total: aPesos(fila.total) })));
+    tablas.inactivos.actualizar(servicioReportes.clientesInactivos().map((fila) => ({ ...fila, ultima: aFecha(fila.ultima.slice(0, 10)) })));
     const cartera = carteraPorEdades();
     const totales = { nombre: 'Total', clase: 'fila-total', total: 0, ...Object.fromEntries(RANGOS_CARTERA.map((rango) => [rango.id, 0])) };
     cartera.forEach((fila) => {
@@ -55,17 +70,9 @@ export function montar(raiz, contexto) {
       totales.total += fila.total;
     });
     const enPesos = (fila) => ({ ...fila, ...Object.fromEntries([...RANGOS_CARTERA.map((rango) => rango.id), 'total'].map((clave) => [clave, aPesos(fila[clave])])) });
-    buscar('#cartera', raiz).innerHTML = repetir(documento, 'fila-cartera', [...cartera.map((fila) => enPesos({ ...fila, clase: '' })), ...(cartera.length ? [enPesos(totales)] : [])]);
-    buscar('#sin-cartera', raiz).hidden = cartera.length > 0;
-
-    const stockBajo = servicioReportes.productosConStockBajo();
-    buscar('#stock-bajo', raiz).innerHTML = repetir(documento, 'fila-stock-bajo', stockBajo);
-    buscar('#sin-stock-bajo', raiz).hidden = stockBajo.length > 0;
-
-    const deudas = servicioReportes.deudasDeClientes();
-    buscar('#deudas', raiz).innerHTML = repetir(documento, 'fila-deuda',
-      deudas.map((fila) => ({ nombre: fila.nombre, deuda: aPesos(fila.deuda) })));
-    buscar('#sin-deudas', raiz).hidden = deudas.length > 0;
+    tablas.cartera.actualizar([...cartera.map((fila) => enPesos({ ...fila, clase: '' })), ...(cartera.length ? [enPesos(totales)] : [])]);
+    tablas.stockBajo.actualizar(servicioReportes.productosConStockBajo());
+    tablas.deudas.actualizar(servicioReportes.deudasDeClientes().map((fila) => ({ nombre: fila.nombre, deuda: aPesos(fila.deuda) })));
   };
 
   const rangos = {

@@ -3,68 +3,7 @@
 
   <div class="tarjetas">{{{resumen}}}</div>
 
-  <section class="caja formulario-en-linea" id="formulario-empleado" aria-labelledby="titulo-formulario-empleado" hidden>
-    <strong id="titulo-formulario-empleado">Nuevo empleado</strong>
-    <div class="formulario-gestion margen-superior">
-      <div>
-        <label for="empleado-nombre">Nombre completo</label>
-        <input id="empleado-nombre" class="campo" autocomplete="off">
-      </div>
-      <div>
-        <label for="empleado-tipoDocumento">Tipo de documento</label>
-        <select id="empleado-tipoDocumento" class="campo">{{{opcionesDocumento}}}</select>
-      </div>
-      <div>
-        <label for="empleado-documento">Documento</label>
-        <input id="empleado-documento" class="campo" maxlength="20" autocomplete="off">
-      </div>
-      <div>
-        <label for="empleado-cargo">Cargo</label>
-        <input id="empleado-cargo" class="campo" list="lista-cargos" maxlength="60" autocomplete="off">
-        <datalist id="lista-cargos">{{{opcionesCargo}}}</datalist>
-      </div>
-      <div>
-        <label for="empleado-tiendaId">Tienda donde trabaja</label>
-        <select id="empleado-tiendaId" class="campo">{{{opcionesTienda}}}</select>
-      </div>
-      <div>
-        <label for="empleado-fechaIngreso">Fecha de ingreso</label>
-        <input id="empleado-fechaIngreso" class="campo" type="date">
-      </div>
-      <div>
-        <label for="empleado-telefono">Teléfono</label>
-        <input id="empleado-telefono" class="campo" inputmode="tel" autocomplete="off">
-      </div>
-      <div>
-        <label for="empleado-correo">Correo</label>
-        <input id="empleado-correo" class="campo" type="email" autocomplete="off">
-      </div>
-      <div>
-        <label for="empleado-turno">Turno</label>
-        <input id="empleado-turno" class="campo" maxlength="120" autocomplete="off" placeholder="Lunes a sábado 8:00 a 17:00">
-      </div>
-      <div>
-        <label for="empleado-metaMensual">Meta de ventas del mes</label>
-        <input id="empleado-metaMensual" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
-      </div>
-      <div>
-        <label for="empleado-comision">Comisión (%)</label>
-        <input id="empleado-comision" class="campo" inputmode="decimal" autocomplete="off" placeholder="0">
-      </div>
-      <div>
-        <label for="empleado-usuarioId">Usuario del sistema</label>
-        <select id="empleado-usuarioId" class="campo">{{{opcionesUsuario}}}</select>
-      </div>
-      <fieldset class="ancho-completo" id="acceso-tiendas">
-        <legend>Tiendas a las que puede entrar con su usuario</legend>
-        <div class="casillas-tiendas">{{{casillasTiendas}}}</div>
-      </fieldset>
-    </div>
-    <div class="acciones-fila margen-superior-grande">
-      <button type="button" class="boton primario" id="guardar-empleado">Guardar empleado</button>
-      <button type="button" class="boton" id="cancelar-empleado">Cancelar</button>
-    </div>
-  </section>
+  <div id="formulario-empleado"></div>
 
   <section class="caja" aria-labelledby="titulo-lista-empleados">
     <strong id="titulo-lista-empleados">Lista de empleados</strong>
@@ -90,7 +29,7 @@
 <template id="avance">
   <div title="{{titulo}}">
     <div>{{texto}}</div>
-    <div class="barra-avance"><i style="width:{{ancho}}%"></i></div>
+    <progress class="barra-avance" max="100" value="{{ancho}}"></progress>
   </div>
 </template>
 
@@ -106,10 +45,4 @@
   <button type="button" class="boton {{claseEstado}}" data-estado="{{id}}">{{textoEstado}}</button>
 </template>
 
-<template id="casilla-tienda">
-  <label><input type="checkbox" value="{{id}}" data-tienda-acceso> {{nombre}}</label>
-</template>
 
-<template id="opcion">
-  <option value="{{valor}}">{{texto}}</option>
-</template>

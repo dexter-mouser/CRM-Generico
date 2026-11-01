@@ -27,11 +27,11 @@ src/
   main.js, main-acceso.js     Arranque (la sesión se exige en main.js)
   config/                     acceso.js, entorno.js, nav.js, permisos.js, routes.js
   core/                       store, plantillas, tema, sesión, validación, formato, router, tienda (tienda activa)
-  components/                 cabecera-seccion, ficha-registro, cuadricula-datos, recibo (comprobantes), sidebar, logo, etc.
+  components/                 cabecera-seccion, ficha-registro, cuadricula-datos, formulario, tabla-resumen, recibo (comprobantes), sidebar, logo, etc.
   modules/<vista>/            <vista>.html + <vista>.js
   services/                   reglas de negocio (ventas, caja, clientes, roles, ...)
   data/seed.js                datos de ejemplo
-styles/                       style.css, tono.css, components.css, cuadricula.css, secciones.css, ...
+styles/                       style.css, tono.css (tokens), components.css (componentes comunes), cuadricula.css, ...
 backend/                      Spring Boot (migraciones Flyway V1..V3)
 docs/                         api.md, seguridad.md, validacion.md
 ```
@@ -43,9 +43,13 @@ docs/                         api.md, seguridad.md, validacion.md
 - Encabezado: buscador de pantallas (`Ctrl+K`), selector de tienda activa, botón "Vender". En celular (≤800 px) el menú lateral es una barra inferior con los grupos.
 - Plantillas: `{{x}}` escapa, `{{{x}}}` inserta HTML, `<!--{{{x}}}-->` dentro de tablas. Funciones: `cargarHtml`, `seccion`, `repetir`, `rellenar`.
 - Cuadrícula reutilizable (`components/cuadricula-datos`): columnas `{clave, titulo, ancho, alinear, filtrable, html}`; búsqueda debajo de cada columna; las acciones por fila usan delegación de eventos.
+- Formulario declarativo (`components/formulario`): `montarFormulario(contenedor, { plantillas, clave, titulo, tituloEditar, columnas, campos, incrustado, valores, alGuardar, alError })`; campos `{clave, etiqueta, tipo, opciones, valor, obligatorio, ancho, ayuda, ejemplo, alCambiar}` (tipos texto, entero, entero-negativo, decimal, correo, telefono, fecha, clave, area, seleccion, lista, etiquetas, casilla, casillas). Devuelve `abrir(registro)`, `cerrar()`, `leer()`, `escribir()`, `opciones()`, `habilitar()`, `mostrar()`, `etiquetar()`, `registro()`. Regla: lo habitual se ve escrito al abrir; al guardar no se inventan valores; lo obligatorio lleva asterisco.
+- Tabla de resumen (`components/tabla-resumen`): `montarTablaResumen(contenedor, { plantillas, columnas, filas, vacio })` para reportes y panel.
+- Selector de registro (`components/selector-registro`): `montarSelectorRegistro(contenedor, { plantillas, clave, etiqueta, columnas, registros, elegido, vacio, alElegir, alSalir })` → `elegido()`, `elegir(id, avisar)`, `habilitar()`, `enfocar()`. Fila del elegido a la vista + una casilla de búsqueda por columna (resultados en línea, no flotantes; en celular cada fila es una tarjeta). Columnas y datos de clientes, proveedores, productos y facturas en `selector-registro/registros.js` (`COLUMNAS_*`, `*ParaElegir(filtro)`). En el formulario: campo `tipo: 'registro'` (`columnas`, `registros`, `plural`, `vacio`); `cargarPlantillasFormulario` ya incluye las plantillas del selector. Regla: ningún `<select>` con listas que crecen (clientes, proveedores, productos, facturas) ni texto libre que se rellena solo.
+- Diseño único: `styles/tono.css` (colores y tokens `--espacio-*`, `--radio-*`, `--letra-*`, `--sombra-*`) y `styles/components.css` (todos los componentes comunes). `data-tema` siempre vale `claro` u `oscuro` (tema.js y previo.js resuelven el automático), así el tema oscuro es un solo bloque. Sin estilos en línea en las plantillas.
 - Permisos: `puede(modulo, accion)` y `exigirPermiso`. El rol Propietario es protegido.
 - Cabecera destacada (`components/cabecera-seccion`): la dibuja el router encima de cada módulo con grupo, título (`etiqueta` de la sección) y `descripcion`. Los módulos no ponen `h1`. Botones con `data-accion-cabecera` pasan a la cabecera (solo los de la parte visible). `contexto.cabecera = { titulo, complemento, descripcion }` en `dibujar()` lo cambia (Panel, Caja).
-- Patrón de sección (el de Clientes, en todos los módulos): botón de nuevo proceso en la cabecera → formulario oculto (`formulario-en-linea` o `panel-proceso`) con Guardar/Cancelar → cuadrícula con **Ficha · Editar · Eliminar** por fila → ficha con botón Editar. Ficha reutilizable: `crearFicha(contenedor, plantillas)` (`components/ficha-registro`), `abrir(id, armar)`, `refrescar()`, `cerrar()`, `idAbierto()`.
+- Patrón de sección (el de Clientes, en todos los módulos): botón de nuevo proceso en la cabecera → formulario del componente `formulario` (clase `panel-proceso`) con Guardar/Cancelar → cuadrícula con **Ficha · Editar · Eliminar** por fila → ficha con botón Editar. Ficha reutilizable: `crearFicha(contenedor, plantillas)` (`components/ficha-registro`), `abrir(id, armar)`, `refrescar()`, `cerrar()`, `idAbierto()`.
 - Excepciones del patrón: tiendas, bodegas y empleados usan Desactivar/Retirar en lugar de Eliminar; documentos contables (facturas, remisiones, cotizaciones, notas, compras, pagos, traslados, órdenes, cierres, auditoría) tienen Ficha + acciones propias, sin Editar ni Eliminar. En páginas divididas el router oculta los botones de otras partes: los módulos solo los ocultan por permiso (nunca `hidden = false`).
 
 ## Documentos de venta
@@ -58,9 +62,10 @@ docs/                         api.md, seguridad.md, validacion.md
 - Pasar a factura: botón "Facturar" en Ventas → `nueva-venta.html?documento=ID`. `registrarVenta` recibe `documentoOrigen`, descuenta solo lo no entregado y marca `facturadaEn`. Una factura nunca vuelve a remisión ni cotización.
 - Notas ND-#### (devolución) y NA-#### (anulación), ancladas a la factura por `ventaId`, con consecutivo propio.
 - Pago en efectivo: `recibido` y `devuelta` guardados en la factura; en efectivo el recibido debe ser ≥ total.
+- Cliente de la venta: siempre uno registrado, por `clienteId`. Por defecto el **Consumidor final** (`C-000`, `generico: true`, `consumidorFinal()` en clientes.service): no tiene crédito, no se elimina y no aparece en Seguimiento. `armarVenta` recibe `clienteId` (ya no el nombre) y lanza "Elige el cliente de la venta" si falta. Ya no existe "Cliente sin nombre".
 
 ## Tiendas, bodegas y empleados
-- Datos de prueba (semilla versión 7): cadena de accesorios para celular. `estado.tiendas`: T-01 Bodega Principal (mayorista, lista `mayor`) → B-01; T-02 Almacén Principal, T-03 Almacén Unicentro y T-04 Almacén Florida (detal, lista `detal`) → B-02, B-03, B-04. Empleados: bodega 3 (admin, Felipe, Luisa), Almacén Principal 3 (Camila, Santiago, Daniela técnica), Unicentro 1, Florida 1. Clientes C-007 a C-009 son los almacenes como clientes internos (lista `surtido`). `estado.traslados` (TR-0001). El stock inicial se calcula para que el kardex cuadre con las compras, ventas, remisión y traslado de la semilla.
+- Datos de prueba (semilla versión 8; `store.js` migra lo guardado desde la versión 7 con `MIGRACIONES` sin perder datos): cadena de accesorios para celular. `estado.tiendas`: T-01 Bodega Principal (mayorista, lista `mayor`) → B-01; T-02 Almacén Principal, T-03 Almacén Unicentro y T-04 Almacén Florida (detal, lista `detal`) → B-02, B-03, B-04. Empleados: bodega 3 (admin, Felipe, Luisa), Almacén Principal 3 (Camila, Santiago, Daniela técnica), Unicentro 1, Florida 1. Clientes C-007 a C-009 son los almacenes como clientes internos (lista `surtido`). `estado.traslados` (TR-0001). El stock inicial se calcula para que el kardex cuadre con las compras, ventas, remisión y traslado de la semilla.
 - Tienda activa en preferencias (`generico.tienda-activa`), `core/tienda.js`: `tiendaActivaId`, `elegirTienda`, `exigirTiendaActiva`, `enTiendaActiva`, `bodegaDeTienda`. `usuario.tiendas` limita el alcance (vacío = todas). "todas" solo consulta: no vende, no mueve caja ni stock.
 - Stock por bodega: `producto.stock = {'B-01': n}`; `producto.existencias` es el total. `existenciasVisibles` da el de la bodega activa. Un traslado enviado no cuenta en ninguna bodega hasta recibirlo.
 - Caja por tienda (`caja.tiendaId`); ventas, documentos, notas y pagos llevan `tiendaId` (y `bodegaId` los que mueven stock); facturas de compra llevan `bodegaId`.
@@ -83,6 +88,8 @@ Hecho y probado en el navegador (escritorio y móvil, sin errores de consola):
 - Varias tiendas, bodegas con traslados y empleados con metas y comisiones.
 - Menú lateral desplegable sin navegar, cabecera destacada en todas las pantallas y patrón de Clientes (nuevo proceso, Ficha · Editar · Eliminar) en los 6 grupos. Servicios nuevos: `actualizarActividad`, `eliminarProducto` (solo sin historia ni stock). Productos ya no se editan en línea.
 - Datos de accesorios para celular, tres precios por producto con listas por tienda y cliente, producto genérico, Registrar venta y Compras en un solo bloque con pasos, y color de marca y por grupo.
+- Estandarización fase 1: tokens de diseño en `tono.css` (un solo bloque oscuro), componentes comunes unificados en `components.css` (se fusionó `secciones.css`; `.cabecera-flex`, `.rejilla-campos`, `.panel-proceso`, `.lista-casillas`, indicadores), todos los formularios con `components/formulario` (valores precargados, obligatorios marcados) y tablas de Reportes y Panel con `components/tabla-resumen`.
+- Selector de registros en toda la app (venta, compras, órdenes, abonos, pagos, seguimiento, notas, kardex), Consumidor final por defecto y la lista de precio ya no reprecia las líneas agregadas.
 
 ## Pendiente
 - Backend: no se ha compilado ni ejecutado (sin Maven en el entorno de trabajo); solo hay revisión de sintaxis.
@@ -90,6 +97,9 @@ Hecho y probado en el navegador (escritorio y móvil, sin errores de consola):
 - Backend (punto 9): faltan los módulos de CRM, tiendas, bodegas, traslados y empleados (tablas, entidades y endpoints); se hará módulo por módulo.
 - Opcional: botón "Ver como este rol" que cambie el menú temporalmente sin cerrar sesión.
 - Antes de producción: quitar el bloque de cuentas de prueba del ingreso.
+- Estandarización fase 2: catálogos que el dueño edita sin código (métodos de pago con tipo, IVA, prefijos, vigencia, plazos, etapas y motivos del embudo, tipos de actividad, etiquetas, categorías, unidades, nombres de listas, moneda) en `estado.ajustes.catalogos` con `catalogos.service.js`; marca (nombre, logo y acento) en Ajustes; quitar los valores por defecto silenciosos de los servicios (`tiendaId ?? 'T-01'`, `bodegaId ?? 'B-01'`, `'Cliente sin nombre'`, `plazoDias ?? 30`, concepto y motivo por defecto).
+- Estandarización fase 3 (POS): lector de códigos de barras con campo propio, tirilla de 58 y 80 mm, cajón de dinero y modo táctil (detalle en `src/pos/PENDIENTE.md` cuando se cree).
+- Registrar venta en celular: la sección tiene `min-width: 940px` (`cuadricula.css`) y se desplaza en horizontal; falta una vista de líneas propia para pantallas angostas.
 
 ## Cómo probar
 1. Abrir `index.html` con Live Server desde la carpeta del proyecto (o `npm start`).
@@ -102,7 +112,7 @@ Hecho y probado en el navegador (escritorio y móvil, sin errores de consola):
 - **Embudo:** cotización = oportunidad (enviada, en negociación, ganada, perdida). Perdida exige motivo; la cotización vencida sin cerrar genera una alerta para su vendedor (campana del encabezado; el Propietario ve todas).
 - **Cartera:** vencimiento por factura a crédito, cupo por cliente y cartera por edades (abonos aplicados a la factura más antigua).
 - **Inventario:** tres precios con IVA incluido (`precioSurtido`, `precioMayor`, `precioDetal`; `LISTAS_PRECIO`, `precioDeLista` en `inventario.service.js`), tarifa de IVA (0, 5, 19), categoría, stock mínimo y kardex calculado desde los documentos y los ajustes manuales.
-- **Listas de precio:** `tienda.listaPrecio` y `cliente.listaPrecio` (vacío = la de la tienda). La venta guarda `listaPrecio`; Registrar venta la toma del cliente o de la tienda y al cambiarla reprecia las líneas.
+- **Listas de precio:** `tienda.listaPrecio` y `cliente.listaPrecio` (vacío = la de la tienda). La venta guarda `listaPrecio`; Registrar venta la toma del cliente o de la tienda. Cambiarla **no reprecia** las líneas ya agregadas: solo aplica a los productos que se agreguen después.
 - **Producto genérico** (`generico: true`, ID 99 en la semilla): no maneja stock (`manejaStock`, `moverExistencias` lo ignora), su nombre y valor se escriben en cada línea de venta (`nombreDeLinea` en ventas.service; los demás productos toman el nombre del inventario). Una sola línea por producto en cada documento (las devoluciones se cuentan por `productoId`). No se compra.
 - **Registrar venta y Compras:** un solo bloque `documento-registro` con pasos numerados (`styles/documento.css`). Compras usa `buscador-cuadricula` montado sobre el panel (`montarFactura(raiz, contexto, documento, plantillasBuscador)`).
 - **Color:** `--acento`/`--marca` índigo y `--grupo-*` por grupo en `tono.css`; `[data-grupo]` (menú, cabecera y `.vista`, que pone el router) define `--color-grupo`.

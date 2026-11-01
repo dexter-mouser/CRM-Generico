@@ -1,7 +1,6 @@
-import { buscar, buscarTodos } from '../../core/dom.js';
+import { buscar } from '../../core/dom.js';
 import { estado } from '../../core/store.js';
 import { aPesos, fechaDeHoy } from '../../core/format.js';
-import { leerEntero } from '../../core/numeros.js';
 import { puede } from '../../core/autorizacion.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import { TIPOS_DOCUMENTO } from '../../core/validacion.js';
@@ -9,18 +8,23 @@ import { nombreDeTienda, enTiendaActiva } from '../../core/tienda.js';
 import * as servicioEmpleados from '../../services/empleados.service.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
+import { cargarPlantillasFormulario, montarFormulario } from '../../components/formulario/formulario.js';
 
-const CAMPOS = ['nombre', 'tipoDocumento', 'documento', 'cargo', 'tiendaId', 'fechaIngreso', 'telefono', 'correo', 'turno', 'metaMensual', 'comision', 'usuarioId'];
 let documento;
 let plantillasCuadricula;
 let plantillasFicha;
+let plantillasFormulario;
+
+const tiendasActivas = () => estado.tiendas.filter((tienda) => tienda.activa);
 
 // Los empleados de la tienda activa (o de todas)
 const empleadosDeLaVista = () => estado.empleados.filter(enTiendaActiva);
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./empleados.html', import.meta.url));
-  [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
+  [plantillasCuadricula, plantillasFicha, plantillasFormulario] = await Promise.all([
+    cargarPlantillasCuadricula(), cargarPlantillasFicha(), cargarPlantillasFormulario(),
+  ]);
   const activos = empleadosDeLaVista().filter((empleado) => empleado.activo);
   const desempeno = activos.map(servicioEmpleados.desempenoDelMes);
   const resumen = [
@@ -30,19 +34,10 @@ export async function dibujar() {
   ];
   return seccion(documento, 'principal', {
     resumen: repetir(documento, 'tarjeta', resumen),
-    opcionesDocumento: repetir(documento, 'opcion', Object.entries(TIPOS_DOCUMENTO).map(([valor, texto]) => ({ valor, texto }))),
-    opcionesCargo: repetir(documento, 'opcion', servicioEmpleados.CARGOS.map((cargo) => ({ valor: cargo, texto: '' }))),
-    opcionesTienda: repetir(documento, 'opcion', estado.tiendas.filter((tienda) => tienda.activa).map((tienda) => ({ valor: tienda.id, texto: tienda.nombre }))),
-    opcionesUsuario: repetir(documento, 'opcion', [{ valor: '', texto: 'Sin usuario' }, ...estado.usuarios.map((usuario) => ({ valor: usuario.id, texto: `${usuario.nombre} · ${usuario.correo}` }))]),
-    casillasTiendas: repetir(documento, 'casilla-tienda', estado.tiendas),
   });
 }
 
 export function montar(raiz, contexto) {
-  const campo = (nombre) => buscar(`#empleado-${nombre}`, raiz);
-  const formulario = buscar('#formulario-empleado', raiz);
-  const casillas = buscarTodos('[data-tienda-acceso]', raiz);
-  let enEdicion = null;
   let porRetirar = null;
   buscar('#nuevo-empleado', raiz).hidden = !puede('empleados', 'crear');
 
@@ -51,42 +46,62 @@ export function montar(raiz, contexto) {
       accion();
       contexto.aviso(mensaje);
       contexto.redibujar();
+      return true;
     } catch (error) {
       contexto.alerta(error.message);
+      return false;
     }
   };
 
   // Las casillas de acceso solo aplican si el empleado tiene usuario; usuario.tiendas vacío = todas
-  const mostrarAcceso = () => {
-    const usuario = estado.usuarios.find((candidato) => candidato.id === campo('usuarioId').value);
-    buscar('#acceso-tiendas', raiz).hidden = !usuario;
+  const mostrarAcceso = (usuarioId, formulario) => {
+    const usuario = estado.usuarios.find((candidato) => candidato.id === usuarioId);
+    formulario.mostrar('tiendasAcceso', Boolean(usuario));
     if (!usuario) return;
-    const permitidas = usuario.tiendas?.length ? usuario.tiendas : estado.tiendas.map((tienda) => tienda.id);
-    casillas.forEach((casilla) => { casilla.checked = permitidas.includes(casilla.value); });
+    formulario.escribir({ tiendasAcceso: usuario.tiendas?.length ? usuario.tiendas : estado.tiendas.map((tienda) => tienda.id) });
   };
-  campo('usuarioId').onchange = mostrarAcceso;
 
-  const abrirFormulario = (empleado) => {
-    enEdicion = empleado?.id ?? null;
-    buscar('#titulo-formulario-empleado', raiz).textContent = empleado ? `Editar a ${empleado.nombre}` : 'Nuevo empleado';
-    const valores = empleado ?? { tipoDocumento: 'CC', fechaIngreso: fechaDeHoy(), tiendaId: campo('tiendaId').options[0]?.value ?? '', metaMensual: '', comision: '' };
-    CAMPOS.forEach((nombre) => { campo(nombre).value = valores[nombre] ?? ''; });
-    if (empleado && !empleado.metaMensual) campo('metaMensual').value = '';
-    mostrarAcceso();
-    formulario.hidden = false;
-    formulario.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    campo('nombre').focus();
-  };
+  const formulario = montarFormulario(buscar('#formulario-empleado', raiz), {
+    plantillas: plantillasFormulario,
+    clave: 'empleado',
+    titulo: 'Nuevo empleado',
+    tituloEditar: (empleado) => `Editar a ${empleado.nombre}`,
+    textoGuardar: 'Guardar empleado',
+    alError: contexto.alerta,
+    columnas: 4,
+    campos: [
+      { clave: 'nombre', etiqueta: 'Nombre completo', obligatorio: true, ancho: 2 },
+      { clave: 'tipoDocumento', etiqueta: 'Tipo de documento', tipo: 'seleccion', valor: 'CC', opciones: () => Object.entries(TIPOS_DOCUMENTO) },
+      { clave: 'documento', etiqueta: 'Documento', maximo: 20, obligatorio: true },
+      { clave: 'cargo', etiqueta: 'Cargo', tipo: 'lista', maximo: 60, obligatorio: true, opciones: () => servicioEmpleados.CARGOS },
+      {
+        clave: 'tiendaId', etiqueta: 'Tienda donde trabaja', tipo: 'seleccion', obligatorio: true,
+        opciones: () => tiendasActivas().map((tienda) => [tienda.id, tienda.nombre]), valor: () => tiendasActivas()[0]?.id ?? '',
+      },
+      { clave: 'fechaIngreso', etiqueta: 'Fecha de ingreso', tipo: 'fecha', valor: fechaDeHoy, obligatorio: true },
+      { clave: 'telefono', etiqueta: 'Teléfono', tipo: 'telefono' },
+      { clave: 'correo', etiqueta: 'Correo', tipo: 'correo' },
+      { clave: 'turno', etiqueta: 'Turno', maximo: 120, ejemplo: 'Lunes a sábado 8:00 a 17:00' },
+      { clave: 'metaMensual', etiqueta: 'Meta de ventas del mes', tipo: 'entero', valor: 0, ayuda: '0 = sin meta' },
+      { clave: 'comision', etiqueta: 'Comisión (%)', tipo: 'decimal', valor: 0 },
+      {
+        clave: 'usuarioId', etiqueta: 'Usuario del sistema', tipo: 'seleccion', valor: '', alCambiar: mostrarAcceso,
+        opciones: () => [['', 'Sin usuario'], ...estado.usuarios.map((usuario) => [usuario.id, `${usuario.nombre} · ${usuario.correo}`])],
+      },
+      {
+        clave: 'tiendasAcceso', etiqueta: 'Tiendas a las que puede entrar con su usuario', tipo: 'casillas', ancho: 'completo',
+        opciones: () => estado.tiendas.map((tienda) => [tienda.id, tienda.nombre]),
+      },
+    ],
+    alGuardar: (datos, empleado) => {
+      if (!datos.usuarioId) delete datos.tiendasAcceso;
+      return empleado
+        ? ejecutar(() => servicioEmpleados.actualizarEmpleado(empleado.id, datos), 'Empleado actualizado correctamente')
+        : ejecutar(() => servicioEmpleados.agregarEmpleado(datos), 'Empleado registrado correctamente');
+    },
+  });
+  const abrirFormulario = (empleado) => formulario.abrir(empleado);
   buscar('#nuevo-empleado', raiz).onclick = () => abrirFormulario(null);
-  buscar('#cancelar-empleado', raiz).onclick = () => { formulario.hidden = true; };
-  buscar('#guardar-empleado', raiz).onclick = () => {
-    const datos = Object.fromEntries(CAMPOS.map((nombre) => [nombre, campo(nombre).value]));
-    datos.metaMensual = leerEntero(datos.metaMensual);
-    datos.comision = Number(String(datos.comision || '0').replace(',', '.'));
-    if (datos.usuarioId) datos.tiendasAcceso = casillas.filter((casilla) => casilla.checked).map((casilla) => casilla.value);
-    if (enEdicion) ejecutar(() => servicioEmpleados.actualizarEmpleado(enEdicion, datos), 'Empleado actualizado correctamente');
-    else ejecutar(() => servicioEmpleados.agregarEmpleado(datos), 'Empleado registrado correctamente');
-  };
 
   const editar = puede('empleados', 'editar');
   montarCuadricula(buscar('#cuadricula-empleados', raiz), {

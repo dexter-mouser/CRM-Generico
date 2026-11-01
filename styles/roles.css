@@ -1,28 +1,15 @@
 /* Roles y permisos: lista de roles a la izquierda, permisos y personas a la derecha */
-.cabecera-vista {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.cabecera-vista h1,
-.cabecera-vista h2 {
-  margin: 0;
-}
 
 .disposicion-roles {
   display: grid;
   grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
-  gap: 14px;
+  gap: var(--espacio-4);
   align-items: start;
 }
 
 .columna-roles {
   display: grid;
-  gap: 14px;
+  gap: var(--espacio-4);
   min-width: 0;
 }
 
@@ -34,7 +21,7 @@
   width: 100%;
   padding: 10px 12px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: var(--radio-md);
   background: none;
   color: var(--texto);
   font: inherit;
@@ -49,10 +36,6 @@
 .tarjeta-rol[aria-current="true"] {
   border-color: var(--contorno);
   background: var(--activo);
-}
-
-.formulario-en-linea {
-  margin-bottom: 14px;
 }
 
 th.centro,
@@ -79,7 +62,7 @@ td input[type="checkbox"] {
 /* Vista previa de lo que ve un rol */
 .vista-previa-rol {
   display: grid;
-  gap: 6px;
+  gap: var(--espacio-2);
   margin-top: 12px;
 }
 
@@ -88,10 +71,10 @@ td input[type="checkbox"] {
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 6px 12px;
+  gap: var(--espacio-2) var(--espacio-4);
   padding: 8px 12px;
   border: 1px solid var(--borde);
-  border-radius: 10px;
+  border-radius: var(--radio-md);
 }
 
 .modulo-previa .insignia + .insignia {

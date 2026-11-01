@@ -3,17 +3,8 @@
   margin-top: 16px;
   padding: 16px;
   border: 1px solid var(--borde);
-  border-radius: 14px;
+  border-radius: var(--radio-lg);
   background: var(--pasar);
-}
-
-.cabecera-efectivo {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 14px;
 }
 
 .pago-exacto {
@@ -23,11 +14,11 @@
   width: 100%;
   padding: 14px 16px;
   border: 1px dashed var(--contorno);
-  border-radius: 12px;
+  border-radius: var(--radio-md);
   background: var(--superficie);
   color: var(--texto);
   font: inherit;
-  font-size: 15px;
+  font-size: var(--letra-lg);
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s, transform 0.12s;
 }
@@ -54,7 +45,7 @@
   display: block;
   margin-bottom: 8px;
   color: var(--suave);
-  font-size: 12px;
+  font-size: var(--letra-xs);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -63,13 +54,13 @@
 .billetes {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
-  gap: 10px;
+  gap: var(--espacio-3);
 }
 
 .monedas {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--espacio-4);
 }
 
 /* Pieza común: billete o moneda */
@@ -90,7 +81,7 @@
 .moneda:hover {
   background: color-mix(in srgb, var(--color-pieza) 26%, var(--superficie));
   transform: translateY(-2px);
-  box-shadow: 0 6px 14px rgb(0 0 0 / 0.08);
+  box-shadow: var(--sombra-1);
 }
 
 .billete:active,
@@ -117,8 +108,8 @@
   justify-content: center;
   height: 58px;
   padding: 0 12px 0 20px;
-  border-radius: 8px;
-  font-size: 15px;
+  border-radius: var(--radio-sm);
+  font-size: var(--letra-lg);
   overflow: visible;
 }
 
@@ -127,7 +118,7 @@
   position: absolute;
   inset: 6px auto 6px 6px;
   width: 6px;
-  border-radius: 3px;
+  border-radius: var(--radio-sm);
   background: var(--color-pieza);
 }
 
@@ -146,7 +137,7 @@
   width: 58px;
   height: 58px;
   border-radius: 50%;
-  font-size: 13px;
+  font-size: var(--letra-sm);
 }
 
 .moneda::before {
@@ -164,10 +155,10 @@
   right: -8px;
   min-width: 24px;
   padding: 2px 7px;
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--acento);
   color: var(--acento-texto);
-  font-size: 12px;
+  font-size: var(--letra-xs);
   line-height: 18px;
   text-align: center;
 }
@@ -175,7 +166,7 @@
 .desglose {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--espacio-2);
   min-height: 28px;
   margin-top: 16px;
 }
@@ -183,16 +174,16 @@
 .pieza {
   padding: 3px 10px;
   border: 1px solid var(--borde);
-  border-radius: 999px;
+  border-radius: var(--radio-pildora);
   background: var(--superficie);
-  font-size: 12px;
+  font-size: var(--letra-xs);
   font-weight: 600;
 }
 
 .resumen-efectivo {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 10px;
+  gap: var(--espacio-3);
   margin-top: 12px;
 }
 
@@ -201,7 +192,7 @@
   justify-content: space-between;
   align-items: baseline;
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: var(--radio-md);
   background: var(--superficie);
 }
 
@@ -211,7 +202,7 @@
 
 .dato-efectivo strong {
   display: inline-block;
-  font-size: 20px;
+  font-size: var(--letra-xl);
 }
 
 .dato-efectivo.falta strong,

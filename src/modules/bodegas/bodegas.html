@@ -2,29 +2,9 @@
   <button type="button" class="boton" id="nueva-bodega" data-accion-cabecera>Nueva bodega</button>
   <button type="button" class="boton primario" id="nuevo-traslado" data-accion-cabecera>Nuevo traslado</button>
 
-  <section class="caja formulario-en-linea" id="formulario-bodega" aria-labelledby="titulo-formulario-bodega" hidden>
-    <strong id="titulo-formulario-bodega">Nueva bodega</strong>
-    <div class="formulario-gestion margen-superior">
-      <div>
-        <label for="bodega-nombre">Nombre</label>
-        <input id="bodega-nombre" class="campo" maxlength="60" autocomplete="off" placeholder="Bodega principal">
-      </div>
-      <div>
-        <label for="bodega-tiendaId">Tienda</label>
-        <select id="bodega-tiendaId" class="campo">{{{opcionesTienda}}}</select>
-      </div>
-      <div class="ancho-completo">
-        <label for="bodega-direccion">Dirección</label>
-        <input id="bodega-direccion" class="campo" maxlength="300" autocomplete="off">
-      </div>
-    </div>
-    <div class="acciones-fila margen-superior-grande">
-      <button type="button" class="boton primario" id="guardar-bodega">Guardar bodega</button>
-      <button type="button" class="boton" id="cancelar-bodega">Cancelar</button>
-    </div>
-  </section>
+  <div id="formulario-bodega"></div>
 
-  <section class="caja separacion-inferior" id="panel-traslado" aria-labelledby="titulo-traslado" hidden>
+  <section class="caja panel-proceso" id="panel-traslado" aria-labelledby="titulo-traslado" hidden>
     <strong id="titulo-traslado">Nuevo traslado</strong>
     <div class="dos-columnas arriba margen-superior">
       <div class="columna-angosta">

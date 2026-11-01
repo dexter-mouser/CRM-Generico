@@ -12,13 +12,13 @@
   display: grid;
   grid-template-columns: var(--columnas);
   align-items: center;
-  gap: 8px;
+  gap: var(--espacio-3);
   padding: 6px 8px;
   border-bottom: 1px solid var(--borde);
 }
 
 .encabezado-cuadricula {
-  font-size: 13px;
+  font-size: var(--letra-sm);
   font-weight: 600;
   color: var(--suave);
 }
@@ -48,9 +48,9 @@
   right: 0;
   z-index: 15;
   overflow: hidden;
-  border-radius: 0 0 10px 10px;
+  border-radius: 0 0 var(--radio-md) var(--radio-md);
   background: var(--superficie);
-  box-shadow: 0 0 0 1px var(--contorno), 0 14px 30px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 0 0 1px var(--contorno), var(--sombra-2);
 }
 
 .resultados-cuadricula[hidden] {
@@ -81,7 +81,7 @@
 .recientes {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--espacio-2);
   padding: 0 12px 12px;
 }
 
@@ -97,7 +97,7 @@
 .reciente {
   padding: 5px 10px;
   border: 1px solid var(--contorno);
-  border-radius: 20px;
+  border-radius: var(--radio-pildora);
   background: var(--superficie);
   color: var(--texto);
   font: inherit;
@@ -137,10 +137,6 @@
   min-width: 0;
 }
 
-.alinear-derecha {
-  text-align: right;
-}
-
 .vacio-cuadricula,
 .pie-cuadricula {
   padding: 10px 8px;
@@ -155,10 +151,10 @@
 /* Botones de acción de cada fila (Ficha, Editar, Eliminar…): compactos para que quepan en la columna */
 .cuadricula-datos .acciones-fila {
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--espacio-2);
 }
 
 .cuadricula-datos .acciones-fila .boton {
   padding: 6px 10px;
-  font-size: 13px;
+  font-size: var(--letra-sm);
 }

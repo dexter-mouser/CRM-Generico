@@ -1,8 +1,7 @@
 import { buscar, buscarTodos } from '../../core/dom.js';
 import { estado } from '../../core/store.js';
 import { aPesos, aFecha, fechaDeHoy } from '../../core/format.js';
-import { leerEntero } from '../../core/numeros.js';
-import { puede } from '../../core/autorizacion.js';
+import { puede, usuarioActual } from '../../core/autorizacion.js';
 import { cargarHtml, seccion, repetir, rellenar } from '../../core/template.js';
 import { TIPOS_DOCUMENTO, TIPOS_PERSONA } from '../../core/validacion.js';
 import { resumirItems, TIPOS_DOCUMENTO as TIPOS_DE_VENTA, ETIQUETA_NOTA } from '../../services/ventas.service.js';
@@ -12,33 +11,43 @@ import * as servicioActividades from '../../services/actividades.service.js';
 import { etapaDe, etiquetaDeEtapa } from '../../services/embudo.service.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 import { refrescarAlertas } from '../../components/header/header.js';
+import { cargarPlantillasFormulario, montarFormulario } from '../../components/formulario/formulario.js';
 
 let documento;
 let plantillasCuadricula;
-
-const opciones = (pares) => repetir(documento, 'opcion', pares.map(([valor, texto]) => ({ valor, texto })));
+let plantillasFormulario;
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./clientes.html', import.meta.url));
-  plantillasCuadricula = await cargarPlantillasCuadricula();
-  const etiquetas = [...new Set(estado.clientes.flatMap((cliente) => cliente.etiquetas ?? []))].sort();
-  return seccion(documento, 'principal', {
-    hoy: fechaDeHoy(),
-    opcionesPersona: opciones(Object.entries(TIPOS_PERSONA)),
-    opcionesDocumento: opciones([['', 'Sin documento'], ...Object.entries(TIPOS_DOCUMENTO)]),
-    opcionesEtiquetas: opciones(etiquetas.map((etiqueta) => [etiqueta, etiqueta])),
-    opcionesLista: opciones([['', 'La de la tienda donde compra'], ...LISTAS_PRECIO.map((lista) => [lista.id, lista.etiqueta])]),
-    opcionesActividad: opciones(Object.entries(servicioActividades.TIPOS_ACTIVIDAD)),
-    opcionesResponsable: opciones(estado.usuarios.filter((usuario) => usuario.activo).map((usuario) => [usuario.correo, usuario.nombre])),
-  });
+  [plantillasCuadricula, plantillasFormulario] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFormulario()]);
+  return seccion(documento, 'principal');
 }
 
+// Campos del cliente: lo que tiene un valor habitual se ve escrito al crear y se cambia si hace falta
+const CAMPOS_CLIENTE = [
+  { clave: 'nombre', etiqueta: 'Nombre o razón social', obligatorio: true },
+  { clave: 'tipoPersona', etiqueta: 'Tipo de persona', tipo: 'seleccion', opciones: () => Object.entries(TIPOS_PERSONA), valor: 'natural' },
+  { clave: 'tipoDocumento', etiqueta: 'Tipo de documento', tipo: 'seleccion', opciones: () => [['', 'Sin documento'], ...Object.entries(TIPOS_DOCUMENTO)], valor: 'CC' },
+  { clave: 'documento', etiqueta: 'Número de documento', ejemplo: 'Sin puntos' },
+  { clave: 'telefono', etiqueta: 'Teléfono', tipo: 'telefono' },
+  { clave: 'correo', etiqueta: 'Correo', tipo: 'correo' },
+  { clave: 'direccion', etiqueta: 'Dirección', ancho: 2 },
+  {
+    clave: 'etiquetas', etiqueta: 'Etiquetas', tipo: 'etiquetas', ayuda: 'Separadas por coma',
+    opciones: () => [...new Set(estado.clientes.flatMap((cliente) => cliente.etiquetas ?? []))].sort(),
+  },
+  { clave: 'limiteCredito', etiqueta: 'Cupo de crédito (COP)', tipo: 'entero', valor: 0, ayuda: '0 = sin crédito' },
+  { clave: 'plazoDias', etiqueta: 'Plazo de pago (días)', tipo: 'entero', valor: 30, obligatorio: true },
+  {
+    clave: 'listaPrecio', etiqueta: 'Lista de precio', tipo: 'seleccion', valor: '',
+    opciones: () => [['', 'La de la tienda donde compra'], ...LISTAS_PRECIO.map((lista) => [lista.id, lista.etiqueta])],
+  },
+  { clave: 'autorizaDatos', etiqueta: 'El cliente autoriza el tratamiento de sus datos personales (Ley 1581 de 2012)', tipo: 'casilla', ancho: 'completo' },
+];
+
 export function montar(raiz, contexto) {
-  let clienteEnEdicion = null; // id del cliente que se edita; null si se crea uno nuevo
   let clientePorEliminar = null;
   let clienteEnFicha = null;
-  const campos = ['nombre', 'tipoPersona', 'tipoDocumento', 'documento', 'telefono', 'correo', 'direccion', 'etiquetas', 'limiteCredito', 'plazoDias', 'listaPrecio'];
-  const campo = (nombre) => buscar(`#cliente-${nombre}`, raiz);
   const etiquetasHtml = (lista = []) => repetir(documento, 'etiqueta-cliente', lista.map((texto) => ({ texto })));
 
   const ejecutar = (accion, mensaje) => {
@@ -83,43 +92,28 @@ export function montar(raiz, contexto) {
   const pintarLista = () => cuadriculaClientes.actualizar(filasClientes());
 
   // --- Formulario ------------------------------------------------------------------------------------------
-  const abrirFormulario = (cliente) => {
-    clienteEnEdicion = cliente?.id ?? null;
-    buscar('#titulo-formulario-cliente', raiz).textContent = cliente ? `Editar a ${cliente.nombre}` : 'Nuevo cliente';
-    campos.forEach((nombre) => {
-      const valor = cliente?.[nombre];
-      campo(nombre).value = Array.isArray(valor) ? valor.join(', ') : (valor ?? '');
-    });
-    if (!cliente) {
-      campo('tipoPersona').value = 'natural';
-      campo('tipoDocumento').value = 'CC';
-      campo('plazoDias').value = '30';
-    }
-    campo('autorizaDatos').checked = Boolean(cliente?.autorizaDatos);
-    const formulario = buscar('#formulario-cliente', raiz);
-    formulario.hidden = false;
-    formulario.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    campo('nombre').focus();
-  };
-  const cerrarFormulario = () => { buscar('#formulario-cliente', raiz).hidden = true; };
+  const formulario = montarFormulario(buscar('#formulario-cliente', raiz), {
+    plantillas: plantillasFormulario,
+    clave: 'cliente',
+    titulo: 'Nuevo cliente',
+    tituloEditar: (cliente) => `Editar a ${cliente.nombre}`,
+    campos: CAMPOS_CLIENTE,
+    textoGuardar: 'Guardar cliente',
+    alError: contexto.alerta,
+    alGuardar: (datos, cliente) => {
+      const aplicado = ejecutar(
+        () => (cliente ? servicioClientes.actualizarCliente(cliente.id, datos) : servicioClientes.agregarCliente(datos)),
+        cliente ? 'Cliente actualizado correctamente' : 'Cliente agregado correctamente',
+      );
+      if (!aplicado) return false;
+      pintarLista();
+      if (clienteEnFicha) abrirFicha(clienteEnFicha);
+      return true;
+    },
+  });
+  const abrirFormulario = (cliente) => formulario.abrir(cliente);
 
   buscar('#nuevo-cliente', raiz).onclick = () => abrirFormulario(null);
-  buscar('#cancelar-cliente', raiz).onclick = cerrarFormulario;
-  buscar('#guardar-cliente', raiz).onclick = () => {
-    const datos = Object.fromEntries(campos.map((nombre) => [nombre, campo(nombre).value]));
-    datos.limiteCredito = leerEntero(datos.limiteCredito);
-    datos.plazoDias = leerEntero(datos.plazoDias) || 30;
-    datos.autorizaDatos = campo('autorizaDatos').checked;
-    const editando = clienteEnEdicion !== null;
-    const aplicado = ejecutar(
-      () => (editando ? servicioClientes.actualizarCliente(clienteEnEdicion, datos) : servicioClientes.agregarCliente(datos)),
-      editando ? 'Cliente actualizado correctamente' : 'Cliente agregado correctamente',
-    );
-    if (!aplicado) return;
-    cerrarFormulario();
-    pintarLista();
-    if (clienteEnFicha) abrirFicha(clienteEnFicha);
-  };
 
   // --- Ficha completa del cliente --------------------------------------------------------------------------
   const cuadricula = (selector, opcionesCuadricula) => montarCuadricula(buscar(selector, raiz), { plantillas: plantillasCuadricula, ...opcionesCuadricula });
@@ -256,22 +250,34 @@ export function montar(raiz, contexto) {
     clienteEnFicha = null;
   };
 
-  // Registrar actividad o tarea desde la ficha
-  const tipoActividad = buscar('#actividad-tipo', raiz);
-  tipoActividad.onchange = () => { buscar('#actividad-vence', raiz).disabled = tipoActividad.value !== 'tarea'; };
-  buscar('#registrar-actividad', raiz).onclick = () => {
-    const aplicado = ejecutar(() => servicioActividades.registrarActividad({
-      clienteId: clienteEnFicha,
-      tipo: tipoActividad.value,
-      descripcion: buscar('#actividad-descripcion', raiz).value,
-      vence: buscar('#actividad-vence', raiz).value,
-      responsableCorreo: buscar('#actividad-responsable', raiz).value,
-    }), tipoActividad.value === 'tarea' ? 'Tarea creada correctamente' : 'Actividad registrada correctamente');
-    if (!aplicado) return;
-    buscar('#actividad-descripcion', raiz).value = '';
-    pintarActividades(servicioClientes.buscarCliente(clienteEnFicha));
-    refrescarAlertas();
-  };
+  // Registrar actividad o tarea desde la ficha: la fecha solo aplica a las tareas
+  montarFormulario(buscar('#nueva-actividad', raiz), {
+    plantillas: plantillasFormulario,
+    clave: 'actividad',
+    incrustado: true,
+    textoGuardar: 'Registrar',
+    alError: contexto.alerta,
+    campos: [
+      {
+        clave: 'tipo', etiqueta: 'Tipo', tipo: 'seleccion', valor: 'llamada', opciones: () => Object.entries(servicioActividades.TIPOS_ACTIVIDAD),
+        alCambiar: (tipo, actividad) => actividad.habilitar('vence', tipo === 'tarea'),
+      },
+      { clave: 'vence', etiqueta: 'Fecha de la tarea', tipo: 'fecha', valor: fechaDeHoy, obligatorio: true },
+      {
+        clave: 'responsableCorreo', etiqueta: 'Responsable', tipo: 'seleccion', valor: () => usuarioActual()?.correo ?? '',
+        opciones: () => estado.usuarios.filter((usuario) => usuario.activo).map((usuario) => [usuario.correo, usuario.nombre]),
+      },
+      { clave: 'descripcion', etiqueta: 'Descripción', ancho: 'completo', maximo: 300, obligatorio: true, ejemplo: 'Qué se habló o qué hay que hacer' },
+    ],
+    alGuardar: (datos) => {
+      const aplicado = ejecutar(() => servicioActividades.registrarActividad({ ...datos, clienteId: clienteEnFicha }),
+        datos.tipo === 'tarea' ? 'Tarea creada correctamente' : 'Actividad registrada correctamente');
+      if (!aplicado) return false;
+      pintarActividades(servicioClientes.buscarCliente(clienteEnFicha));
+      refrescarAlertas();
+      return true;
+    },
+  });
   buscar('#cuadricula-actividades', raiz).addEventListener('click', (evento) => {
     const boton = evento.target.closest('[data-completar]');
     if (!boton) return;

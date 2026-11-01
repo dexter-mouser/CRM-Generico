@@ -8,6 +8,7 @@ import { aFecha } from '../../core/format.js';
 import { descargarCsv } from '../../services/csv.service.js';
 import * as servicioAjustes from '../../services/ajustes.service.js';
 import * as servicioCopia from '../../services/copia.service.js';
+import { cargarPlantillasFormulario, montarFormulario } from '../../components/formulario/formulario.js';
 
 // Tablas que se pueden exportar a CSV desde Ajustes
 const EXPORTACIONES = {
@@ -25,12 +26,12 @@ const EXPORTACIONES = {
     filas: () => estado.auditoria.map((a) => [a.id, aFecha(a.fecha), a.usuario, a.modulo, a.accion, a.detalle]) },
 };
 
+let plantillasFormulario;
+
 export async function dibujar() {
   const documento = await cargarHtml(new URL('./ajustes.html', import.meta.url));
-  const { tienda, recibo } = estado.ajustes;
+  plantillasFormulario = await cargarPlantillasFormulario();
   return seccion(documento, 'principal', {
-    ...tienda,
-    pie: recibo.pie,
     metodos: repetir(documento, 'casilla-metodo', servicioAjustes.METODOS_DISPONIBLES.map((metodo) => ({ metodo }))),
   });
 }
@@ -48,8 +49,6 @@ const ventaDeEjemplo = () => ({
 });
 
 export function montar(raiz, contexto) {
-  const valorDe = (selector) => buscar(selector, raiz).value;
-
   // Ejecuta un cambio y muestra el aviso; devuelve si se pudo aplicar
   const ejecutar = (accion, mensaje) => {
     try {
@@ -88,16 +87,31 @@ export function montar(raiz, contexto) {
   });
   pintarSegmentos();
 
-  // Tienda
-  buscar('#guardar-tienda', raiz).onclick = () => {
-    ejecutar(() => servicioAjustes.guardarDatosTienda({
-      nombre: valorDe('#tienda-nombre'),
-      nit: valorDe('#tienda-nit'),
-      telefono: valorDe('#tienda-telefono'),
-      ciudad: valorDe('#tienda-ciudad'),
-      direccion: valorDe('#tienda-direccion'),
-    }), 'Datos de la tienda guardados correctamente');
-  };
+  // Tienda y mensaje del recibo: formularios incrustados que muestran lo guardado
+  const formulario = (selector, opciones) => montarFormulario(buscar(selector, raiz), {
+    plantillas: plantillasFormulario, incrustado: true, columnas: 2, alError: contexto.alerta, ...opciones,
+  });
+  formulario('#formulario-tienda', {
+    clave: 'tienda',
+    textoGuardar: 'Guardar datos de la tienda',
+    valores: () => estado.ajustes.tienda,
+    campos: [
+      { clave: 'nombre', etiqueta: 'Nombre', obligatorio: true },
+      { clave: 'nit', etiqueta: 'NIT', maximo: 30 },
+      { clave: 'telefono', etiqueta: 'Teléfono', tipo: 'telefono' },
+      { clave: 'ciudad', etiqueta: 'Ciudad' },
+      { clave: 'direccion', etiqueta: 'Dirección', ancho: 'completo' },
+    ],
+    alGuardar: (datos) => ejecutar(() => servicioAjustes.guardarDatosTienda(datos), 'Datos de la tienda guardados correctamente'),
+  });
+  formulario('#formulario-recibo', {
+    clave: 'recibo',
+    textoGuardar: 'Guardar mensaje',
+    columnas: 1,
+    valores: () => estado.ajustes.recibo,
+    campos: [{ clave: 'pie', etiqueta: 'Mensaje al final del recibo', maximo: 300 }],
+    alGuardar: ({ pie }) => ejecutar(() => servicioAjustes.guardarMensajeRecibo(pie), 'Mensaje del recibo guardado correctamente'),
+  });
 
   // Ventas: los cambios se aplican al marcar o desmarcar
   buscarTodos('[data-metodo]', raiz).forEach((casilla) => {
@@ -128,9 +142,6 @@ export function montar(raiz, contexto) {
     'Datos de la tienda en el recibo actualizados correctamente',
   );
 
-  buscar('#guardar-recibo', raiz).onclick = () => {
-    ejecutar(() => servicioAjustes.guardarMensajeRecibo(valorDe('#recibo-pie')), 'Mensaje del recibo guardado correctamente');
-  };
   buscar('#ver-recibo-ejemplo', raiz).onclick = () => mostrarRecibo(ventaDeEjemplo());
 
   // Datos de prueba: pide confirmación antes de borrar

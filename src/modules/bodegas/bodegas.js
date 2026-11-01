@@ -11,30 +11,29 @@ import * as servicioBodegas from '../../services/bodegas.service.js';
 import { dibujarSelector, montarSelectorProductos } from '../../components/selector-productos/selector-productos.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
+import { cargarPlantillasFormulario, montarFormulario } from '../../components/formulario/formulario.js';
 
-const CAMPOS = ['nombre', 'tiendaId', 'direccion'];
 let documento;
 let plantillasCuadricula;
 let plantillasFicha;
+let plantillasFormulario;
 
 const porRecibirEn = (bodegaId) => estado.traslados.filter((traslado) => traslado.estado === 'enviado' && traslado.destinoId === bodegaId).length;
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./bodegas.html', import.meta.url));
-  [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
+  [plantillasCuadricula, plantillasFicha, plantillasFormulario] = await Promise.all([
+    cargarPlantillasCuadricula(), cargarPlantillasFicha(), cargarPlantillasFormulario(),
+  ]);
   const activas = servicioBodegas.bodegasActivas();
   return seccion(documento, 'principal', {
-    opcionesTienda: repetir(documento, 'opcion', [{ valor: '', texto: 'Ninguna (bodega central)' }, ...estado.tiendas.map((tienda) => ({ valor: tienda.id, texto: tienda.nombre }))]),
     opcionesBodega: repetir(documento, 'opcion', activas.map((bodega) => ({ valor: bodega.id, texto: `${bodega.nombre} · ${bodega.id}` }))),
     selector: await dibujarSelector(),
   });
 }
 
 export function montar(raiz, contexto) {
-  const campo = (nombre) => buscar(`#bodega-${nombre}`, raiz);
-  const formulario = buscar('#formulario-bodega', raiz);
   const panelTraslado = buscar('#panel-traslado', raiz);
-  let enEdicion = null;
   let trasladoPorAnular = null;
   buscar('#nueva-bodega', raiz).hidden = !puede('bodegas', 'crear');
   buscar('#nuevo-traslado', raiz).hidden = !puede('bodegas', 'crear');
@@ -51,23 +50,32 @@ export function montar(raiz, contexto) {
   };
 
   // --- Bodegas ---------------------------------------------------------------------------------------------
-  const abrirFormulario = (bodega) => {
-    enEdicion = bodega?.id ?? null;
-    buscar('#titulo-formulario-bodega', raiz).textContent = bodega ? `Editar ${bodega.nombre}` : 'Nueva bodega';
-    CAMPOS.forEach((nombre) => { campo(nombre).value = bodega?.[nombre] ?? ''; });
-    formulario.hidden = false;
-    formulario.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    campo('nombre').focus();
-  };
+  const formulario = montarFormulario(buscar('#formulario-bodega', raiz), {
+    plantillas: plantillasFormulario,
+    clave: 'bodega',
+    titulo: 'Nueva bodega',
+    tituloEditar: (bodega) => `Editar ${bodega.nombre}`,
+    textoGuardar: 'Guardar bodega',
+    alError: contexto.alerta,
+    campos: [
+      { clave: 'nombre', etiqueta: 'Nombre', maximo: 60, obligatorio: true, ejemplo: 'Bodega principal' },
+      {
+        clave: 'tiendaId', etiqueta: 'Tienda', tipo: 'seleccion', valor: '',
+        opciones: () => [['', 'Ninguna (bodega central)'], ...estado.tiendas.map((tienda) => [tienda.id, tienda.nombre])],
+      },
+      { clave: 'direccion', etiqueta: 'Dirección', maximo: 300, ancho: 'completo' },
+    ],
+    alGuardar: (datos, bodega) => {
+      const aplicado = bodega
+        ? ejecutar(() => servicioBodegas.actualizarBodega(bodega.id, datos), 'Bodega actualizada correctamente')
+        : ejecutar(() => servicioBodegas.agregarBodega(datos), 'Bodega creada correctamente');
+      if (!aplicado) return false;
+      contexto.redibujar();
+      return true;
+    },
+  });
+  const abrirFormulario = (bodega) => formulario.abrir(bodega);
   buscar('#nueva-bodega', raiz).onclick = () => abrirFormulario(null);
-  buscar('#cancelar-bodega', raiz).onclick = () => { formulario.hidden = true; };
-  buscar('#guardar-bodega', raiz).onclick = () => {
-    const datos = Object.fromEntries(CAMPOS.map((nombre) => [nombre, campo(nombre).value]));
-    const aplicado = enEdicion
-      ? ejecutar(() => servicioBodegas.actualizarBodega(enEdicion, datos), 'Bodega actualizada correctamente')
-      : ejecutar(() => servicioBodegas.agregarBodega(datos), 'Bodega creada correctamente');
-    if (aplicado) contexto.redibujar();
-  };
   const nombreBodega = (id) => buscarBodega(id)?.nombre ?? id;
   const editar = puede('bodegas', 'editar');
   montarCuadricula(buscar('#cuadricula-bodegas', raiz), {

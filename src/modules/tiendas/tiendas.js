@@ -7,29 +7,26 @@ import { LISTAS_PRECIO, etiquetaDeLista } from '../../services/inventario.servic
 import { buscarTienda, resumenDeTienda, agregarTienda, actualizarTienda, cambiarEstadoTienda } from '../../services/tiendas.service.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
+import { cargarPlantillasFormulario, montarFormulario } from '../../components/formulario/formulario.js';
 
-const CAMPOS = ['nombre', 'ciudad', 'telefono', 'direccion', 'bodegaId', 'listaPrecio'];
 let documento;
 let plantillasCuadricula;
 let plantillasFicha;
+let plantillasFormulario;
 
 const nombreBodega = (id) => estado.bodegas.find((bodega) => bodega.id === id)?.nombre ?? '—';
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./tiendas.html', import.meta.url));
-  [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
-  return seccion(documento, 'principal', {
-    opcionesLista: repetir(documento, 'opcion', LISTAS_PRECIO.map((lista) => ({ valor: lista.id, texto: lista.etiqueta }))),
-    opcionesBodega: repetir(documento, 'opcion', [{ valor: '', texto: 'Crear una bodega nueva' }, ...estado.bodegas.filter((bodega) => bodega.activa).map((bodega) => ({ valor: bodega.id, texto: `${bodega.nombre} · ${bodega.id}` }))]),
-  });
+  [plantillasCuadricula, plantillasFicha, plantillasFormulario] = await Promise.all([
+    cargarPlantillasCuadricula(), cargarPlantillasFicha(), cargarPlantillasFormulario(),
+  ]);
+  return seccion(documento, 'principal');
 }
 
 export function montar(raiz, contexto) {
-  const campo = (nombre) => buscar(`#tienda-${nombre}`, raiz);
-  const formulario = buscar('#formulario-tienda', raiz);
   const ficha = crearFicha(buscar('#ficha-tienda', raiz), plantillasFicha);
   const puedeEditar = puede('tiendas', 'editar');
-  let enEdicion = null;
   buscar('#nueva-tienda', raiz).hidden = !puede('tiendas', 'crear');
 
   const ejecutar = (accion, mensaje) => {
@@ -82,31 +79,42 @@ export function montar(raiz, contexto) {
   const pintar = () => cuadricula.actualizar(filas());
 
   // --- Formulario -------------------------------------------------------------------------------------------
-  const abrirFormulario = (tienda) => {
-    enEdicion = tienda?.id ?? null;
-    buscar('#titulo-formulario-tienda', raiz).textContent = tienda ? `Editar ${tienda.nombre}` : 'Nueva tienda';
-    // Al editar no se ofrece "crear bodega nueva": la tienda debe quedar con una bodega existente
-    campo('bodegaId').options[0].hidden = Boolean(tienda);
-    CAMPOS.forEach((nombre) => { campo(nombre).value = tienda?.[nombre] ?? ''; });
-    campo('listaPrecio').value = tienda?.listaPrecio ?? 'detal';
-    formulario.hidden = false;
-    formulario.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    campo('nombre').focus();
-  };
+  const formulario = montarFormulario(buscar('#formulario-tienda', raiz), {
+    plantillas: plantillasFormulario,
+    clave: 'tienda',
+    titulo: 'Nueva tienda',
+    tituloEditar: (tienda) => `Editar ${tienda.nombre}`,
+    textoGuardar: 'Guardar tienda',
+    alError: contexto.alerta,
+    campos: [
+      { clave: 'nombre', etiqueta: 'Nombre', maximo: 60, obligatorio: true, ejemplo: 'Tienda Sur' },
+      { clave: 'ciudad', etiqueta: 'Ciudad' },
+      { clave: 'telefono', etiqueta: 'Teléfono', tipo: 'telefono' },
+      {
+        // Al editar no se ofrece "crear bodega nueva": la tienda debe quedar con una bodega existente
+        clave: 'bodegaId', etiqueta: 'Bodega donde vende', tipo: 'seleccion', valor: '',
+        opciones: () => [
+          ...(formulario.registro() ? [] : [['', 'Crear una bodega nueva']]),
+          ...estado.bodegas.filter((bodega) => bodega.activa).map((bodega) => [bodega.id, `${bodega.nombre} · ${bodega.id}`]),
+        ],
+      },
+      { clave: 'listaPrecio', etiqueta: 'Lista de precio por defecto', tipo: 'seleccion', valor: 'detal', opciones: () => LISTAS_PRECIO.map((lista) => [lista.id, lista.etiqueta]) },
+      { clave: 'direccion', etiqueta: 'Dirección', maximo: 300, ancho: 'completo' },
+    ],
+    alGuardar: (datos, tienda) => {
+      const aplicado = tienda
+        ? ejecutar(() => actualizarTienda(tienda.id, datos), 'Tienda actualizada correctamente')
+        : ejecutar(() => agregarTienda(datos), 'Tienda creada correctamente');
+      if (!aplicado) return false;
+      // Una tienda nueva puede crear su bodega: se redibuja para que aparezca en la lista de bodegas
+      if (!tienda) contexto.redibujar();
+      pintar();
+      ficha.refrescar();
+      return true;
+    },
+  });
+  const abrirFormulario = (tienda) => formulario.abrir(tienda);
   buscar('#nueva-tienda', raiz).onclick = () => abrirFormulario(null);
-  buscar('#cancelar-tienda', raiz).onclick = () => { formulario.hidden = true; };
-  buscar('#guardar-tienda', raiz).onclick = () => {
-    const datos = Object.fromEntries(CAMPOS.map((nombre) => [nombre, campo(nombre).value]));
-    const aplicado = enEdicion
-      ? ejecutar(() => actualizarTienda(enEdicion, datos), 'Tienda actualizada correctamente')
-      : ejecutar(() => agregarTienda(datos), 'Tienda creada correctamente');
-    if (!aplicado) return;
-    // Una tienda nueva puede crear su bodega: se redibuja para que aparezca en la lista de bodegas
-    if (!enEdicion) return contexto.redibujar();
-    formulario.hidden = true;
-    pintar();
-    ficha.refrescar();
-  };
 
   // --- Ficha ------------------------------------------------------------------------------------------------
   const abrirFicha = (id) => ficha.abrir(id, () => {

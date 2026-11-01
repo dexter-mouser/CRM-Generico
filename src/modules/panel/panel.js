@@ -16,6 +16,11 @@ import { enTiendaActiva, tiendaActiva } from '../../core/tienda.js';
 import { existenciasVisibles, productosBajoMinimo, bodegaActiva } from '../../services/inventario.service.js';
 import { alertasDeCotizaciones } from '../../services/embudo.service.js';
 import { tareasPendientes, estaVencidaTarea } from '../../services/actividades.service.js';
+import { cargarPlantillasTabla, montarTablaResumen } from '../../components/tabla-resumen/tabla-resumen.js';
+
+// Últimas ventas: se calculan al dibujar y se pintan con la tabla de resumen al montar
+let ultimasVentas = [];
+let plantillasTabla;
 
 const ALTURA_MAXIMA_BARRA = 170;
 const ALTURA_MINIMA_BARRA = 4;
@@ -30,6 +35,7 @@ function saludoSegunHora() {
 
 export async function dibujar(contexto) {
   const documento = await cargarHtml(new URL('./panel.html', import.meta.url));
+  plantillasTabla = await cargarPlantillasTabla();
   const hoy = fechaDeHoy();
   const ventasDeHoy = ventasEntre(hoy, hoy).filter((venta) => !estaAnulada(venta));
   const semana = ventasPorDia(7);
@@ -78,7 +84,7 @@ export async function dibujar(contexto) {
     titulo: `${formatoDia.format(dia.fecha)}: ${aPesos(dia.total)}`,
   }));
   const etiquetas = semana.map((dia) => ({ texto: formatoDia.format(dia.fecha).replace('.', '') }));
-  const filas = estado.ventas.filter(enTiendaActiva).slice(-5).reverse().map((venta) => ({
+  ultimasVentas = estado.ventas.filter(enTiendaActiva).slice(-5).reverse().map((venta) => ({
     cliente: venta.cliente,
     productos: resumirItems(venta),
     metodo: venta.metodo,
@@ -101,7 +107,6 @@ export async function dibujar(contexto) {
     tarjetas: repetir(documento, 'tarjeta-resumen', tarjetas),
     barras: repetir(documento, 'barra', barras),
     etiquetas: repetir(documento, 'etiqueta-barra', etiquetas),
-    filas: repetir(documento, 'fila-venta', filas),
   });
 }
 
@@ -139,6 +144,18 @@ function pendientes(documento) {
 }
 
 export function montar(raiz, contexto) {
+  montarTablaResumen(buscar('#ultimas-ventas', raiz), {
+    plantillas: plantillasTabla,
+    columnas: [
+      { clave: 'cliente', titulo: 'Cliente' },
+      { clave: 'productos', titulo: 'Productos', clase: 'celda-ancha' },
+      { clave: 'metodo', titulo: 'Pago' },
+      { clave: 'total', titulo: 'Total', alinear: 'derecha' },
+    ],
+    filas: ultimasVentas,
+    vacio: 'Aún no hay ventas en esta tienda.',
+  });
+
   habilitarReordenamiento(buscar('#contenedor-tarjetas', raiz), {
     selector: '.resumen',
     alCambiar: (orden) => {

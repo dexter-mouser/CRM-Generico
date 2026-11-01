@@ -7,10 +7,10 @@
   <section class="caja panel-proceso" id="panel-nueva-nota" aria-labelledby="titulo-nueva-nota" data-seccion="notas">
     <strong id="titulo-nueva-nota">Nueva nota de devolución o de anulación</strong>
     <div class="texto-suave">Elige la factura y qué quieres hacer; luego indicas las cantidades y el motivo.</div>
-    <div class="tres-campos margen-superior">
-      <div>
-        <label for="nota-factura">Factura</label>
-        <select id="nota-factura" class="campo">{{{opcionesFactura}}}</select>
+    <div class="rejilla-campos margen-superior">
+      <div class="campo-formulario ancho-completo">
+        <span class="etiqueta-campo">Factura · busca por cualquier dato</span>
+        <div class="contenedor-selector" id="selector-nota-factura"></div>
       </div>
       <div>
         <label for="nota-tipo">Tipo de nota</label>
@@ -135,9 +135,6 @@
   <span class="insignia {{clase}}">{{texto}}</span>
 </template>
 
-<template id="opcion">
-  <option value="{{valor}}">{{texto}}</option>
-</template>
 
 <template id="fila-devolver-item">
   <tr>

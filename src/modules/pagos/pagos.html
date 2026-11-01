@@ -2,57 +2,9 @@
   <button type="button" class="boton primario" id="nuevo-abono" data-accion-cabecera data-seccion="abonos">Registrar abono</button>
   <button type="button" class="boton primario" id="nuevo-pago" data-accion-cabecera data-seccion="proveedores">Registrar pago</button>
 
-  <section class="caja panel-proceso" id="panel-abono" aria-labelledby="titulo-abono" data-seccion="abonos">
-    <strong id="titulo-abono">Abono de un cliente</strong>
-    <div class="tres-campos">
-      <div>
-        <label for="abono-cliente">Cliente con deuda</label>
-        <select id="abono-cliente" class="campo">{{{opcionesClientes}}}</select>
-        <div class="texto-suave" id="deuda-seleccionada"></div>
-      </div>
-      <div>
-        <label for="abono-valor">Valor (COP)</label>
-        <input id="abono-valor" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
-      </div>
-      <div>
-        <label for="abono-metodo">Método de pago</label>
-        <select id="abono-metodo" class="campo">{{{opcionesMetodo}}}</select>
-      </div>
-    </div>
-    <div class="acciones-fila margen-superior-grande">
-      <button type="button" class="boton primario" id="registrar-abono">Registrar abono</button>
-      <button type="button" class="boton" data-cancelar="#panel-abono">Cancelar</button>
-    </div>
-  </section>
+  <div id="panel-abono" data-seccion="abonos"></div>
 
-  <section class="caja panel-proceso" id="panel-pago" aria-labelledby="titulo-proveedor" data-seccion="proveedores">
-    <strong id="titulo-proveedor">Pago a un proveedor</strong>
-    <div class="tres-campos">
-      <div>
-        <label for="pago-proveedor">Proveedor con saldo pendiente</label>
-        <select id="pago-proveedor" class="campo">{{{opcionesProveedores}}}</select>
-        <div class="texto-suave" id="saldo-seleccionado"></div>
-      </div>
-      <div>
-        <label for="pago-concepto">Concepto</label>
-        <input id="pago-concepto" class="campo" autocomplete="off" placeholder="Pago de facturas">
-      </div>
-      <div>
-        <label for="pago-valor">Valor (COP)</label>
-        <input id="pago-valor" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0">
-      </div>
-    </div>
-    <div class="tres-campos">
-      <div>
-        <label for="pago-metodo">Método de pago</label>
-        <select id="pago-metodo" class="campo">{{{opcionesMetodo}}}</select>
-      </div>
-    </div>
-    <div class="acciones-fila margen-superior-grande">
-      <button type="button" class="boton primario" id="registrar-pago">Registrar pago</button>
-      <button type="button" class="boton" data-cancelar="#panel-pago">Cancelar</button>
-    </div>
-  </section>
+  <div id="panel-pago" data-seccion="proveedores"></div>
 
   <section class="caja" aria-labelledby="titulo-historial-pagos">
     <strong id="titulo-historial-pagos">{{tituloHistorial}}</strong>
@@ -60,22 +12,6 @@
   </section>
   <div id="ficha-pago"></div>
 </div>
-
-<template id="opcion-cliente">
-  <option value="{{id}}" data-pendiente="{{pendiente}}">{{nombre}}</option>
-</template>
-
-<template id="opcion-proveedor">
-  <option value="{{id}}" data-pendiente="{{pendiente}}">{{nombre}}</option>
-</template>
-
-<template id="opcion-vacia">
-  <option value="">{{texto}}</option>
-</template>
-
-<template id="opcion-metodo">
-  <option>{{metodo}}</option>
-</template>
 
 <template id="accion-pago">
   <div class="acciones-fila">

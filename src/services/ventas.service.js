@@ -91,7 +91,7 @@ function nombreDeLinea(linea) {
 }
 
 // Valida las líneas y arma el documento sin guardarlo: sirve para la vista previa y para registrar
-export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo', lineas, recibido, observaciones = '', documentoOrigen = '', listaPrecio = '' }) {
+export function armarVenta({ tipo = 'factura', clienteId = '', metodo = 'Efectivo', lineas, recibido, observaciones = '', documentoOrigen = '', listaPrecio = '' }) {
   if (!TIPOS_DOCUMENTO[tipo]) throw new Error('Elige si es factura, remisión o cotización');
   if (!lineas.length) throw new Error('Agrega al menos un producto');
   const nombres = lineas.map(nombreDeLinea);
@@ -122,11 +122,9 @@ export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo'
     }
   }
 
-  const nombreCliente = exigirTexto(cliente, 'el cliente', { obligatorio: false });
-  const registrado = buscarClientePorNombre(nombreCliente);
-  if (tipo === 'factura' && metodo === METODO_CREDITO && !registrado) {
-    throw new Error('Para vender a Crédito, registra primero al cliente en Clientes y escribe su nombre completo');
-  }
+  // El cliente siempre es uno registrado: por defecto el Consumidor final, que se cambia al elegir otro
+  const registrado = buscarCliente(clienteId);
+  if (!registrado) throw new Error('Elige el cliente de la venta');
 
   const items = lineas.map(({ productoId, cantidad, valorUnitario }, posicion) => ({
     productoId,
@@ -139,6 +137,7 @@ export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo'
   const total = items.reduce((acumulado, item) => acumulado + item.cantidad * item.valorUnitario, 0);
   // A crédito solo hasta el cupo del cliente
   if (tipo === 'factura' && metodo === METODO_CREDITO) {
+    if (registrado.generico) throw new Error('Para vender a Crédito elige un cliente registrado con cupo de crédito');
     if (!registrado.limiteCredito) throw new Error(`${registrado.nombre} no tiene cupo de crédito: asígnalo en Clientes`);
     if (total > cupoDisponible(registrado)) {
       throw new Error(`La venta supera el cupo de crédito de ${registrado.nombre}: disponible ${aPesos(cupoDisponible(registrado))}`);
@@ -148,8 +147,8 @@ export function armarVenta({ tipo = 'factura', cliente = '', metodo = 'Efectivo'
   const documento = {
     tipo,
     fecha: ahora.toISOString(),
-    cliente: nombreCliente || 'Cliente sin nombre',
-    clienteId: registrado?.id ?? '',
+    cliente: registrado.nombre,
+    clienteId: registrado.id,
     usuario: nombreDeUsuario(),
     usuarioCorreo: usuarioActual()?.correo ?? '',
     tiendaId,

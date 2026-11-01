@@ -7,30 +7,29 @@ import * as servicioActividades from '../../services/actividades.service.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
 import { refrescarAlertas } from '../../components/header/header.js';
+import { cargarPlantillasFormulario, montarFormulario } from '../../components/formulario/formulario.js';
+import { COLUMNAS_CLIENTE, clientesParaElegir } from '../../components/selector-registro/registros.js';
 
 let documento;
 let plantillasCuadricula;
 let plantillasFicha;
+let plantillasFormulario;
 
-const opciones = (pares) => repetir(documento, 'opcion', pares.map(([valor, texto]) => ({ valor, texto })));
 const nombreCliente = (id) => estado.clientes.find((cliente) => cliente.id === id)?.nombre ?? id;
+
+// Clientes que se buscan y eligen en el formulario (el consumidor final no tiene seguimiento)
+const clientesConDatos = () => clientesParaElegir((cliente) => !cliente.generico);
 const buscarActividad = (id) => estado.actividades.find((actividad) => actividad.id === id);
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./seguimiento.html', import.meta.url));
-  [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
-  return seccion(documento, 'principal', {
-    hoy: fechaDeHoy(),
-    opcionesCliente: opciones(estado.clientes.map((cliente) => [cliente.id, `${cliente.nombre} · ${cliente.id}`])),
-    opcionesActividad: opciones(Object.entries(servicioActividades.TIPOS_ACTIVIDAD)),
-    opcionesResponsable: opciones(estado.usuarios.filter((usuario) => usuario.activo).map((usuario) => [usuario.correo, usuario.nombre])),
-  });
+  [plantillasCuadricula, plantillasFicha, plantillasFormulario] = await Promise.all([
+    cargarPlantillasCuadricula(), cargarPlantillasFicha(), cargarPlantillasFormulario(),
+  ]);
+  return seccion(documento, 'principal');
 }
 
 export function montar(raiz, contexto) {
-  let actividadEnEdicion = null; // id de la actividad que se edita; null si se registra una nueva
-  const campo = (nombre) => buscar(`#actividad-${nombre}`, raiz);
-  const formulario = buscar('#formulario-actividad', raiz);
   const ficha = crearFicha(buscar('#ficha-actividad', raiz), plantillasFicha);
   buscar('#nueva-actividad', raiz).hidden = !puede('seguimiento', 'crear');
 
@@ -51,53 +50,56 @@ export function montar(raiz, contexto) {
   };
 
   // --- Formulario (nueva actividad o edición) -------------------------------------------------------------
-  const mostrarCamposTarea = (actividad) => {
-    const esTarea = actividad ? servicioActividades.esPendiente(actividad) : campo('tipo').value === 'tarea';
-    buscar('#campos-tarea', raiz).hidden = !esTarea;
+  // La fecha y el responsable solo aplican a una tarea pendiente; el resultado, a una actividad ya registrada
+  const mostrarCamposTarea = (tipo, formularioActividad) => {
+    const actividad = formularioActividad.registro();
+    const esTarea = actividad ? servicioActividades.esPendiente(actividad) : tipo === 'tarea';
+    formularioActividad.mostrar('vence', esTarea);
+    formularioActividad.mostrar('responsableCorreo', esTarea);
+    formularioActividad.mostrar('resultado', Boolean(actividad));
   };
-  campo('tipo').onchange = () => mostrarCamposTarea(null);
 
+  const formulario = montarFormulario(buscar('#formulario-actividad', raiz), {
+    plantillas: plantillasFormulario,
+    clave: 'actividad',
+    titulo: 'Nueva actividad o tarea',
+    tituloEditar: (actividad) => `Editar ${actividad.id}`,
+    alError: contexto.alerta,
+    campos: [
+      {
+        clave: 'clienteId', etiqueta: 'Cliente', tipo: 'registro', obligatorio: true, valor: '', plural: 'clientes', vacio: 'Elige el cliente',
+        columnas: COLUMNAS_CLIENTE, registros: clientesConDatos,
+      },
+      { clave: 'tipo', etiqueta: 'Tipo', tipo: 'seleccion', valor: 'llamada', opciones: () => Object.entries(servicioActividades.TIPOS_ACTIVIDAD), alCambiar: mostrarCamposTarea },
+      { clave: 'descripcion', etiqueta: 'Descripción', maximo: 300, obligatorio: true, ejemplo: 'Qué se habló o qué hay que hacer' },
+      { clave: 'vence', etiqueta: 'Fecha de la tarea', tipo: 'fecha', valor: fechaDeHoy, obligatorio: true },
+      {
+        clave: 'responsableCorreo', etiqueta: 'Responsable', tipo: 'seleccion', valor: () => usuarioActual()?.correo ?? '',
+        opciones: () => estado.usuarios.filter((usuario) => usuario.activo).map((usuario) => [usuario.correo, usuario.nombre]),
+      },
+      { clave: 'resultado', etiqueta: 'Resultado', maximo: 300, ancho: 'completo', ejemplo: 'En qué quedó' },
+    ],
+    alGuardar: (datos, actividad) => {
+      const aplicado = ejecutar(
+        () => (actividad ? servicioActividades.actualizarActividad(actividad.id, datos) : servicioActividades.registrarActividad(datos)),
+        actividad ? 'Actividad actualizada correctamente' : (datos.tipo === 'tarea' ? 'Tarea creada correctamente' : 'Actividad registrada correctamente'),
+      );
+      if (!aplicado) return false;
+      pintar();
+      ficha.refrescar();
+      refrescarAlertas();
+      return true;
+    },
+  });
+
+  // Al editar, el cliente y el tipo no cambian
   const abrirFormulario = (actividad) => {
-    actividadEnEdicion = actividad?.id ?? null;
-    buscar('#titulo-formulario-actividad', raiz).textContent = actividad ? `Editar ${actividad.id}` : 'Nueva actividad o tarea';
-    campo('cliente').disabled = Boolean(actividad);
-    campo('tipo').disabled = Boolean(actividad);
-    campo('cliente').value = actividad?.clienteId ?? campo('cliente').value;
-    campo('tipo').value = actividad?.tipo ?? 'llamada';
-    campo('descripcion').value = actividad?.descripcion ?? '';
-    campo('resultado').value = actividad?.resultado ?? '';
-    campo('vence').value = actividad?.vence ? actividad.vence.slice(0, 10) : fechaDeHoy();
-    campo('responsable').value = actividad?.responsableCorreo || usuarioActual()?.correo || '';
-    buscar('#campo-resultado', raiz).hidden = !actividad;
-    mostrarCamposTarea(actividad);
-    formulario.hidden = false;
-    formulario.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    campo('descripcion').focus();
+    formulario.habilitar('clienteId', !actividad);
+    formulario.habilitar('tipo', !actividad);
+    formulario.abrir(actividad ? { ...actividad, vence: actividad.vence ? actividad.vence.slice(0, 10) : null } : null);
   };
-  const cerrarFormulario = () => { formulario.hidden = true; };
 
   buscar('#nueva-actividad', raiz).onclick = () => abrirFormulario(null);
-  buscar('#cancelar-actividad', raiz).onclick = cerrarFormulario;
-  buscar('#guardar-actividad', raiz).onclick = () => {
-    const datos = {
-      clienteId: campo('cliente').value,
-      tipo: campo('tipo').value,
-      descripcion: campo('descripcion').value,
-      resultado: campo('resultado').value,
-      vence: campo('vence').value,
-      responsableCorreo: campo('responsable').value,
-    };
-    const editando = actividadEnEdicion !== null;
-    const aplicado = ejecutar(
-      () => (editando ? servicioActividades.actualizarActividad(actividadEnEdicion, datos) : servicioActividades.registrarActividad(datos)),
-      editando ? 'Actividad actualizada correctamente' : (datos.tipo === 'tarea' ? 'Tarea creada correctamente' : 'Actividad registrada correctamente'),
-    );
-    if (!aplicado) return;
-    cerrarFormulario();
-    pintar();
-    ficha.refrescar();
-    refrescarAlertas();
-  };
 
   // --- Cuadrículas ------------------------------------------------------------------------------------------
   const botonEditar = (id) => (puede('seguimiento', 'editar') ? repetir(documento, 'boton-editar', [{ id }]) : '');

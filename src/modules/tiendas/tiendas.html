@@ -1,39 +1,7 @@
 <div id="principal">
   <button type="button" class="boton primario" id="nueva-tienda" data-accion-cabecera>Nueva tienda</button>
 
-  <section class="caja formulario-en-linea" id="formulario-tienda" aria-labelledby="titulo-formulario-tienda" hidden>
-    <strong id="titulo-formulario-tienda">Nueva tienda</strong>
-    <div class="formulario-gestion margen-superior">
-      <div>
-        <label for="tienda-nombre">Nombre</label>
-        <input id="tienda-nombre" class="campo" maxlength="60" autocomplete="off" placeholder="Tienda Sur">
-      </div>
-      <div>
-        <label for="tienda-ciudad">Ciudad</label>
-        <input id="tienda-ciudad" class="campo" autocomplete="off">
-      </div>
-      <div>
-        <label for="tienda-telefono">Teléfono</label>
-        <input id="tienda-telefono" class="campo" inputmode="tel" autocomplete="off">
-      </div>
-      <div>
-        <label for="tienda-bodegaId">Bodega donde vende</label>
-        <select id="tienda-bodegaId" class="campo">{{{opcionesBodega}}}</select>
-      </div>
-      <div>
-        <label for="tienda-listaPrecio">Lista de precio por defecto</label>
-        <select id="tienda-listaPrecio" class="campo">{{{opcionesLista}}}</select>
-      </div>
-      <div class="ancho-completo">
-        <label for="tienda-direccion">Dirección</label>
-        <input id="tienda-direccion" class="campo" maxlength="300" autocomplete="off">
-      </div>
-    </div>
-    <div class="acciones-fila margen-superior-grande">
-      <button type="button" class="boton primario" id="guardar-tienda">Guardar tienda</button>
-      <button type="button" class="boton" id="cancelar-tienda">Cancelar</button>
-    </div>
-  </section>
+  <div id="formulario-tienda"></div>
 
   <section class="caja" aria-labelledby="titulo-lista-tiendas">
     <strong id="titulo-lista-tiendas">Lista de tiendas</strong>
@@ -59,6 +27,3 @@
   <span class="insignia {{clase}}">{{texto}}</span>
 </template>
 
-<template id="opcion">
-  <option value="{{valor}}">{{texto}}</option>
-</template>

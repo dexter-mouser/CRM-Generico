@@ -9,12 +9,7 @@
     </div>
     <div class="caja">
       <strong>Últimas ventas</strong>
-      <div class="desplazable">
-        <table>
-          <tr><th>Cliente</th><th>Productos</th><th>Pago</th><th>Total</th></tr>
-          <!--{{{filas}}}-->
-        </table>
-      </div>
+      <div id="ultimas-ventas"></div>
     </div>
   </div>
   <div class="dos-columnas">
@@ -67,13 +62,10 @@
 </template>
 
 <template id="barra">
-  <i style="height:{{altura}}px;animation-delay:{{retraso}}ms" title="{{titulo}}" aria-label="{{titulo}}"></i>
+  <i data-altura="{{altura}}" data-retraso="{{retraso}}" title="{{titulo}}" aria-label="{{titulo}}"></i>
 </template>
 
 <template id="etiqueta-barra">
   <span>{{texto}}</span>
 </template>
 
-<template id="fila-venta">
-  <tr><td>{{cliente}}</td><td class="celda-ancha">{{productos}}</td><td>{{metodo}}</td><td>{{total}}</td></tr>
-</template>

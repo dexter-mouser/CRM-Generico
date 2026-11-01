@@ -1,38 +1,32 @@
-import { buscar, buscarTodos } from '../../core/dom.js';
+import { buscar } from '../../core/dom.js';
 import { puede } from '../../core/autorizacion.js';
 import { estado } from '../../core/store.js';
 import { aPesos, aFecha } from '../../core/format.js';
-import { leerEntero } from '../../core/numeros.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
-import { clientesConDeuda, deudaDeCliente } from '../../services/clientes.service.js';
+import { deudaDeCliente } from '../../services/clientes.service.js';
+import { saldoConProveedor } from '../../services/proveedores.service.js';
 import * as servicioPagos from '../../services/pagos.service.js';
 import { mostrarComprobanteDePago } from '../../components/recibo/comprobantes.js';
 import { enTiendaActiva, nombreDeTienda } from '../../core/tienda.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
+import { cargarPlantillasFormulario, montarFormulario } from '../../components/formulario/formulario.js';
+import { COLUMNAS_CLIENTE, COLUMNAS_PROVEEDOR, clientesParaElegir, proveedoresParaElegir } from '../../components/selector-registro/registros.js';
 
 let documento;
 let plantillasCuadricula;
 let plantillasFicha;
-
-// Lista de opciones; si no hay nadie con saldo se muestra un texto que lo explica
-const opciones = (plantilla, elementos, textoVacio) => (elementos.length
-  ? repetir(documento, plantilla, elementos)
-  : repetir(documento, 'opcion-vacia', [{ texto: textoVacio }]));
+let plantillasFormulario;
 
 // Cada parte de la página muestra sus pagos: abonos de clientes o pagos a proveedores
 const TIPO_POR_SECCION = { abonos: 'abono', proveedores: 'proveedor' };
 
 export async function dibujar(contexto) {
   documento = await cargarHtml(new URL('./pagos.html', import.meta.url));
-  [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
-  const metodos = servicioPagos.metodosDePago().map((metodo) => ({ metodo }));
-  const clientes = clientesConDeuda().map((cliente) => ({ id: cliente.id, nombre: cliente.nombre, pendiente: deudaDeCliente(cliente) }));
-  const proveedores = servicioPagos.proveedoresConSaldo();
+  [plantillasCuadricula, plantillasFicha, plantillasFormulario] = await Promise.all([
+    cargarPlantillasCuadricula(), cargarPlantillasFicha(), cargarPlantillasFormulario(),
+  ]);
   return seccion(documento, 'principal', {
-    opcionesClientes: opciones('opcion-cliente', clientes, 'Ningún cliente tiene deuda'),
-    opcionesProveedores: opciones('opcion-proveedor', proveedores, 'Ningún proveedor tiene saldo'),
-    opcionesMetodo: repetir(documento, 'opcion-metodo', metodos),
     tituloHistorial: contexto.seccion === 'proveedores' ? 'Pagos a proveedores' : 'Abonos de clientes',
   });
 }
@@ -92,36 +86,6 @@ export function montar(raiz, contexto) {
     if (boton) mostrarComprobanteDePago(estado.pagos.find((pago) => pago.id === boton.dataset.comprobante));
   });
 
-  // Paneles de proceso: se abren con el botón de la cabecera
-  ['#panel-abono', '#panel-pago'].forEach((selector) => { buscar(selector, raiz).hidden = true; });
-  const abrirPanel = (selector) => {
-    const panel = buscar(selector, raiz);
-    panel.hidden = false;
-    panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    panel.querySelector('select')?.focus();
-  };
-  if (!puede('pagos', 'crear')) ['#nuevo-abono', '#nuevo-pago'].forEach((selector) => { buscar(selector, raiz).hidden = true; });
-  buscar('#nuevo-abono', raiz).onclick = () => abrirPanel('#panel-abono');
-  buscar('#nuevo-pago', raiz).onclick = () => abrirPanel('#panel-pago');
-  buscarTodos('[data-cancelar]', raiz).forEach((boton) => { boton.onclick = () => { buscar(boton.dataset.cancelar, raiz).hidden = true; }; });
-
-  const valorDe = (selector) => buscar(selector, raiz).value;
-
-  // Muestra lo pendiente de la persona elegida en cada lista
-  const mostrarPendiente = (selector, destino, etiqueta) => {
-    const elegida = buscar(`${selector} option:checked`, raiz);
-    buscar(destino, raiz).textContent = elegida?.dataset.pendiente
-      ? `${etiqueta}: ${aPesos(Number(elegida.dataset.pendiente))}`
-      : '';
-  };
-  const pintarPendientes = () => {
-    mostrarPendiente('#abono-cliente', '#deuda-seleccionada', 'Deuda actual');
-    mostrarPendiente('#pago-proveedor', '#saldo-seleccionado', 'Pendiente por pagar');
-  };
-  buscar('#abono-cliente', raiz).onchange = pintarPendientes;
-  buscar('#pago-proveedor', raiz).onchange = pintarPendientes;
-  pintarPendientes();
-
   // Tras registrar un pago se abre su comprobante para imprimirlo
   const ejecutar = (accion, mensaje) => {
     try {
@@ -129,21 +93,59 @@ export function montar(raiz, contexto) {
       contexto.aviso(mensaje);
       contexto.redibujar();
       mostrarComprobanteDePago(pago);
+      return true;
     } catch (error) {
       contexto.alerta(error.message);
+      return false;
     }
   };
 
-  buscar('#registrar-abono', raiz).onclick = () => ejecutar(() => servicioPagos.registrarAbono({
-    clienteId: valorDe('#abono-cliente'),
-    valor: leerEntero(valorDe('#abono-valor')),
-    metodo: valorDe('#abono-metodo'),
-  }), 'Abono registrado correctamente');
+  // Paneles de proceso: se abren con el botón de la cabecera. Al elegir a quién, el valor se precarga con todo
+  // lo pendiente y se cambia si el pago es parcial.
+  const opcionesMetodo = () => servicioPagos.metodosDePago();
+  const deudores = () => clientesParaElegir((cliente) => deudaDeCliente(cliente) > 0);
+  const acreedores = () => proveedoresParaElegir((proveedor) => saldoConProveedor(proveedor.id) > 0);
+  const precargarValor = (pendiente) => (id, panel) => {
+    const valor = id ? pendiente(id) : 0;
+    if (valor) panel.escribir({ valor });
+  };
 
-  buscar('#registrar-pago', raiz).onclick = () => ejecutar(() => servicioPagos.registrarPagoProveedor({
-    proveedorId: valorDe('#pago-proveedor'),
-    concepto: valorDe('#pago-concepto'),
-    valor: leerEntero(valorDe('#pago-valor')),
-    metodo: valorDe('#pago-metodo'),
-  }), 'Pago al proveedor registrado correctamente');
+  const panelAbono = montarFormulario(buscar('#panel-abono', raiz), {
+    plantillas: plantillasFormulario,
+    clave: 'abono',
+    titulo: 'Abono de un cliente',
+    textoGuardar: 'Registrar abono',
+    alError: contexto.alerta,
+    campos: [
+      {
+        clave: 'clienteId', etiqueta: 'Cliente con deuda', tipo: 'registro', obligatorio: true, valor: '', plural: 'clientes con deuda', vacio: 'Elige el cliente que abona',
+        columnas: COLUMNAS_CLIENTE, registros: deudores, alCambiar: precargarValor((id) => deudaDeCliente(estado.clientes.find((cliente) => cliente.id === id))),
+      },
+      { clave: 'valor', etiqueta: 'Valor (COP)', tipo: 'entero', obligatorio: true },
+      { clave: 'metodo', etiqueta: 'Método de pago', tipo: 'seleccion', opciones: opcionesMetodo, valor: () => opcionesMetodo()[0] },
+    ],
+    alGuardar: (datos) => ejecutar(() => servicioPagos.registrarAbono(datos), 'Abono registrado correctamente'),
+  });
+
+  const panelPago = montarFormulario(buscar('#panel-pago', raiz), {
+    plantillas: plantillasFormulario,
+    clave: 'pago',
+    titulo: 'Pago a un proveedor',
+    textoGuardar: 'Registrar pago',
+    alError: contexto.alerta,
+    campos: [
+      {
+        clave: 'proveedorId', etiqueta: 'Proveedor con saldo pendiente', tipo: 'registro', obligatorio: true, valor: '', plural: 'proveedores con saldo', vacio: 'Elige el proveedor al que se le paga',
+        columnas: COLUMNAS_PROVEEDOR, registros: acreedores, alCambiar: precargarValor(saldoConProveedor),
+      },
+      { clave: 'concepto', etiqueta: 'Concepto', valor: 'Pago de facturas', obligatorio: true },
+      { clave: 'valor', etiqueta: 'Valor (COP)', tipo: 'entero', obligatorio: true },
+      { clave: 'metodo', etiqueta: 'Método de pago', tipo: 'seleccion', opciones: opcionesMetodo, valor: () => opcionesMetodo()[0] },
+    ],
+    alGuardar: (datos) => ejecutar(() => servicioPagos.registrarPagoProveedor(datos), 'Pago al proveedor registrado correctamente'),
+  });
+
+  if (!puede('pagos', 'crear')) ['#nuevo-abono', '#nuevo-pago'].forEach((selector) => { buscar(selector, raiz).hidden = true; });
+  buscar('#nuevo-abono', raiz).onclick = () => panelAbono.abrir();
+  buscar('#nuevo-pago', raiz).onclick = () => panelPago.abrir();
 }

@@ -2,17 +2,17 @@
 .accesos-principales {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
-  gap: 12px;
+  gap: var(--espacio-4);
   margin-bottom: 16px;
 }
 
 .acceso-principal {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--espacio-4);
   padding: 14px;
   border: 1px solid var(--borde);
-  border-radius: 14px;
+  border-radius: var(--radio-lg);
   background: var(--superficie);
   color: var(--texto);
   text-decoration: none;
@@ -28,7 +28,7 @@
   display: block;
   margin-top: 2px;
   color: var(--suave);
-  font-size: 12px;
+  font-size: var(--letra-xs);
 }
 
 .icono-acceso {
@@ -38,7 +38,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: var(--radio-md);
   background: var(--marca-suave);
   color: var(--marca);
 }
@@ -69,20 +69,20 @@
 .todas-funciones {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 16px;
+  gap: var(--espacio-5);
   margin-top: 14px;
 }
 
 .grupo-funciones {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--espacio-1);
 }
 
 .titulo-funciones {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--espacio-3);
   margin-bottom: 4px;
   font-weight: 600;
 }
@@ -104,28 +104,6 @@
 }
 
 /* Formularios de gestión */
-.formulario-gestion {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
-  align-items: end;
-}
-
-.formulario-gestion .ancho-completo {
-  grid-column: 1 / -1;
-}
-
-.casillas-tiendas {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-}
-
-.casillas-tiendas label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
 
 /* Matriz de stock por bodega y líneas del traslado */
 .matriz-stock td.numero,
@@ -136,27 +114,38 @@
 .lineas-traslado {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--espacio-3);
   margin: 12px 0;
 }
 
 .linea-traslado {
   display: grid;
   grid-template-columns: 1fr 100px auto;
-  gap: 8px;
+  gap: var(--espacio-3);
   align-items: center;
 }
 
+/* Barra de avance de la meta: un <progress> con los colores del tema */
 .barra-avance {
+  display: block;
+  width: 100%;
   height: 6px;
-  border-radius: 3px;
+  border: 0;
+  border-radius: var(--radio-sm);
   background: var(--pista);
   overflow: hidden;
+  appearance: none;
 }
 
-.barra-avance i {
-  display: block;
-  height: 100%;
+.barra-avance::-webkit-progress-bar {
+  background: var(--pista);
+}
+
+.barra-avance::-webkit-progress-value {
+  background: var(--barra);
+}
+
+.barra-avance::-moz-progress-bar {
   background: var(--barra);
 }
 
@@ -168,6 +157,6 @@
   .acceso-principal {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: var(--espacio-3);
   }
 }

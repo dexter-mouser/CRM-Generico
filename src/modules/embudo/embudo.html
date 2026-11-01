@@ -10,23 +10,7 @@
 
   <div class="tablero-embudo margen-superior-grande" id="tablero"></div>
 
-  <section class="caja margen-superior-grande" id="panel-perdida" hidden aria-labelledby="titulo-perdida">
-    <strong id="titulo-perdida"></strong>
-    <div class="dos-campos">
-      <div>
-        <label for="motivo-perdida">Motivo</label>
-        <select id="motivo-perdida" class="campo">{{{opcionesMotivo}}}</select>
-      </div>
-      <div>
-        <label for="detalle-perdida">Detalle</label>
-        <input id="detalle-perdida" class="campo" maxlength="200" autocomplete="off" placeholder="Obligatorio si el motivo es «Otro»">
-      </div>
-    </div>
-    <div class="acciones-fila margen-superior-grande">
-      <button type="button" class="boton peligro" id="confirmar-perdida">Registrar como perdida</button>
-      <button type="button" class="boton" id="cancelar-perdida">Cancelar</button>
-    </div>
-  </section>
+  <div id="panel-perdida" class="margen-superior-grande"></div>
 
   <div id="ficha-oportunidad"></div>
 </div>
@@ -86,6 +70,3 @@
   <div class="caja indicador"><span class="texto-suave">{{etiqueta}}</span><strong>{{valor}}</strong></div>
 </template>
 
-<template id="opcion">
-  <option value="{{valor}}">{{valor}}</option>
-</template>

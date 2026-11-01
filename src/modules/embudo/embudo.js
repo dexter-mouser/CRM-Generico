@@ -7,22 +7,21 @@ import * as servicioEmbudo from '../../services/embudo.service.js';
 import { mostrarReciboDeVenta } from '../../components/recibo/comprobantes.js';
 import { refrescarAlertas } from '../../components/header/header.js';
 import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
+import { cargarPlantillasFormulario, montarFormulario } from '../../components/formulario/formulario.js';
 
 let documento;
 let plantillasFicha;
+let plantillasFormulario;
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./embudo.html', import.meta.url));
-  plantillasFicha = await cargarPlantillasFicha();
-  return seccion(documento, 'principal', {
-    opcionesMotivo: repetir(documento, 'opcion', servicioEmbudo.MOTIVOS_PERDIDA.map((valor) => ({ valor }))),
-  });
+  [plantillasFicha, plantillasFormulario] = await Promise.all([cargarPlantillasFicha(), cargarPlantillasFormulario()]);
+  return seccion(documento, 'principal');
 }
 
 export function montar(raiz, contexto) {
   const puedeEditar = puede('embudo', 'editar');
   const puedeConvertir = puede('nueva-venta', 'crear');
-  let enPerdida = null;
   buscar('#nueva-cotizacion', raiz).hidden = !puedeConvertir;
 
   // Botones de una oportunidad según su etapa (en la tarjeta y en la ficha)
@@ -108,15 +107,23 @@ export function montar(raiz, contexto) {
     }
   };
 
-  const abrirPerdida = (id) => {
-    enPerdida = id;
-    buscar('#titulo-perdida', raiz).textContent = `¿Por qué se perdió la cotización ${id}?`;
-    buscar('#detalle-perdida', raiz).value = '';
-    const panel = buscar('#panel-perdida', raiz);
-    panel.hidden = false;
-    panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    buscar('#motivo-perdida', raiz).focus();
-  };
+  // El motivo no se supone: la persona lo elige; el detalle es obligatorio si el motivo es «Otro»
+  const panelPerdida = montarFormulario(buscar('#panel-perdida', raiz), {
+    plantillas: plantillasFormulario,
+    clave: 'perdida',
+    textoGuardar: 'Registrar como perdida',
+    columnas: 2,
+    alError: contexto.alerta,
+    campos: [
+      { clave: 'motivo', etiqueta: 'Motivo', tipo: 'seleccion', obligatorio: true, valor: '', opciones: () => [['', 'Elige el motivo'], ...servicioEmbudo.MOTIVOS_PERDIDA] },
+      { clave: 'detalle', etiqueta: 'Detalle', maximo: 200, ayuda: 'Obligatorio si el motivo es «Otro»' },
+    ],
+    alGuardar: ({ motivo, detalle }, cotizacion) => ejecutar(
+      () => servicioEmbudo.marcarPerdida(cotizacion.id, motivo, detalle),
+      `Cotización ${cotizacion.id} registrada como perdida correctamente`,
+    ),
+  });
+  const abrirPerdida = (id) => panelPerdida.abrir({ id }, `¿Por qué se perdió la cotización ${id}?`);
 
   // Ficha de la oportunidad: datos de la cotización y sus acciones del embudo
   const ficha = crearFicha(buscar('#ficha-oportunidad', raiz), plantillasFicha);
@@ -152,15 +159,6 @@ export function montar(raiz, contexto) {
   };
   buscar('#tablero', raiz).addEventListener('click', alTocar);
   buscar('#ficha-oportunidad', raiz).addEventListener('click', alTocar);
-
-  buscar('#cancelar-perdida', raiz).onclick = () => { buscar('#panel-perdida', raiz).hidden = true; };
-  buscar('#confirmar-perdida', raiz).onclick = () => {
-    const aplicado = ejecutar(
-      () => servicioEmbudo.marcarPerdida(enPerdida, buscar('#motivo-perdida', raiz).value, buscar('#detalle-perdida', raiz).value),
-      `Cotización ${enPerdida} registrada como perdida correctamente`,
-    );
-    if (aplicado) buscar('#panel-perdida', raiz).hidden = true;
-  };
 
   pintar();
   // Llega desde la alerta del encabezado con ?perdida=C17 para registrar el motivo directamente

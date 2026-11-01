@@ -5,31 +5,7 @@
       <div class="texto-suave">Estos datos aparecen en el recibo.</div>
     </div>
     <div>
-      <div class="dos-campos">
-        <div>
-          <label for="tienda-nombre">Nombre</label>
-          <input id="tienda-nombre" class="campo" autocomplete="off" value="{{nombre}}">
-        </div>
-        <div>
-          <label for="tienda-nit">NIT</label>
-          <input id="tienda-nit" class="campo" autocomplete="off" value="{{nit}}">
-        </div>
-      </div>
-      <div class="dos-campos">
-        <div>
-          <label for="tienda-telefono">Teléfono</label>
-          <input id="tienda-telefono" class="campo" inputmode="tel" autocomplete="off" value="{{telefono}}">
-        </div>
-        <div>
-          <label for="tienda-ciudad">Ciudad</label>
-          <input id="tienda-ciudad" class="campo" autocomplete="off" value="{{ciudad}}">
-        </div>
-      </div>
-      <label for="tienda-direccion">Dirección</label>
-      <input id="tienda-direccion" class="campo" autocomplete="off" value="{{direccion}}">
-      <div class="acciones-fila margen-superior-grande">
-        <button type="button" class="boton primario" id="guardar-tienda">Guardar datos de la tienda</button>
-      </div>
+      <div id="formulario-tienda"></div>
     </div>
   </section>
 
@@ -75,8 +51,7 @@
       <div class="texto-suave">Cómo se ve el recibo de cada venta.</div>
     </div>
     <div>
-      <label for="recibo-pie">Mensaje al final del recibo</label>
-      <input id="recibo-pie" class="campo" autocomplete="off" value="{{pie}}">
+      <div id="formulario-recibo"></div>
       <div class="margen-superior-grande">
         <label class="interruptor">
           <input type="checkbox" role="switch" id="mostrar-datos-tienda">
@@ -85,7 +60,6 @@
         </label>
       </div>
       <div class="acciones-fila margen-superior-grande">
-        <button type="button" class="boton primario" id="guardar-recibo">Guardar mensaje</button>
         <button type="button" class="boton" id="ver-recibo-ejemplo">Ver recibo de ejemplo</button>
       </div>
     </div>

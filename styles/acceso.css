@@ -14,12 +14,12 @@
 .acceso-caja {
   padding: 32px 28px;
   border: 1px solid var(--borde);
-  border-radius: 14px;
+  border-radius: var(--radio-lg);
   background: var(--superficie);
 }
 
 .acceso-caja h1 {
-  font-size: 22px;
+  font-size: var(--letra-xl);
 }
 
 .acceso-marca {
@@ -27,15 +27,15 @@
 }
 
 .acceso-marca .logo {
-  font-size: 24px;
+  font-size: var(--letra-xxl);
 }
 
 .pestanas {
   display: flex;
-  gap: 4px;
+  gap: var(--espacio-1);
   margin: 20px 0 4px;
   padding: 4px;
-  border-radius: 10px;
+  border-radius: var(--radio-md);
   background: var(--pista);
 }
 
@@ -43,11 +43,11 @@
   flex: 1;
   padding: 8px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radio-sm);
   background: none;
   color: var(--suave);
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--letra-sm);
   font-weight: 600;
   cursor: pointer;
 }
@@ -71,29 +71,13 @@
   right: 4px;
   bottom: 4px;
   padding: 0 10px;
-  font-size: 12px;
-}
-
-.marca-check {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 16px 0 0;
-  font-size: 13px;
-  color: var(--texto);
-  cursor: pointer;
-}
-
-.marca-check input {
-  width: 16px;
-  height: 16px;
-  margin: 0;
+  font-size: var(--letra-xs);
 }
 
 .error {
   min-height: 20px;
   margin-top: 12px;
-  font-size: 13px;
+  font-size: var(--letra-sm);
   color: var(--negativo);
 }
 
@@ -106,7 +90,7 @@
 
 .cuentas-prueba {
   display: grid;
-  gap: 6px;
+  gap: var(--espacio-2);
   margin: 8px 0;
 }
 
@@ -114,7 +98,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: var(--espacio-3);
 }
 
 .demo code {

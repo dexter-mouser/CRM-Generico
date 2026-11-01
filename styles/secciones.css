@@ -7,14 +7,14 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 16px 24px;
+  gap: var(--espacio-5) var(--espacio-6);
   margin-bottom: 18px;
   padding: 22px 24px 22px 28px;
   overflow: hidden;
   /* clip: la marca de agua sobresale y el navegador no debe desplazar la cabecera al enfocar sus botones */
   overflow: clip;
   border: 1px solid var(--borde);
-  border-radius: 18px;
+  border-radius: var(--radio-xl);
   background:
     radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--color-grupo, var(--acento)) 16%, transparent) 0, transparent 60%),
     linear-gradient(120deg, var(--superficie) 50%, color-mix(in srgb, var(--color-grupo, var(--acento)) 7%, var(--superficie)));
@@ -52,10 +52,10 @@
 .grupo-cabecera {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--espacio-3);
   margin-bottom: 8px;
   color: var(--color-grupo, var(--suave));
-  font-size: 11.5px;
+  font-size: var(--letra-xxs);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -67,9 +67,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 8px;
+  border-radius: var(--radio-sm);
   background: var(--color-grupo, var(--acento));
-  color: #ffffff;
+  color: var(--superficie);
 }
 
 .icono-cabecera svg {
@@ -79,7 +79,7 @@
 
 .cabecera-seccion h1 {
   margin: 0;
-  font-size: 30px;
+  font-size: var(--letra-titulo);
   font-weight: 800;
   line-height: 1.15;
   letter-spacing: -0.6px;
@@ -101,7 +101,7 @@
   max-width: 72ch;
   margin: 8px 0 0;
   color: var(--suave);
-  font-size: 15px;
+  font-size: var(--letra-lg);
   line-height: 1.5;
 }
 
@@ -109,7 +109,7 @@
   position: relative;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--espacio-3);
 }
 
 .acciones-cabecera[hidden] {
@@ -117,7 +117,6 @@
 }
 
 /* Formulario de nuevo proceso (se abre con el botón de la cabecera) */
-.formulario-en-linea,
 .panel-proceso {
   position: relative;
   margin-bottom: 16px;
@@ -129,11 +128,10 @@
   display: none;
 }
 
-.formulario-en-linea > strong:first-child,
 .panel-proceso > strong:first-child {
   display: block;
   margin-bottom: 4px;
-  font-size: 17px;
+  font-size: var(--letra-lg);
 }
 
 @keyframes aparecer-proceso {
@@ -149,23 +147,23 @@
   animation: aparecer-proceso 0.2s ease-out;
 }
 
-.cabecera-ficha-registro {
+.cabecera-flex {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--espacio-4);
   margin-bottom: 14px;
 }
 
-.cabecera-ficha-registro h2 {
+.ficha-registro .cabecera-flex h2 {
   margin: 2px 0 4px;
-  font-size: 22px;
+  font-size: var(--letra-xl);
 }
 
 .etiqueta-ficha {
   color: var(--color-grupo, var(--suave));
-  font-size: 11px;
+  font-size: var(--letra-xxs);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -182,11 +180,11 @@
 .datos-registro {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 12px 18px;
+  gap: var(--espacio-4) var(--espacio-5);
   margin: 0 0 14px;
   padding: 14px;
   border: 1px solid var(--borde);
-  border-radius: 12px;
+  border-radius: var(--radio-md);
   background: var(--pasar);
 }
 
@@ -200,7 +198,7 @@
 
 .datos-registro dt {
   color: var(--suave);
-  font-size: 12px;
+  font-size: var(--letra-xs);
 }
 
 .datos-registro dd {
@@ -224,11 +222,11 @@
   }
 
   .cabecera-seccion h1 {
-    font-size: 24px;
+    font-size: var(--letra-xxl);
   }
 
   .descripcion-cabecera {
-    font-size: 14px;
+    font-size: var(--letra-md);
   }
 
   .acciones-cabecera {
@@ -245,13 +243,7 @@
   color: var(--texto);
 }
 
-/* Toques de color: pestañas, insignias e indicadores toman el color del grupo o el de estado */
-.pestana-grupo.activa {
-  background: color-mix(in srgb, var(--color-grupo, var(--acento)) 13%, var(--superficie));
-  color: var(--color-grupo, var(--texto));
-  box-shadow: inset 0 -2px 0 var(--color-grupo, var(--acento));
-}
-
+/* Toques de color: insignias e indicadores toman el color del grupo o el de estado */
 .insignia.informativa {
   border-color: transparent;
   background: var(--marca-suave);

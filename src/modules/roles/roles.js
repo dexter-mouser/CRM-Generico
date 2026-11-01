@@ -1,4 +1,4 @@
-import { buscar, buscarTodos } from '../../core/dom.js';
+import { buscar } from '../../core/dom.js';
 import { estado } from '../../core/store.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import { ACCIONES, MODULOS_PERMISOS } from '../../config/permisos.js';
@@ -7,10 +7,12 @@ import * as servicioRoles from '../../services/roles.service.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
 import { nombreDeTienda } from '../../core/tienda.js';
+import { cargarPlantillasFormulario, montarFormulario } from '../../components/formulario/formulario.js';
 
 let documento;
 let plantillasCuadricula;
 let plantillasFicha;
+let plantillasFormulario;
 let rolSeleccionadoId = null;
 
 const contarPersonas = (rolId) => {
@@ -20,7 +22,9 @@ const contarPersonas = (rolId) => {
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./roles.html', import.meta.url));
-  [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
+  [plantillasCuadricula, plantillasFicha, plantillasFormulario] = await Promise.all([
+    cargarPlantillasCuadricula(), cargarPlantillasFicha(), cargarPlantillasFormulario(),
+  ]);
   if (!servicioRoles.buscarRol(rolSeleccionadoId)) rolSeleccionadoId = estado.roles[0].id;
   return seccion(documento, 'principal', {
     roles: '',
@@ -29,7 +33,6 @@ export async function dibujar() {
 }
 
 export function montar(raiz, contexto) {
-  let modoFormulario = null; // 'crear' o 'editar'
   const rolActual = () => servicioRoles.buscarRol(rolSeleccionadoId);
 
   // Ejecuta un cambio y muestra el aviso; devuelve si se pudo aplicar
@@ -146,7 +149,6 @@ export function montar(raiz, contexto) {
   const pintarPersonas = () => {
     cuadriculaPersonas.actualizar(filasPersonas());
     fichaPersona.refrescar();
-    buscar('#persona-rol', raiz).innerHTML = opcionesDeRoles(rolSeleccionadoId);
   };
 
   const pintarTodo = () => {
@@ -156,43 +158,39 @@ export function montar(raiz, contexto) {
     pintarPersonas();
   };
 
-  // Formulario de rol (crear o editar)
-  const abrirFormularioRol = (modo) => {
-    modoFormulario = modo;
-    const rol = rolActual();
-    buscar('#titulo-formulario-rol', raiz).textContent = modo === 'crear' ? 'Nuevo rol' : `Editar rol ${rol.nombre}`;
-    buscar('#rol-nombre', raiz).value = modo === 'crear' ? '' : rol.nombre;
-    buscar('#rol-descripcion', raiz).value = modo === 'crear' ? '' : rol.descripcion;
-    buscar('#formulario-rol', raiz).hidden = false;
-    buscar('#formulario-rol', raiz).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    buscar('#rol-nombre', raiz).focus();
-  };
-  const cerrarFormularioRol = () => {
-    modoFormulario = null;
-    buscar('#formulario-rol', raiz).hidden = true;
-  };
+  // Formulario de rol (crear o editar el rol elegido)
+  const formularioRol = montarFormulario(buscar('#formulario-rol', raiz), {
+    plantillas: plantillasFormulario,
+    clave: 'rol',
+    titulo: 'Nuevo rol',
+    tituloEditar: (rol) => `Editar rol ${rol.nombre}`,
+    textoGuardar: 'Guardar rol',
+    columnas: 2,
+    alError: contexto.alerta,
+    campos: [
+      { clave: 'nombre', etiqueta: 'Nombre', obligatorio: true, ejemplo: 'Por ejemplo: Supervisor' },
+      { clave: 'descripcion', etiqueta: 'Descripción', ejemplo: 'Qué hace este rol' },
+    ],
+    alGuardar: (datos, rol) => {
+      const aplicado = ejecutar(() => {
+        if (rol) servicioRoles.actualizarRol(rol.id, datos);
+        else rolSeleccionadoId = servicioRoles.crearRol(datos).id;
+      }, rol ? 'Rol actualizado correctamente' : 'Rol creado correctamente');
+      if (!aplicado) return false;
+      pintarTodo();
+      return true;
+    },
+  });
 
-  buscar('#nuevo-rol', raiz).onclick = () => abrirFormularioRol('crear');
-  buscar('#editar-rol', raiz).onclick = () => abrirFormularioRol('editar');
-  buscar('#cancelar-rol', raiz).onclick = cerrarFormularioRol;
-  buscar('#guardar-rol', raiz).onclick = () => {
-    const datos = { nombre: buscar('#rol-nombre', raiz).value, descripcion: buscar('#rol-descripcion', raiz).value };
-    const creando = modoFormulario === 'crear';
-    const aplicado = ejecutar(() => {
-      if (creando) rolSeleccionadoId = servicioRoles.crearRol(datos).id;
-      else servicioRoles.actualizarRol(rolSeleccionadoId, datos);
-    }, creando ? 'Rol creado correctamente' : 'Rol actualizado correctamente');
-    if (!aplicado) return;
-    cerrarFormularioRol();
-    pintarTodo();
-  };
+  buscar('#nuevo-rol', raiz).onclick = () => formularioRol.abrir(null);
+  buscar('#editar-rol', raiz).onclick = () => formularioRol.abrir(rolActual());
 
   // Elegir un rol de la lista
   buscar('#lista-roles', raiz).addEventListener('click', (evento) => {
     const tarjeta = evento.target.closest('[data-rol]');
     if (!tarjeta) return;
     rolSeleccionadoId = tarjeta.dataset.rol;
-    if (modoFormulario === 'editar') cerrarFormularioRol();
+    if (formularioRol.registro()) formularioRol.cerrar();
     pintarTodo();
   });
 
@@ -238,23 +236,25 @@ export function montar(raiz, contexto) {
     pintarTodo();
   });
 
-  const formularioPersona = buscar('#formulario-persona', raiz);
-  buscar('#agregar-persona', raiz).onclick = () => {
-    formularioPersona.hidden = false;
-    buscar('#persona-nombre', raiz).focus();
-  };
-  buscar('#cancelar-persona', raiz).onclick = () => { formularioPersona.hidden = true; };
-  buscar('#guardar-persona', raiz).onclick = () => {
-    const aplicado = ejecutar(() => servicioRoles.agregarUsuario({
-      nombre: buscar('#persona-nombre', raiz).value,
-      correo: buscar('#persona-correo', raiz).value,
-      rolId: buscar('#persona-rol', raiz).value,
-    }), 'Persona agregada correctamente');
-    if (!aplicado) return;
-    buscarTodos('#persona-nombre, #persona-correo', raiz).forEach((campo) => { campo.value = ''; });
-    formularioPersona.hidden = true;
-    pintarTodo();
-  };
+  // Persona nueva: el rol elegido en la lista viene marcado
+  const formularioPersona = montarFormulario(buscar('#formulario-persona', raiz), {
+    plantillas: plantillasFormulario,
+    clave: 'persona',
+    titulo: 'Agregar persona',
+    textoGuardar: 'Guardar persona',
+    alError: contexto.alerta,
+    campos: [
+      { clave: 'nombre', etiqueta: 'Nombre', obligatorio: true },
+      { clave: 'correo', etiqueta: 'Correo', obligatorio: true, ejemplo: 'nombre@generico.com', ayuda: 'Puedes escribir solo lo que va antes de la @' },
+      { clave: 'rolId', etiqueta: 'Rol', tipo: 'seleccion', valor: () => rolSeleccionadoId, opciones: () => estado.roles.map((rol) => [rol.id, rol.nombre]) },
+    ],
+    alGuardar: (datos) => {
+      if (!ejecutar(() => servicioRoles.agregarUsuario(datos), 'Persona agregada correctamente')) return false;
+      pintarTodo();
+      return true;
+    },
+  });
+  buscar('#agregar-persona', raiz).onclick = () => formularioPersona.abrir(null);
 
   if (!puede('auditoria', 'ver')) buscar('#ver-auditoria-roles', raiz).hidden = true;
   pintarTodo();

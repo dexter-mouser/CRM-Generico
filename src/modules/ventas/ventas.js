@@ -11,10 +11,13 @@ import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/c
 import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
 import { nombreDeTienda } from '../../core/tienda.js';
 import { etiquetaDeLista } from '../../services/inventario.service.js';
+import { cargarPlantillasSelector, montarSelectorRegistro } from '../../components/selector-registro/selector-registro.js';
+import { COLUMNAS_FACTURA, facturasParaElegir } from '../../components/selector-registro/registros.js';
 
 let documento;
 let plantillasCuadricula;
 let plantillasFicha;
+let plantillasSelector;
 
 function estadoDeFactura(venta) {
   if (servicioVentas.estaAnulada(venta)) return { texto: 'Anulada', clase: '' };
@@ -36,13 +39,10 @@ const facturasConPendientes = () => estado.ventas.filter(enTiendaActiva).reverse
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./ventas.html', import.meta.url));
-  [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
-  const facturas = facturasConPendientes();
-  return seccion(documento, 'principal', {
-    opcionesFactura: repetir(documento, 'opcion', facturas.length
-      ? facturas.map((venta) => ({ valor: venta.id, texto: `${venta.id} · ${venta.cliente} · ${aPesos(venta.total)}` }))
-      : [{ valor: '', texto: 'No hay facturas con productos por devolver' }]),
-  });
+  [plantillasCuadricula, plantillasFicha, plantillasSelector] = await Promise.all([
+    cargarPlantillasCuadricula(), cargarPlantillasFicha(), cargarPlantillasSelector(),
+  ]);
+  return seccion(documento, 'principal');
 }
 
 export function montar(raiz, contexto) {
@@ -259,15 +259,24 @@ export function montar(raiz, contexto) {
   // --- Nueva nota: se elige la factura y el tipo; luego se abre el panel de cantidades y motivo -----------
   const panelNota = buscar('#panel-nueva-nota', raiz);
   panelNota.hidden = true;
+  const facturaNota = montarSelectorRegistro(buscar('#selector-nota-factura', raiz), {
+    plantillas: plantillasSelector,
+    clave: 'nota-factura',
+    etiqueta: 'facturas con productos por devolver',
+    columnas: COLUMNAS_FACTURA,
+    registros: () => facturasParaElegir(facturasConPendientes()),
+    vacio: 'Elige la factura',
+    alSalir: () => buscar('#nota-tipo', raiz).focus(),
+  });
   buscar('#nueva-nota', raiz).onclick = () => {
     panelNota.hidden = false;
     panelNota.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    buscar('#nota-factura', raiz).focus();
+    facturaNota.enfocar();
   };
   buscar('#cancelar-nota', raiz).onclick = () => { panelNota.hidden = true; };
   buscar('#continuar-nota', raiz).onclick = () => {
-    const ventaId = buscar('#nota-factura', raiz).value;
-    if (!ventaId) return contexto.alerta('No hay facturas con productos por devolver');
+    const ventaId = facturaNota.elegido()?.id;
+    if (!ventaId) return contexto.alerta(facturasConPendientes().length ? 'Elige la factura' : 'No hay facturas con productos por devolver');
     panelNota.hidden = true;
     panelDeFactura(ventaId, buscar('#nota-tipo', raiz).value === 'anulacion');
   };

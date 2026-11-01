@@ -10,10 +10,30 @@ function completarConSemilla(guardado) {
   return guardado;
 }
 
+// Cambios de estructura entre versiones: se aplican en orden a lo guardado para no perder los datos de la tienda
+const MIGRACIONES = {
+  // 8: cliente fijo Consumidor final; las ventas guardadas sin cliente quedan a su nombre
+  8: (datos) => {
+    const consumidor = semilla.clientes.find((cliente) => cliente.generico);
+    if (!datos.clientes.some((cliente) => cliente.generico)) datos.clientes.unshift(structuredClone(consumidor));
+    [datos.ventas, datos.documentos, datos.devoluciones].forEach((lista = []) => lista.forEach((registro) => {
+      if (!registro.clienteId && registro.cliente === 'Cliente sin nombre') registro.clienteId = consumidor.id;
+    }));
+  },
+};
+const VERSION_MINIMA_MIGRABLE = 7;
+
+function migrar(guardado) {
+  for (let version = guardado.version + 1; version <= semilla.version; version += 1) MIGRACIONES[version]?.(guardado);
+  guardado.version = semilla.version;
+  return guardado;
+}
+
 function cargar() {
   try {
     const guardado = JSON.parse(localStorage.getItem(CLAVE_DATOS));
     if (guardado?.version === semilla.version) return completarConSemilla(guardado);
+    if (guardado?.version >= VERSION_MINIMA_MIGRABLE && guardado.version < semilla.version) return completarConSemilla(migrar(guardado));
   } catch { /* datos ilegibles */ }
   return structuredClone(semilla);
 }

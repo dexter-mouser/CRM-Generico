@@ -2,48 +2,14 @@
   <button type="button" class="boton" id="nuevo-proveedor" data-accion-cabecera>Nuevo proveedor</button>
   <button type="button" class="boton primario" id="nueva-orden" data-accion-cabecera>Nueva orden de compra</button>
 
-  <section class="caja formulario-en-linea" id="formulario-proveedor" aria-labelledby="titulo-formulario-proveedor" hidden>
-    <strong id="titulo-formulario-proveedor">Nuevo proveedor</strong>
-    <div class="tres-campos">
-      <div>
-        <label for="proveedor-nombre">Nombre o razón social</label>
-        <input id="proveedor-nombre" class="campo" autocomplete="off">
-      </div>
-      <div>
-        <label for="proveedor-nit">NIT</label>
-        <input id="proveedor-nit" class="campo" autocomplete="off" placeholder="900123456-7">
-      </div>
-      <div>
-        <label for="proveedor-plazoDias">Plazo de pago (días)</label>
-        <input id="proveedor-plazoDias" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="30">
-      </div>
-    </div>
-    <div class="tres-campos">
-      <div>
-        <label for="proveedor-contacto">Persona de contacto</label>
-        <input id="proveedor-contacto" class="campo" autocomplete="off">
-      </div>
-      <div>
-        <label for="proveedor-telefono">Teléfono</label>
-        <input id="proveedor-telefono" class="campo" inputmode="tel" autocomplete="off">
-      </div>
-      <div>
-        <label for="proveedor-correo">Correo</label>
-        <input id="proveedor-correo" class="campo" type="email" autocomplete="off">
-      </div>
-    </div>
-    <div class="acciones-fila margen-superior-grande">
-      <button type="button" class="boton primario" id="guardar-proveedor">Guardar proveedor</button>
-      <button type="button" class="boton" id="cancelar-proveedor">Cancelar</button>
-    </div>
-  </section>
+  <div id="formulario-proveedor"></div>
 
-  <section class="caja separacion-inferior" id="panel-orden" aria-labelledby="titulo-orden" hidden>
+  <section class="caja panel-proceso" id="panel-orden" aria-labelledby="titulo-orden" hidden>
     <strong id="titulo-orden">Nueva orden de compra</strong>
+    <span class="etiqueta-campo">Proveedor · busca por cualquier dato</span>
+    <div id="selector-proveedor-orden"></div>
     <div class="dos-columnas arriba margen-superior">
       <div class="columna-angosta">
-        <label for="orden-proveedor">Proveedor</label>
-        <select id="orden-proveedor" class="campo">{{{opcionesProveedor}}}</select>
         <label for="orden-observaciones">Observaciones</label>
         <input id="orden-observaciones" class="campo" maxlength="300" autocomplete="off" placeholder="Opcional: fecha de entrega, condiciones">
         {{{selector}}}

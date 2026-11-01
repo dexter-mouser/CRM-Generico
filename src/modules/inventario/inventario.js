@@ -2,11 +2,13 @@ import { buscar, escaparHtml } from '../../core/dom.js';
 import { puede } from '../../core/autorizacion.js';
 import { estado } from '../../core/store.js';
 import { aPesos, aFecha, fechaDeHoy } from '../../core/format.js';
-import { leerEntero } from '../../core/numeros.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
-import { LISTAS_PRECIO, manejaStock, agregarProducto, actualizarProducto, eliminarProducto, importarProductos, kardexDeProducto, buscarProductoPorId, categorias, bodegaActiva, existenciasVisibles, buscarBodega } from '../../services/inventario.service.js';
+import { LISTAS_PRECIO, manejaStock, agregarProducto, actualizarProducto, eliminarProducto, importarProductos, kardexDeProducto, buscarProductoPorId, categorias, bodegaActiva, existenciasVisibles, buscarBodega, siguienteIdProducto } from '../../services/inventario.service.js';
+import { cargarPlantillasFormulario, montarFormulario } from '../../components/formulario/formulario.js';
+import { montarSelectorRegistro } from '../../components/selector-registro/selector-registro.js';
+import { COLUMNAS_PRODUCTO, productosParaElegir } from '../../components/selector-registro/registros.js';
 import { bodegasActivas } from '../../services/bodegas.service.js';
 import { TARIFAS_IVA } from '../../core/validacion.js';
 import { buscarOrden } from '../../services/proveedores.service.js';
@@ -16,15 +18,17 @@ import { montarFactura } from './factura.js';
 import { mostrarComprobanteDeFactura } from '../../components/recibo/comprobantes.js';
 
 const CAMPOS = ['referencia', 'nombre', 'categoria', 'costo', 'precioSurtido', 'precioMayor', 'precioDetal', 'iva', 'stockMinimo', 'existencias'];
-const CAMPOS_NUMERICOS = ['costo', 'precioSurtido', 'precioMayor', 'precioDetal', 'iva', 'stockMinimo', 'existencias'];
 let documento;
 let plantillasCuadricula;
 let plantillasFicha;
 let plantillasBuscador;
+let plantillasFormulario;
 
 export async function dibujar() {
   documento = await cargarHtml(new URL('./inventario.html', import.meta.url));
-  [plantillasCuadricula, plantillasFicha, plantillasBuscador] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha(), cargarPlantillasBuscador()]);
+  [plantillasCuadricula, plantillasFicha, plantillasBuscador, plantillasFormulario] = await Promise.all([
+    cargarPlantillasCuadricula(), cargarPlantillasFicha(), cargarPlantillasBuscador(), cargarPlantillasFormulario(),
+  ]);
   const bodega = bodegaActiva();
   const activas = bodegasActivas();
   const opcionesBodega = (elegida) => activas.map((una) => ({ valor: una.id, texto: una.nombre, seleccion: una.id === elegida ? 'selected' : '' }));
@@ -34,11 +38,7 @@ export async function dibujar() {
       : 'Con "Todas las tiendas" ves el stock total; elige una tienda en el menú superior para editarlo.',
     opcionesBodegaFactura: repetir(documento, 'opcion-elegida', opcionesBodega(bodega?.id ?? activas[0]?.id)),
     opcionesBodegaKardex: repetir(documento, 'opcion-elegida', [{ valor: '', texto: 'Todas las bodegas', seleccion: bodega ? '' : 'selected' }, ...opcionesBodega(bodega?.id)]),
-    opcionesProducto: repetir(documento, 'opcion', estado.productos.filter((producto) => !producto.generico).map((producto) => ({ valor: producto.id, texto: `${producto.id} · ${producto.nombre}` }))),
     hoy: fechaDeHoy(),
-    opcionesProveedor: repetir(documento, 'opcion', estado.proveedores.map((proveedor) => ({ valor: proveedor.id, texto: `${proveedor.nombre} · ${proveedor.id}` }))),
-    opcionesCategoria: repetir(documento, 'opcion', categorias().map((categoria) => ({ valor: categoria, texto: categoria }))),
-    opcionesIva: repetir(documento, 'opcion-iva', TARIFAS_IVA.map((valor) => ({ valor, seleccion: valor === 19 ? 'selected' : '' }))),
   });
 }
 
@@ -61,11 +61,7 @@ export function montar(raiz, contexto) {
   });
 
   // --- Productos: cuadrícula, formulario (nuevo o edición) y ficha -----------------------------------------
-  const campo = (nombre) => buscar(`#producto-${nombre}`, raiz);
-  const formulario = buscar('#formulario-producto', raiz);
   const ficha = crearFicha(buscar('#ficha-producto', raiz), plantillasFicha);
-  let productoEnEdicion = null;
-  formulario.hidden = true;
   // En una página dividida el router ya ocultó los botones de las otras partes: aquí solo se ocultan por permiso
   if (!puede('inventario', 'crear')) buscar('#nuevo-producto', raiz).hidden = true;
 
@@ -112,59 +108,67 @@ export function montar(raiz, contexto) {
   });
   const pintarProductos = () => cuadriculaProductos.actualizar(filasProductos());
 
-  const abrirFormulario = (producto) => {
-    productoEnEdicion = producto?.id ?? null;
-    buscar('#titulo-formulario-producto', raiz).textContent = producto ? `Editar ${producto.nombre}` : 'Nuevo producto';
-    campo('id').value = producto?.id ?? '';
-    campo('id').disabled = Boolean(producto); // el ID no cambia: lo usan las ventas y las facturas
-    CAMPOS.forEach((nombre) => { campo(nombre).value = producto?.[nombre] ?? ''; });
-    if (!producto) campo('iva').value = '19';
-    else campo('existencias').value = existenciasVisibles(producto);
-    // "Genérico" se elige al crear el producto; después no cambia (su historia de stock depende de eso)
-    campo('generico').checked = Boolean(producto?.generico);
-    campo('generico').disabled = Boolean(producto);
-    mostrarCamposStock();
-    // Con "Todas las tiendas" el stock no se edita (no se sabe en qué bodega)
-    campo('existencias').disabled = Boolean(producto) && !bodega;
-    buscar('#etiqueta-existencias', raiz).textContent = producto
-      ? (bodega ? `Stock en ${bodega.nombre}` : 'Stock total (elige una tienda para cambiarlo)')
-      : 'Stock inicial (bodega de la tienda activa)';
-    formulario.hidden = false;
-    formulario.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    campo(producto ? 'nombre' : 'id').focus();
-  };
-
-  // Un producto genérico no maneja stock: se ocultan el stock y el mínimo
-  const mostrarCamposStock = () => { buscar('#campos-stock', raiz).hidden = campo('generico').checked; };
-  campo('generico').onchange = mostrarCamposStock;
-
   // Guarda solo los campos que cambiaron (cada cambio queda en la auditoría; el stock como ajuste del kardex)
-  const guardarEdicion = (id) => {
+  const guardarEdicion = (id, datos) => {
     const producto = buscarProductoPorId(id);
     CAMPOS.forEach((nombre) => {
       if ((nombre === 'existencias' && !bodega) || (producto.generico && ['existencias', 'stockMinimo'].includes(nombre))) return;
-      const valor = CAMPOS_NUMERICOS.includes(nombre) ? leerEntero(campo(nombre).value) : campo(nombre).value.trim();
-      const actual = nombre === 'existencias' ? existenciasVisibles(producto) : (producto[nombre] ?? (CAMPOS_NUMERICOS.includes(nombre) ? 0 : ''));
-      if (valor !== actual) actualizarProducto(id, nombre, valor);
+      const actual = nombre === 'existencias' ? existenciasVisibles(producto) : (producto[nombre] ?? (typeof datos[nombre] === 'number' ? 0 : ''));
+      if (datos[nombre] !== actual) actualizarProducto(id, nombre, datos[nombre]);
     });
   };
 
-  buscar('#nuevo-producto', raiz).onclick = () => abrirFormulario(null);
-  buscar('#cancelar-producto', raiz).onclick = () => { formulario.hidden = true; };
-  buscar('#guardar-producto', raiz).onclick = () => {
-    const editando = productoEnEdicion !== null;
-    const aplicado = ejecutar(() => (editando
-      ? guardarEdicion(productoEnEdicion)
-      : agregarProducto({
-        id: campo('id').value,
-        generico: campo('generico').checked,
-        ...Object.fromEntries(CAMPOS.map((nombre) => [nombre, CAMPOS_NUMERICOS.includes(nombre) ? leerEntero(campo(nombre).value) : campo(nombre).value])),
-      })), editando ? 'Producto actualizado correctamente' : 'Producto agregado correctamente');
-    if (!aplicado) return;
-    formulario.hidden = true;
-    pintarProductos();
-    ficha.refrescar();
+  const formulario = montarFormulario(buscar('#formulario-producto', raiz), {
+    plantillas: plantillasFormulario,
+    clave: 'producto',
+    titulo: 'Nuevo producto',
+    tituloEditar: (producto) => `Editar ${producto.nombre}`,
+    textoGuardar: 'Guardar producto',
+    alError: contexto.alerta,
+    campos: [
+      // El ID siguiente se ve escrito; se puede cambiar por el código propio (solo números)
+      { clave: 'id', etiqueta: 'ID', tipo: 'entero', maximo: 12, valor: siguienteIdProducto, obligatorio: true },
+      { clave: 'referencia', etiqueta: 'Referencia', maximo: 40 },
+      { clave: 'nombre', etiqueta: 'Nombre', obligatorio: true },
+      { clave: 'categoria', etiqueta: 'Categoría', tipo: 'lista', maximo: 60, opciones: categorias },
+      { clave: 'costo', etiqueta: 'Costo (COP)', tipo: 'entero', valor: 0 },
+      { clave: 'iva', etiqueta: 'IVA', tipo: 'seleccion', valor: 19, opciones: () => TARIFAS_IVA.map((tarifa) => [tarifa, `${tarifa} %`]), ayuda: 'Los precios incluyen el IVA' },
+      { clave: 'precioSurtido', etiqueta: 'Precio 1 · Surtido (COP)', tipo: 'entero', valor: 0, ayuda: 'Casi al costo, para surtir almacenes' },
+      { clave: 'precioMayor', etiqueta: 'Precio 2 · Por mayor (COP)', tipo: 'entero', valor: 0 },
+      { clave: 'precioDetal', etiqueta: 'Precio 3 · Al detal (COP)', tipo: 'entero', valor: 0 },
+      { clave: 'stockMinimo', etiqueta: 'Stock mínimo', tipo: 'entero', valor: 0 },
+      { clave: 'existencias', etiqueta: 'Stock inicial', tipo: 'entero-negativo', valor: 0 },
+      {
+        // "Genérico" se elige al crear el producto; después no cambia (su historia de stock depende de eso).
+        // Un producto genérico no maneja stock: se ocultan el stock y el mínimo
+        clave: 'generico', tipo: 'casilla', ancho: 'completo',
+        etiqueta: 'Producto genérico: no maneja stock y su nombre y valor se escriben en cada venta (servicios, reparaciones, artículos sin código)',
+        alCambiar: (generico, formularioProducto) => ['stockMinimo', 'existencias'].forEach((clave) => formularioProducto.mostrar(clave, !generico)),
+      },
+    ],
+    alGuardar: (datos, producto) => {
+      datos.iva = Number(datos.iva);
+      const aplicado = ejecutar(() => (producto ? guardarEdicion(producto.id, datos) : agregarProducto(datos)),
+        producto ? 'Producto actualizado correctamente' : 'Producto agregado correctamente');
+      if (!aplicado) return false;
+      pintarProductos();
+      ficha.refrescar();
+      return true;
+    },
+  });
+
+  const abrirFormulario = (producto) => {
+    // El ID no cambia: lo usan las ventas y las facturas. Con "Todas las tiendas" el stock no se edita (no se sabe en qué bodega)
+    formulario.habilitar('id', !producto);
+    formulario.habilitar('generico', !producto);
+    formulario.habilitar('existencias', !producto || Boolean(bodega));
+    formulario.etiquetar('existencias', producto
+      ? (bodega ? `Stock en ${bodega.nombre}` : 'Stock total (elige una tienda para cambiarlo)')
+      : `Stock inicial${bodega ? ` en ${bodega.nombre}` : ''}`);
+    formulario.abrir(producto ? { ...producto, existencias: existenciasVisibles(producto) } : null);
   };
+
+  buscar('#nuevo-producto', raiz).onclick = () => abrirFormulario(null);
 
   const abrirFicha = (id) => ficha.abrir(id, () => {
     const producto = buscarProductoPorId(id);
@@ -236,7 +240,7 @@ export function montar(raiz, contexto) {
   buscar('#ingresar-compra', raiz).onclick = () => {
     panelFactura.hidden = false;
     panelFactura.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    buscar('#factura-proveedor', raiz).focus();
+    buscar('[data-filtro-selector]', panelFactura).focus();
   };
 
   const fichaFactura = crearFicha(buscar('#ficha-factura-compra', raiz), plantillasFicha);
@@ -304,7 +308,7 @@ export function montar(raiz, contexto) {
   });
 
   // Factura de compra (sección Compras)
-  const cargarOrden = montarFactura(raiz, contexto, documento, plantillasBuscador);
+  const cargarOrden = montarFactura(raiz, contexto, documento, plantillasBuscador, plantillasFormulario);
 
   // Recibir una orden de compra: llega desde Proveedores con ?seccion=compras&orden=OC-0001
   const orden = buscarOrden(new URLSearchParams(location.search).get('orden') ?? '');
@@ -315,13 +319,22 @@ export function montar(raiz, contexto) {
   }
 
   // Kardex de un producto, en una bodega o en todas (sección Kardex; ?producto=ID lo abre directo)
-  const productoKardex = buscar('#kardex-producto', raiz);
+  // El producto viene elegido (el pedido o el primero con stock) y se cambia buscando por cualquier dato
   const bodegaKardex = buscar('#kardex-bodega', raiz);
   const pedido = new URLSearchParams(location.search).get('producto');
-  if (pedido && buscarProductoPorId(pedido)) productoKardex.value = pedido;
-  productoKardex.onchange = () => abrirKardex(productoKardex.value);
-  bodegaKardex.onchange = () => abrirKardex(productoKardex.value);
-  if (contexto.seccion === 'kardex' && productoKardex.value) abrirKardex(productoKardex.value);
+  const conKardex = (producto) => !producto.generico;
+  const productoKardex = montarSelectorRegistro(buscar('#selector-kardex', raiz), {
+    plantillas: plantillasFormulario,
+    clave: 'kardex',
+    etiqueta: 'productos',
+    columnas: COLUMNAS_PRODUCTO,
+    registros: () => productosParaElegir(conKardex),
+    elegido: () => (pedido && buscarProductoPorId(pedido) ? pedido : estado.productos.find(conKardex)?.id),
+    vacio: 'Elige el producto',
+    alElegir: (producto) => abrirKardex(producto.id),
+  });
+  bodegaKardex.onchange = () => abrirKardex(productoKardex.elegido()?.id);
+  if (contexto.seccion === 'kardex' && productoKardex.elegido()) abrirKardex(productoKardex.elegido().id);
 
   function abrirKardex(id) {
     const producto = buscarProductoPorId(id);

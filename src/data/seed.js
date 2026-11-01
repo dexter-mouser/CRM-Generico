@@ -78,7 +78,8 @@ const EN = {
 };
 const ADMIN = { usuario: 'Administrador', usuarioCorreo: 'demo@generico.com' };
 const CAMILA = { usuario: 'Camila Duarte', usuarioCorreo: 'camila@generico.com' };
-const SIN_NOMBRE = { cliente: 'Cliente sin nombre' };
+// Ventas de mostrador sin datos del comprador: quedan a nombre del cliente Consumidor final (C-000)
+const SIN_NOMBRE = { cliente: 'Consumidor final', clienteId: 'C-000' };
 
 const VENTAS = [
   // Bodega principal: surtido a los almacenes (precio 1) y ventas por mayor (precio 2)
@@ -177,7 +178,7 @@ const STOCK_FINAL = {
 };
 
 const semilla = {
-  version: 7,
+  version: 8,
   productos: PRODUCTOS,
   ventas: VENTAS,
   facturas: FACTURAS,
@@ -213,6 +214,8 @@ const semilla = {
     recibo: { pie: 'Gracias por tu compra · Garantía de 30 días presentando este comprobante', mostrarDatosTienda: true },
   },
   clientes: [
+    // Cliente fijo de las ventas de mostrador: viene elegido en Registrar venta, no tiene crédito ni se elimina
+    { id: 'C-000', tipoDocumento: 'CC', documento: '222222222222', tipoPersona: 'natural', nombre: 'Consumidor final', telefono: '', correo: '', direccion: '', etiquetas: [], autorizaDatos: false, limiteCredito: 0, plazoDias: 30, listaPrecio: '', generico: true, creadoEn: hace(365, 9) },
     { id: 'C-001', tipoDocumento: 'CC', documento: '1036654321', tipoPersona: 'natural', nombre: 'Laura Martínez', telefono: '310 555 0142', correo: 'laura.martinez@correo.com', direccion: 'Cra 70 # 44-12', etiquetas: ['Frecuente'], autorizaDatos: true, limiteCredito: 0, plazoDias: 30, listaPrecio: '', creadoEn: hace(60, 9) },
     { id: 'C-002', tipoDocumento: 'CC', documento: '71234567', tipoPersona: 'natural', nombre: 'Carlos Rodríguez', telefono: '311 555 0187', correo: 'carlos.rodriguez@correo.com', direccion: 'Calle 33 # 80-25', etiquetas: ['Reparación'], autorizaDatos: true, limiteCredito: 0, plazoDias: 30, listaPrecio: '', creadoEn: hace(40, 9) },
     { id: 'C-003', tipoDocumento: 'CC', documento: '1017223344', tipoPersona: 'natural', nombre: 'Valentina Gómez', telefono: '312 555 0199', correo: 'valentina.gomez@correo.com', direccion: 'Cra 43A # 5-30', etiquetas: ['Frecuente', 'Crédito'], autorizaDatos: true, limiteCredito: 300000, plazoDias: 30, listaPrecio: '', creadoEn: hace(50, 9) },

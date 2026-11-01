@@ -2,23 +2,7 @@
   <a class="boton" id="ver-auditoria-roles" href="auditoria.html?modulo=roles" data-accion-cabecera>Ver cambios en Auditoría</a>
   <button type="button" class="boton primario" id="nuevo-rol" data-accion-cabecera>Nuevo rol</button>
 
-  <section class="caja formulario-en-linea" id="formulario-rol" aria-labelledby="titulo-formulario-rol" hidden>
-    <strong id="titulo-formulario-rol">Nuevo rol</strong>
-    <div class="dos-campos">
-      <div>
-        <label for="rol-nombre">Nombre</label>
-        <input id="rol-nombre" class="campo" autocomplete="off" placeholder="Por ejemplo: Supervisor">
-      </div>
-      <div>
-        <label for="rol-descripcion">Descripción</label>
-        <input id="rol-descripcion" class="campo" autocomplete="off" placeholder="Qué hace este rol">
-      </div>
-    </div>
-    <div class="acciones-fila margen-superior-grande">
-      <button type="button" class="boton primario" id="guardar-rol">Guardar rol</button>
-      <button type="button" class="boton" id="cancelar-rol">Cancelar</button>
-    </div>
-  </section>
+  <div id="formulario-rol"></div>
 
   <div class="disposicion-roles">
     <section class="caja" aria-label="Roles">
@@ -27,7 +11,7 @@
 
     <div class="columna-roles">
       <section class="caja" aria-labelledby="rol-titulo">
-        <div class="cabecera-vista">
+        <div class="cabecera-flex">
           <div>
             <h2 id="rol-titulo"></h2>
             <div class="texto-suave" id="rol-descripcion-actual"></div>
@@ -59,28 +43,11 @@
       </section>
 
       <section class="caja" aria-labelledby="titulo-personas">
-        <div class="cabecera-vista">
+        <div class="cabecera-flex">
           <h2 id="titulo-personas">Personas</h2>
           <button type="button" class="boton" id="agregar-persona">Agregar persona</button>
         </div>
-        <div class="formulario-en-linea" id="formulario-persona" hidden>
-          <div class="dos-campos">
-            <div>
-              <label for="persona-nombre">Nombre</label>
-              <input id="persona-nombre" class="campo" autocomplete="off">
-            </div>
-            <div>
-              <label for="persona-correo">Correo</label>
-              <input id="persona-correo" class="campo" type="email" autocomplete="off" placeholder="nombre@generico.com">
-            </div>
-          </div>
-          <label for="persona-rol">Rol</label>
-          <select id="persona-rol" class="campo"></select>
-          <div class="acciones-fila margen-superior-grande">
-            <button type="button" class="boton primario" id="guardar-persona">Guardar persona</button>
-            <button type="button" class="boton" id="cancelar-persona">Cancelar</button>
-          </div>
-        </div>
+        <div id="formulario-persona"></div>
         <div id="cuadricula-personas"></div>
         <div id="ficha-persona"></div>
       </section>

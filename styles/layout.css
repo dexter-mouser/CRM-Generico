@@ -4,7 +4,7 @@ header {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--espacio-4);
   padding: 0 16px;
   background: var(--superficie);
   border-bottom: 1px solid var(--borde);
@@ -36,8 +36,8 @@ main {
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-size: 18px;
+  gap: var(--espacio-3);
+  font-size: var(--letra-lg);
   font-weight: 700;
   letter-spacing: -0.3px;
   color: var(--texto);
@@ -69,7 +69,7 @@ main {
   height: 36px;
   padding: 0 64px 0 34px;
   border: 1px solid var(--borde);
-  border-radius: 10px;
+  border-radius: var(--radio-md);
   background: var(--fondo);
   color: var(--texto);
   font: inherit;
@@ -80,7 +80,7 @@ main {
   right: 8px;
   padding: 2px 6px;
   border: 1px solid var(--borde);
-  border-radius: 6px;
+  border-radius: var(--radio-sm);
   color: var(--suave);
   font: 11px/1.4 inherit;
   pointer-events: none;
@@ -91,7 +91,7 @@ main {
   max-width: 190px;
   padding: 0 10px;
   border: 1px solid var(--borde);
-  border-radius: 10px;
+  border-radius: var(--radio-md);
   background: var(--superficie);
   color: var(--texto);
   font: inherit;
@@ -106,7 +106,7 @@ main {
 .boton-vender {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--espacio-2);
   text-decoration: none;
 }
 
@@ -118,7 +118,7 @@ main {
 /* Pestañas con las secciones del grupo abierto, encima del contenido */
 .pestanas-grupo {
   display: flex;
-  gap: 4px;
+  gap: var(--espacio-1);
   margin-bottom: 20px;
   padding-bottom: 8px;
   overflow-x: auto;
@@ -129,7 +129,7 @@ main {
 .pestana-grupo {
   flex: none;
   padding: 8px 14px;
-  border-radius: 8px;
+  border-radius: var(--radio-sm);
   color: var(--suave);
   text-decoration: none;
   white-space: nowrap;
@@ -140,9 +140,10 @@ main {
 }
 
 .pestana-grupo.activa {
-  background: var(--activo);
-  color: var(--texto);
+  background: color-mix(in srgb, var(--color-grupo, var(--acento)) 13%, var(--superficie));
+  color: var(--color-grupo, var(--texto));
   font-weight: 600;
+  box-shadow: inset 0 -2px 0 var(--color-grupo, var(--acento));
 }
 
 .espacio-flexible {
@@ -167,7 +168,7 @@ aside {
   flex: none;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--espacio-1);
   padding: 12px;
   overflow-x: hidden;
   overflow-y: auto;
@@ -183,11 +184,11 @@ aside.recogido {
 .opcion-menu {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--espacio-4);
   width: 100%;
   padding: 10px 12px;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--radio-md);
   background: none;
   color: var(--suave);
   font: inherit;
@@ -247,10 +248,10 @@ aside.recogido .opcion-menu span {
   margin-left: auto;
   min-width: 20px;
   padding: 1px 6px;
-  border-radius: 10px;
+  border-radius: var(--radio-md);
   background: var(--pista);
   color: var(--suave);
-  font-size: 11px;
+  font-size: var(--letra-xxs);
   font-weight: 600;
   text-align: center;
 }
@@ -297,9 +298,9 @@ aside.recogido .flecha-grupo {
 
 .opcion-seccion {
   padding: 7px 10px;
-  border-radius: 8px;
+  border-radius: var(--radio-sm);
   color: var(--suave);
-  font-size: 14px;
+  font-size: var(--letra-md);
   text-decoration: none;
   line-height: 1.3;
 }
@@ -330,7 +331,7 @@ aside.recogido .secciones-grupo {
   z-index: 30;
   transform: translateX(-50%);
   padding: 10px 16px;
-  border-radius: 10px;
+  border-radius: var(--radio-md);
   background: var(--acento);
   color: var(--acento-texto);
   opacity: 0;
@@ -370,7 +371,7 @@ aside.recogido .secciones-grupo {
 /* Celular: el menú pasa a una barra inferior fija con los grupos; las secciones quedan como pestañas */
 @media (max-width: 800px) {
   header {
-    gap: 8px;
+    gap: var(--espacio-3);
     padding: 0 12px;
   }
 
@@ -429,7 +430,7 @@ aside.recogido .secciones-grupo {
 
   aside .opcion-menu span::after {
     content: attr(data-corta);
-    font-size: 10.5px;
+    font-size: var(--letra-xxs);
   }
 
   aside .cuenta-grupo,
@@ -462,9 +463,9 @@ aside.recogido .secciones-grupo {
     margin: 0;
     padding: 10px;
     border: 1px solid var(--borde);
-    border-radius: 14px;
+    border-radius: var(--radio-lg);
     background: var(--superficie);
-    box-shadow: 0 -10px 30px rgb(0 0 0 / 0.16);
+    box-shadow: var(--sombra-arriba);
   }
 
   aside .secciones-grupo[hidden] {
@@ -475,14 +476,14 @@ aside.recogido .secciones-grupo {
     display: block;
     padding: 4px 10px 8px;
     color: var(--suave);
-    font-size: 12px;
+    font-size: var(--letra-xs);
     letter-spacing: 0.06em;
     text-transform: uppercase;
   }
 
   aside .opcion-seccion {
     padding: 12px 10px;
-    font-size: 15px;
+    font-size: var(--letra-lg);
   }
 
   aside .grupo-menu.abierto .opcion-menu {
@@ -502,6 +503,6 @@ aside.recogido .secciones-grupo {
   }
 
   aside .opcion-menu span::after {
-    font-size: 9.5px;
+    font-size: var(--letra-xxs);
   }
 }

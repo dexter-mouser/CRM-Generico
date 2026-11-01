@@ -6,7 +6,7 @@ const FORMATOS = {
   numero: (valor) => String(Math.round(valor)),
 };
 
-// Contadores de 0 al valor y barras de 0 al porcentaje. Con ejecutar=false se muestran directo.
+// Contadores de 0 al valor, barras de 0 al porcentaje y alturas de la gráfica. Con ejecutar=false se muestran directo.
 export function animar(raiz, ejecutar = true) {
   const sinMovimiento = !ejecutar || matchMedia('(prefers-reduced-motion: reduce)').matches;
   const duracion = sinMovimiento ? 0 : 900;
@@ -23,8 +23,18 @@ export function animar(raiz, ejecutar = true) {
     })(inicio);
   });
 
+  dimensionarBarras(raiz);
+
   raiz.querySelectorAll('[data-porcentaje]').forEach((barra) => {
     if (sinMovimiento) barra.style.transition = 'none';
     requestAnimationFrame(() => requestAnimationFrame(() => (barra.style.width = barra.dataset.porcentaje + '%')));
+  });
+}
+
+// Barras de la gráfica del panel: la altura y el retraso vienen en data-altura y data-retraso (sin estilos en línea)
+export function dimensionarBarras(raiz) {
+  raiz.querySelectorAll('[data-altura]').forEach((barra) => {
+    barra.style.height = `${barra.dataset.altura}px`;
+    barra.style.animationDelay = `${barra.dataset.retraso ?? 0}ms`;
   });
 }

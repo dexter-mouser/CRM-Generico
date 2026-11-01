@@ -13,6 +13,9 @@ const DIA_MS = 86_400_000;
 
 export const buscarCliente = (id) => estado.clientes.find((cliente) => cliente.id === id);
 
+// Cliente fijo de las ventas de mostrador (generico: true): viene elegido en Registrar venta
+export const consumidorFinal = () => estado.clientes.find((cliente) => cliente.generico);
+
 export const ventasDeCliente = (cliente) => estado.ventas.filter((venta) => venta.clienteId === cliente.id);
 
 export function deudaDeCliente(cliente) {
@@ -115,6 +118,7 @@ export function actualizarCliente(id, datos) {
   const cliente = buscarCliente(id);
   if (!cliente) throw new Error('El cliente no existe');
   const limpios = prepararDatos(datos, id);
+  if (cliente.generico && limpios.limiteCredito) throw new Error('El consumidor final no puede tener cupo de crédito');
   if (limpios.limiteCredito !== cliente.limiteCredito) {
     registrarAuditoria('clientes', 'Cupo de crédito cambiado', `${cliente.id} · $ ${cliente.limiteCredito ?? 0} → $ ${limpios.limiteCredito}`);
   }
@@ -127,6 +131,7 @@ export function eliminarCliente(id) {
   exigirPermiso('clientes', 'eliminar', 'eliminar clientes');
   const cliente = buscarCliente(id);
   if (!cliente) throw new Error('El cliente no existe');
+  if (cliente.generico) throw new Error('El consumidor final no se elimina: es el cliente de las ventas de mostrador');
   const deuda = deudaDeCliente(cliente);
   if (deuda > 0) throw new Error(`${cliente.nombre} tiene una deuda pendiente: registra el abono antes de eliminarlo`);
   estado.clientes = estado.clientes.filter((candidato) => candidato.id !== id);

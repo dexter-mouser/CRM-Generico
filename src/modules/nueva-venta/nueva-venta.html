@@ -7,13 +7,12 @@
 
   <section class="caja documento-registro cuadricula-venta" id="cuadricula-venta" aria-label="Documento de venta">
     <div class="encabezado-documento">
-      <div class="paso-documento" id="datos-cliente">
+      <div class="paso-documento paso-registro" id="datos-cliente">
         <span class="numero-paso">1</span>
         <div class="contenido-paso">
-          <label for="cliente">Cliente</label>
-          <input id="cliente" class="campo" list="lista-clientes" autocomplete="off" placeholder="Escribe el nombre · vacío = cliente sin nombre">
-          <datalist id="lista-clientes">{{{opcionesCliente}}}</datalist>
-          <div class="ficha-cliente" id="ficha-cliente" aria-live="polite"></div>
+          <span class="etiqueta-paso">Cliente <span class="texto-suave">· busca por cualquier dato; por defecto, Consumidor final</span></span>
+          <div id="selector-cliente"></div>
+          <div class="nota-cliente" id="ficha-cliente" aria-live="polite"></div>
         </div>
       </div>
       <div class="paso-documento">
@@ -38,7 +37,7 @@
       </div>
     </div>
 
-    <div class="titulo-paso"><span class="numero-paso">4</span><strong>Productos</strong><span class="texto-suave">Enter en el cliente pasa a la búsqueda · <kbd>F2</kbd> buscar</span></div>
+    <div class="titulo-paso"><span class="numero-paso">4</span><strong>Productos</strong><span class="texto-suave">Enter en el cliente (sin buscar) pasa a los productos · <kbd>F2</kbd> buscar</span></div>
     <div class="cuadricula" role="grid" aria-label="Productos de la venta">
       <div class="fila-cuadricula encabezado-cuadricula" role="row">
         <div role="columnheader">ID</div>
@@ -82,7 +81,7 @@
     </div>
 
     <div class="pago-efectivo" id="pago-efectivo">
-      <div class="cabecera-efectivo">
+      <div class="cabecera-flex">
         <div>
           <strong>¿Con cuánto paga?</strong>
           <div class="texto-suave">Toca cada billete o moneda que entrega el cliente. Clic derecho sobre uno lo quita.</div>
@@ -132,22 +131,12 @@
   </section>
 </div>
 
-<template id="ficha-registrado">
-  <div class="dato-cliente"><span>Código</span><strong>{{id}}</strong></div>
-  <div class="dato-cliente"><span>Teléfono</span><strong>{{telefono}}</strong></div>
-  <div class="dato-cliente"><span>Dirección</span><strong>{{direccion}}</strong></div>
-  <div class="dato-cliente {{claseDeuda}}"><span>Deuda</span><strong>{{deuda}}</strong></div>
-  <div class="dato-cliente"><span>Cupo disponible</span><strong>{{cupo}}</strong></div>
-</template>
 
-<template id="ficha-sin-registro">
+<template id="nota-cliente">
   <div class="texto-suave">{{texto}}</div>
   {{{enlace}}}
 </template>
 
-<template id="opcion-cliente">
-  <option value="{{nombre}}"></option>
-</template>
 
 <template id="boton-billete">
   <button type="button" class="billete" data-denominacion="{{valor}}" aria-label="Agregar billete de {{texto}}">

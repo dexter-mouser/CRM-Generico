@@ -1,16 +1,17 @@
 import { buscar } from '../../core/dom.js';
 import { estado } from '../../core/store.js';
 import { aPesos, aFecha } from '../../core/format.js';
-import { leerEntero } from '../../core/numeros.js';
 import { cargarHtml, seccion, repetir } from '../../core/template.js';
 import * as servicioCaja from '../../services/caja.service.js';
 import { tiendaActiva, nombreDeTienda } from '../../core/tienda.js';
 import { cargarPlantillasCuadricula, montarCuadricula } from '../../components/cuadricula-datos/cuadricula-datos.js';
 import { cargarPlantillasFicha, crearFicha } from '../../components/ficha-registro/ficha-registro.js';
+import { cargarPlantillasFormulario, montarFormulario } from '../../components/formulario/formulario.js';
 
 let documento;
 let plantillasCuadricula;
 let plantillasFicha;
+let plantillasFormulario;
 
 const aHora = (iso) => new Intl.DateTimeFormat('es-CO', { timeStyle: 'short' }).format(new Date(iso));
 
@@ -34,7 +35,9 @@ const contenidoCajaAbierta = (caja) => {
 
 export async function dibujar(contexto) {
   documento = await cargarHtml(new URL('./caja.html', import.meta.url));
-  [plantillasCuadricula, plantillasFicha] = await Promise.all([cargarPlantillasCuadricula(), cargarPlantillasFicha()]);
+  [plantillasCuadricula, plantillasFicha, plantillasFormulario] = await Promise.all([
+    cargarPlantillasCuadricula(), cargarPlantillasFicha(), cargarPlantillasFormulario(),
+  ]);
   const caja = servicioCaja.cajaAbierta();
   const tienda = tiendaActiva();
   contexto.cabecera = { complemento: tienda?.nombre ?? 'Todas las tiendas' };
@@ -114,20 +117,64 @@ export function montar(raiz, contexto) {
     if (boton) abrirFicha(boton.dataset.ficha);
   });
 
-  // Paneles de proceso de la caja abierta: registrar movimiento y cerrar caja
-  const alternarPanel = (abrir, cerrar) => {
-    const panel = buscar(abrir, raiz);
-    buscar(cerrar, raiz).hidden = true;
-    panel.hidden = false;
-    panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    panel.querySelector('input, select')?.focus();
+  const ejecutar = (accion, mensaje) => {
+    try {
+      const resultado = accion();
+      contexto.aviso(typeof mensaje === 'function' ? mensaje(resultado) : mensaje);
+      contexto.redibujar();
+      return true;
+    } catch (error) {
+      contexto.alerta(error.message);
+      return false;
+    }
   };
-  buscar('#nuevo-movimiento', raiz)?.addEventListener('click', () => alternarPanel('#panel-movimiento', '#panel-cierre'));
-  buscar('#abrir-cierre', raiz)?.addEventListener('click', () => alternarPanel('#panel-cierre', '#panel-movimiento'));
-  buscar('#cancelar-movimiento', raiz)?.addEventListener('click', () => { buscar('#panel-movimiento', raiz).hidden = true; });
-  buscar('#cancelar-cierre', raiz)?.addEventListener('click', () => { buscar('#panel-cierre', raiz).hidden = true; });
+  const formulario = (selector, opciones) => montarFormulario(buscar(selector, raiz), { plantillas: plantillasFormulario, alError: contexto.alerta, ...opciones });
 
+  // Caja cerrada: la base con la que empieza el día
+  if (buscar('#formulario-abrir-caja', raiz)) {
+    formulario('#formulario-abrir-caja', {
+      clave: 'apertura',
+      incrustado: true,
+      textoGuardar: 'Abrir caja',
+      columnas: 2,
+      campos: [{ clave: 'base', etiqueta: 'Base (COP)', tipo: 'entero', valor: 0, obligatorio: true }],
+      alGuardar: ({ base }) => ejecutar(() => servicioCaja.abrirCaja(base), 'Caja abierta correctamente'),
+    });
+  }
+
+  // Paneles de proceso de la caja abierta: registrar movimiento y cerrar caja (uno abierto a la vez)
   const caja = servicioCaja.cajaAbierta();
+  if (caja && buscar('#panel-movimiento', raiz)) {
+    const panelMovimiento = formulario('#panel-movimiento', {
+      clave: 'movimiento',
+      titulo: 'Registrar movimiento',
+      textoGuardar: 'Registrar movimiento',
+      campos: [
+        { clave: 'tipo', etiqueta: 'Tipo', tipo: 'seleccion', valor: 'ingreso', opciones: [['ingreso', 'Ingreso'], ['egreso', 'Egreso']] },
+        { clave: 'concepto', etiqueta: 'Concepto', obligatorio: true },
+        { clave: 'valor', etiqueta: 'Valor (COP)', tipo: 'entero', obligatorio: true },
+      ],
+      alGuardar: (datos) => ejecutar(() => servicioCaja.registrarMovimiento(datos), 'Movimiento registrado correctamente'),
+    });
+    // El contado no se precarga: hay que contar el efectivo de verdad
+    const panelCierre = formulario('#panel-cierre', {
+      clave: 'cierre',
+      titulo: 'Cerrar caja',
+      textoGuardar: 'Cerrar caja',
+      columnas: 2,
+      campos: [{
+        clave: 'contado', etiqueta: 'Efectivo contado (COP)', tipo: 'entero', obligatorio: true,
+        ayuda: `Cuenta el efectivo y escríbelo. Se guarda la diferencia con lo esperado (${aPesos(servicioCaja.resumenDeCaja(caja).esperado)}).`,
+      }],
+      alGuardar: ({ contado }) => ejecutar(() => servicioCaja.cerrarCaja(contado), (cierre) => {
+        const detalle = cierre.diferencia === 0 ? 'sin diferencia' : `diferencia de ${aPesos(cierre.diferencia)}`;
+        return `Caja cerrada correctamente: ${detalle}`;
+      }),
+    });
+    buscar('#nuevo-movimiento', raiz).onclick = () => { panelCierre.cerrar(); panelMovimiento.abrir(); };
+    buscar('#abrir-cierre', raiz).onclick = () => { panelMovimiento.cerrar(); panelCierre.abrir(); };
+  }
+
   const contenedorMovimientos = buscar('#cuadricula-movimientos', raiz);
   if (caja && contenedorMovimientos) {
     montarCuadricula(contenedorMovimientos, {
@@ -149,36 +196,4 @@ export function montar(raiz, contexto) {
     });
   }
 
-  const ejecutar = (accion, mensaje) => {
-    try {
-      const resultado = accion();
-      contexto.aviso(typeof mensaje === 'function' ? mensaje(resultado) : mensaje);
-      contexto.redibujar();
-    } catch (error) {
-      contexto.alerta(error.message);
-    }
-  };
-  const valorDe = (selector) => buscar(selector, raiz).value;
-
-  buscar('#abrir-caja', raiz)?.addEventListener('click', () => {
-    if (!valorDe('#base-caja').trim()) return contexto.alerta('Escribe la base con la que abres la caja (puede ser 0)');
-    ejecutar(() => servicioCaja.abrirCaja(leerEntero(valorDe('#base-caja'))), 'Caja abierta correctamente');
-  });
-
-  buscar('#registrar-movimiento', raiz)?.addEventListener('click', () => {
-    ejecutar(() => servicioCaja.registrarMovimiento({
-      tipo: valorDe('#movimiento-tipo'),
-      concepto: valorDe('#movimiento-concepto'),
-      valor: leerEntero(valorDe('#movimiento-valor')),
-    }), 'Movimiento registrado correctamente');
-  });
-
-  buscar('#cerrar-caja', raiz)?.addEventListener('click', () => {
-    if (!valorDe('#efectivo-contado').trim()) return contexto.alerta('Escribe el efectivo que contaste (puede ser 0)');
-    ejecutar(() => servicioCaja.cerrarCaja(leerEntero(valorDe('#efectivo-contado'))), (cierre) => {
-      const diferencia = cierre.diferencia;
-      const detalle = diferencia === 0 ? 'sin diferencia' : `diferencia de ${aPesos(diferencia)}`;
-      return `Caja cerrada correctamente: ${detalle}`;
-    });
-  });
 }

@@ -1,69 +1,7 @@
 <div id="principal">
   <button type="button" class="boton primario" id="nuevo-cliente" data-accion-cabecera>Nuevo cliente</button>
 
-  <section class="caja formulario-en-linea" id="formulario-cliente" aria-labelledby="titulo-formulario-cliente" hidden>
-    <strong id="titulo-formulario-cliente">Nuevo cliente</strong>
-    <div class="tres-campos">
-      <div>
-        <label for="cliente-nombre">Nombre o razón social</label>
-        <input id="cliente-nombre" class="campo" autocomplete="off">
-      </div>
-      <div>
-        <label for="cliente-tipoPersona">Tipo de persona</label>
-        <select id="cliente-tipoPersona" class="campo">{{{opcionesPersona}}}</select>
-      </div>
-      <div class="campo-documento">
-        <div>
-          <label for="cliente-tipoDocumento">Documento</label>
-          <select id="cliente-tipoDocumento" class="campo">{{{opcionesDocumento}}}</select>
-        </div>
-        <div>
-          <label for="cliente-documento">Número</label>
-          <input id="cliente-documento" class="campo" autocomplete="off" placeholder="Sin puntos">
-        </div>
-      </div>
-    </div>
-    <div class="tres-campos">
-      <div>
-        <label for="cliente-telefono">Teléfono</label>
-        <input id="cliente-telefono" class="campo" inputmode="tel" autocomplete="off">
-      </div>
-      <div>
-        <label for="cliente-correo">Correo</label>
-        <input id="cliente-correo" class="campo" type="email" autocomplete="off">
-      </div>
-      <div>
-        <label for="cliente-direccion">Dirección</label>
-        <input id="cliente-direccion" class="campo" autocomplete="off">
-      </div>
-    </div>
-    <div class="tres-campos">
-      <div>
-        <label for="cliente-etiquetas">Etiquetas</label>
-        <input id="cliente-etiquetas" class="campo" list="lista-etiquetas" autocomplete="off" placeholder="Separadas por coma: Mayorista, Frecuente">
-        <datalist id="lista-etiquetas">{{{opcionesEtiquetas}}}</datalist>
-      </div>
-      <div>
-        <label for="cliente-limiteCredito">Cupo de crédito (COP)</label>
-        <input id="cliente-limiteCredito" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="0 = sin crédito">
-      </div>
-      <div>
-        <label for="cliente-plazoDias">Plazo de pago (días)</label>
-        <input id="cliente-plazoDias" class="campo" data-numero="entero" inputmode="numeric" autocomplete="off" placeholder="30">
-      </div>
-    </div>
-    <div class="tres-campos">
-      <div>
-        <label for="cliente-listaPrecio">Lista de precio</label>
-        <select id="cliente-listaPrecio" class="campo">{{{opcionesLista}}}</select>
-      </div>
-    </div>
-    <label class="marca-check"><input type="checkbox" id="cliente-autorizaDatos"> El cliente autoriza el tratamiento de sus datos personales (Ley 1581 de 2012)</label>
-    <div class="acciones-fila margen-superior-grande">
-      <button type="button" class="boton primario" id="guardar-cliente">Guardar cliente</button>
-      <button type="button" class="boton" id="cancelar-cliente">Cancelar</button>
-    </div>
-  </section>
+  <div id="formulario-cliente"></div>
 
   <section class="caja" aria-labelledby="titulo-lista-clientes">
     <strong id="titulo-lista-clientes">Lista de clientes</strong>
@@ -76,7 +14,7 @@
   </section>
 
   <section class="caja ficha-registro ficha-cliente-completa" id="ficha" aria-labelledby="titulo-ficha" hidden>
-    <div class="cabecera-ficha-registro">
+    <div class="cabecera-flex">
       <div>
         <span class="etiqueta-ficha">Ficha del cliente</span>
         <h2 id="titulo-ficha"></h2>
@@ -100,25 +38,7 @@
     </div>
 
     <div data-panel="actividades">
-      <div class="nueva-actividad" id="nueva-actividad" hidden>
-        <div class="tres-campos">
-          <div>
-            <label for="actividad-tipo">Tipo</label>
-            <select id="actividad-tipo" class="campo">{{{opcionesActividad}}}</select>
-          </div>
-          <div>
-            <label for="actividad-vence">Fecha de la tarea</label>
-            <input id="actividad-vence" class="campo" type="date" value="{{hoy}}" disabled>
-          </div>
-          <div>
-            <label for="actividad-responsable">Responsable</label>
-            <select id="actividad-responsable" class="campo">{{{opcionesResponsable}}}</select>
-          </div>
-        </div>
-        <label for="actividad-descripcion">Descripción</label>
-        <input id="actividad-descripcion" class="campo" maxlength="300" autocomplete="off" placeholder="Qué se habló o qué hay que hacer">
-        <button type="button" class="boton primario margen-superior" id="registrar-actividad">Registrar</button>
-      </div>
+      <div id="nueva-actividad" hidden></div>
       <div id="cuadricula-actividades"></div>
     </div>
     <div data-panel="compras" hidden><div id="cuadricula-compras"></div></div>
@@ -153,6 +73,3 @@
   <button type="button" class="boton" data-completar="{{id}}">Marcar hecha</button>
 </template>
 
-<template id="opcion">
-  <option value="{{valor}}">{{texto}}</option>
-</template>
