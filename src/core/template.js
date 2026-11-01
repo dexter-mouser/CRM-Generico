@@ -7,7 +7,8 @@ const MARCADORES = /(?:<!--)?\{\{\{(\w+)\}\}\}(?:-->)?|\{\{(\w+)\}\}/g;
 export async function cargarHtml(url) {
   const clave = String(url);
   if (!memoria.has(clave)) {
-    const respuesta = await fetch(url);
+    // no-cache: el navegador revalida con el servidor y nunca muestra una plantilla vieja tras un cambio
+    const respuesta = await fetch(url, { cache: 'no-cache' });
     if (!respuesta.ok) throw new Error('No se pudo cargar ' + clave);
     memoria.set(clave, await respuesta.text());
   }
